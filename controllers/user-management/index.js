@@ -39,16 +39,28 @@ const create = async (req, res) => {
     }
 };
 
+
 // GET ALL
 const getAll = async (req, res) => {
     try {
-        const users = await User.findAll({ order: [["createdAt", "DESC"]] });
+        const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+        const limitRaw = parseInt(req.query.limit, 10) || 20;
+        const limit = Math.min(Math.max(limitRaw, 1), 100);
+        const offset = (page - 1) * limit;
+
+        const users = await User.findAll({
+            limit,
+            offset,
+            order: [["createdAt", "DESC"]],
+        });
+
         return res.json(users);
     } catch (err) {
         console.error(err);
         return res.status(500).json({ message: "Failed to fetch users." });
     }
 };
+
 
 // GET ONE
 const getOne = async (req, res) => {
