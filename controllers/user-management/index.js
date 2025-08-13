@@ -40,7 +40,7 @@ const create = async (req, res) => {
 };
 
 // GET ALL
-const getAll = async (_req, res) => {
+const getAll = async (req, res) => {
     try {
         const users = await User.findAll({ order: [["createdAt", "DESC"]] });
         return res.json(users);
