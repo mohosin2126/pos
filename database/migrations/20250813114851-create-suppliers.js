@@ -10,28 +10,27 @@ module.exports = {
         allowNull: false,
       },
 
-      // Unique company code (e.g., SUP-0001)
       supplierCode: {
-        type: Sequelize.STRING(50),
+        type: Sequelize.STRING,
         allowNull: false,
         unique: true,
       },
 
       companyName: {
-        type: Sequelize.STRING(150),
+        type: Sequelize.STRING,
         allowNull: false,
       },
       contactPersonName: {
-        type: Sequelize.STRING(150),
+        type: Sequelize.STRING,
         allowNull: false,
       },
 
       email: {
-        type: Sequelize.STRING(150),
+        type: Sequelize.STRING,
         allowNull: true,
       },
       phone: {
-        type: Sequelize.STRING(50),
+        type: Sequelize.STRING,
         allowNull: true,
       },
 
@@ -40,30 +39,29 @@ module.exports = {
         allowNull: true,
       },
       city: {
-        type: Sequelize.STRING(100),
+        type: Sequelize.STRING,
         allowNull: true,
       },
       state: {
-        type: Sequelize.STRING(100),
+        type: Sequelize.STRING,
         allowNull: true,
       },
       postalCode: {
-        type: Sequelize.STRING(30),
+        type: Sequelize.STRING,
         allowNull: true,
       },
       country: {
-        type: Sequelize.STRING(100),
+        type: Sequelize.STRING,
         allowNull: true,
       },
 
       website: {
-        type: Sequelize.STRING(200),
+        type: Sequelize.STRING,
         allowNull: true,
       },
 
-      // Finance & compliance
       taxId: {
-        type: Sequelize.STRING(100),
+        type: Sequelize.STRING,
         allowNull: true,
       },
       bankDetails: {
@@ -71,7 +69,11 @@ module.exports = {
         allowNull: true,
       },
       paymentTerms: {
-        type: Sequelize.STRING(50), // e.g., "Net 30"
+        type: Sequelize.STRING,
+        allowNull: true,
+      },
+      notes: {
+        type: Sequelize.TEXT,
         allowNull: true,
       },
 
@@ -81,7 +83,6 @@ module.exports = {
         defaultValue: "active",
       },
 
-      // Timestamps
       createdAt: {
         allowNull: false,
         type: Sequelize.DATE,

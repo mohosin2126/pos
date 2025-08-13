@@ -2,6 +2,7 @@ const { sequelize } = require('../database/models');
 
 const userManagement=require('./user-management/index')
 const roleManagement=require('./role/index')
+const supplierManagement=require('./supplier/index')
 
 module.exports = function registerRoutes(app) {
     app.get('/', (req, res) => {
@@ -20,6 +21,7 @@ module.exports = function registerRoutes(app) {
 
     app.use('/api/v1/admin/user', userManagement);
     app.use('/api/v1/admin/role', roleManagement);
+    app.use('/api/v1/admin/supplier', supplierManagement);
 
 
 };
