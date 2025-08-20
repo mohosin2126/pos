@@ -4,6 +4,7 @@ const userManagement=require('./user-management/index')
 const roleManagement=require('./role/index')
 const supplierManagement=require('./supplier/index')
 const categoryManagement = require("./category");
+const productManagement = require("./product");
 
 module.exports = function registerRoutes(app) {
     app.get('/', (req, res) => {
@@ -24,6 +25,7 @@ module.exports = function registerRoutes(app) {
     app.use('/api/v1/admin/role', roleManagement);
     app.use('/api/v1/admin/supplier', supplierManagement);
     app.use("/api/v1/admin/category", categoryManagement);
+    app.use("/api/v1/admin/product", productManagement);
 
 
 };
