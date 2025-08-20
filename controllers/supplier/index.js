@@ -1,6 +1,6 @@
 "use strict";
 
-const { Supplier } = require("../../database/models");
+const {Supplier} = require("../../database/models");
 
 // CREATE
 const create = async (req, res) => {
@@ -8,25 +8,25 @@ const create = async (req, res) => {
         const value = req.body || {};
 
         if (!value.supplierCode || String(value.supplierCode).trim() === "") {
-            return res.status(400).json({ message: "supplierCode is required" });
+            return res.status(400).json({message: "supplierCode is required"});
         }
 
         const exists = await Supplier.findOne({
-            where: { supplierCode: value.supplierCode },
+            where: {supplierCode: value.supplierCode},
         });
         if (exists) {
-            return res.status(409).json({ message: "Supplier code already in use" });
+            return res.status(409).json({message: "Supplier code already in use"});
         }
 
-        const created = await Supplier.create(value, { fields: Object.keys(value) });
+        const created = await Supplier.create(value, {fields: Object.keys(value)});
 
         return res
             .status(201)
-            .json({ message: "Supplier created successfully", data: created });
+            .json({message: "Supplier created successfully", data: created});
     } catch (err) {
         return res
             .status(500)
-            .json({ message: err.message || "Something went wrong" });
+            .json({message: err.message || "Something went wrong"});
     }
 };
 
@@ -53,7 +53,7 @@ const getAll = async (req, res) => {
             }
         }
 
-        const { rows, count } = await Supplier.findAndCountAll({
+        const {rows, count} = await Supplier.findAndCountAll({
             where,
             limit,
             offset,
@@ -70,7 +70,7 @@ const getAll = async (req, res) => {
             },
         });
     } catch (err) {
-        return res.status(500).json({ message: "Failed to fetch suppliers" });
+        return res.status(500).json({message: "Failed to fetch suppliers"});
     }
 };
 
@@ -78,14 +78,14 @@ const getAll = async (req, res) => {
 const getOne = async (req, res) => {
     try {
         const id = Number(req.params.id);
-        if (!id) return res.status(400).json({ message: "Invalid supplier id" });
+        if (!id) return res.status(400).json({message: "Invalid supplier id"});
 
         const supplier = await Supplier.findByPk(id);
-        if (!supplier) return res.status(404).json({ message: "Supplier not found" });
+        if (!supplier) return res.status(404).json({message: "Supplier not found"});
 
-        return res.json({ data: supplier });
+        return res.json({data: supplier});
     } catch (err) {
-        return res.status(500).json({ message: "Failed to fetch supplier" });
+        return res.status(500).json({message: "Failed to fetch supplier"});
     }
 };
 
@@ -93,23 +93,23 @@ const getOne = async (req, res) => {
 const update = async (req, res) => {
     try {
         const id = Number(req.params.id);
-        if (!id) return res.status(400).json({ message: "Invalid supplier id" });
+        if (!id) return res.status(400).json({message: "Invalid supplier id"});
 
         if (req.body.supplierCode !== undefined) {
-            return res.status(400).json({ message: "supplierCode cannot be updated" });
+            return res.status(400).json({message: "supplierCode cannot be updated"});
         }
 
         if (Object.keys(req.body).length === 0) {
-            return res.status(400).json({ message: "No fields provided for update" });
+            return res.status(400).json({message: "No fields provided for update"});
         }
 
-        const [affected] = await Supplier.update(req.body, { where: { id } });
-        if (!affected) return res.status(404).json({ message: "Supplier not found" });
+        const [affected] = await Supplier.update(req.body, {where: {id}});
+        if (!affected) return res.status(404).json({message: "Supplier not found"});
 
         const updated = await Supplier.findByPk(id);
-        return res.json({ message: "Supplier updated successfully", data: updated });
+        return res.json({message: "Supplier updated successfully", data: updated});
     } catch (err) {
-        return res.status(500).json({ message: "Failed to update supplier" });
+        return res.status(500).json({message: "Failed to update supplier"});
     }
 };
 
@@ -117,15 +117,15 @@ const update = async (req, res) => {
 const destroy = async (req, res) => {
     try {
         const id = Number(req.params.id);
-        if (!id) return res.status(400).json({ message: "Invalid supplier id" });
+        if (!id) return res.status(400).json({message: "Invalid supplier id"});
 
-        const deleted = await Supplier.destroy({ where: { id } });
-        if (!deleted) return res.status(404).json({ message: "Supplier not found" });
+        const deleted = await Supplier.destroy({where: {id}});
+        if (!deleted) return res.status(404).json({message: "Supplier not found"});
 
         return res.status(204).send();
     } catch (err) {
-        return res.status(500).json({ message: "Failed to delete supplier" });
+        return res.status(500).json({message: "Failed to delete supplier"});
     }
 };
 
-module.exports = { create, getAll, getOne, update, destroy };
+module.exports = {create, getAll, getOne, update, destroy};

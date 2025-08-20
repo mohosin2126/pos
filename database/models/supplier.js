@@ -1,6 +1,6 @@
 "use strict";
 
-const { Model } = require("sequelize");
+const {Model} = require("sequelize");
 
 module.exports = (sequelize, DataTypes) => {
     class Supplier extends Model {
@@ -26,7 +26,7 @@ module.exports = (sequelize, DataTypes) => {
             email: {
                 type: DataTypes.STRING,
                 allowNull: true,
-                validate: { isEmail: true },
+                validate: {isEmail: true},
             },
             phone: {
                 type: DataTypes.STRING,
@@ -55,7 +55,7 @@ module.exports = (sequelize, DataTypes) => {
             website: {
                 type: DataTypes.STRING,
                 allowNull: true,
-                validate: { isUrl: true },
+                validate: {isUrl: true},
             },
             taxId: {
                 type: DataTypes.STRING,
