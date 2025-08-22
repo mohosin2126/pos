@@ -53,6 +53,7 @@ module.exports = {
       notes: { type: Sequelize.TEXT, allowNull: true },
       shippingDetails: { type: Sequelize.TEXT, allowNull: true },
 
+      // NEW: warranty & expiry (simple)
       warrantyValue: { type: Sequelize.INTEGER, allowNull: true },
       warrantyUnit:  { type: Sequelize.ENUM("months", "years"), allowNull: true },
       expiryDate:    { type: Sequelize.DATE, allowNull: true },
