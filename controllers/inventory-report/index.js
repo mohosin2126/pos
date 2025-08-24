@@ -1,121 +1,129 @@
 "use strict";
+const { sequelize } =require("../../database/models");
 
-const {
-    ActiveProductView,
-    NonExpiredStockView,
-    LowStockProductView,
-    ExpiredOnlyProductView,
-    SellableProductView,
-    OutOfStockProductView
-} = require("../../../POS/server/database/models");
+const LOW_STOCK_THRESHOLD = 5;
 
-// GET /inventory/active-products
-const listActiveProducts = async (req, res) => {
+async function fetchProductSummaryRows() {
+    const [rows] = await sequelize.query(`
+    SELECT
+      p.id AS productId,
+      p.name AS productName,
+      p.status,
+      p.isTrackStock,
+      p.reorderLevel,
+      COALESCE(s.nonExpiredQty, 0) AS nonExpiredQty,
+      COALESCE(s.expiredQty, 0)    AS expiredQty
+    FROM products p
+    LEFT JOIN inventory_stock_summary s ON s.productId = p.id
+  `);
+    return rows;
+}
+
+// GET active-products
+const listActiveProducts = async (_req, res) => {
     try {
-        const rows = await ActiveProductView.findAll({ order: [["productName", "ASC"]] });
-        return res.json({
-            data: rows.map(r => ({
+        const rows = await fetchProductSummaryRows();
+        const data = rows
+            .filter(r => r.status === "active")
+            .sort((a,b) => a.productName.localeCompare(b.productName))
+            .map(r => ({
                 productId: r.productId,
                 productName: r.productName,
                 isTrackStock: !!r.isTrackStock,
                 reorderLevel: r.reorderLevel,
-            })),
-        });
+            }));
+        return res.json({ data });
     } catch (err) {
         return res.status(500).json({ message: "Failed to fetch active products", error: err.message });
     }
 };
 
-// GET /inventory/in-stock-products (non-expired stock > 0)
-const listInStockProducts = async (req, res) => {
+// GET in-stock-products
+const listInStockProducts = async (_req, res) => {
     try {
-        const rows = await NonExpiredStockView.findAll({ order: [["productName", "ASC"]] });
-        // No Sequelize.Op — filter in JS
-        const filtered = rows.filter(r => Number(r.onHandNotExpired || 0) > 0);
-        return res.json({
-            data: filtered.map(r => ({
-                productId: r.productId,
-                productName: r.productName,
-                quantity: Number(r.onHandNotExpired),
-            })),
-        });
+        const rows = await fetchProductSummaryRows();
+        const data = rows
+            .filter(r => r.status === "active" && Number(r.nonExpiredQty) > 0)
+            .sort((a,b) => a.productName.localeCompare(b.productName))
+            .map(r => ({ productId: r.productId, productName: r.productName, quantity: Number(r.nonExpiredQty) }));
+        return res.json({ data });
     } catch (err) {
         return res.status(500).json({ message: "Failed to fetch in-stock products", error: err.message });
     }
 };
 
-// GET /inventory/low-stock-products
-const listLowStockProducts = async (req, res) => {
+// GET low-stock-products
+const listLowStockProducts = async (_req, res) => {
     try {
-        const rows = await LowStockProductView.findAll({ order: [["productName", "ASC"]] });
-        return res.json({
-            data: rows.map(r => ({
+        const rows = await fetchProductSummaryRows();
+        const data = rows
+            .filter(r => Number(r.nonExpiredQty) <= LOW_STOCK_THRESHOLD)
+            .sort((a,b) => a.productName.localeCompare(b.productName))
+            .map(r => ({
                 productId: r.productId,
                 productName: r.productName,
-                quantity: Number(r.onHandNotExpired),
+                quantity: Number(r.nonExpiredQty),
                 reorderLevel: r.reorderLevel,
-            })),
-        });
+                threshold: LOW_STOCK_THRESHOLD,
+            }));
+        return res.json({ data });
     } catch (err) {
         return res.status(500).json({ message: "Failed to fetch low-stock products", error: err.message });
     }
 };
 
-// GET /inventory/expired-only-products
-// (products that have stock, but all of it is expired: non-expired = 0 AND total > 0)
-const listExpiredOnlyProducts = async (req, res) => {
+// GET out-of-stock-products
+const listOutOfStockProducts = async (_req, res) => {
     try {
-        const rows = await ExpiredOnlyProductView.findAll({ order: [["productName", "ASC"]] });
-        return res.json({
-            data: rows.map(r => ({
-                productId: r.productId,
-                productName: r.productName,
-                expiredQuantity: Number(r.expiredOnlyQty),
-            })),
-        });
-    } catch (err) {
-        return res.status(500).json({ message: "Failed to fetch expired-only products", error: err.message });
-    }
-};
-
-
-const listSellableProducts = async (req, res) => {
-    try {
-        const rows = await SellableProductView.findAll({ order: [["productName", "ASC"]] });
-        return res.json({
-            data: rows.map(r => ({
-                productId: r.productId,
-                productName: r.productName,
-                available: Number(r.onHandNotExpired),
-                reorderLevel: r.reorderLevel,
-            })),
-        });
-    } catch (err) {
-        return res.status(500).json({ message: "Failed to fetch sellable products", error: err.message });
-    }
-};
-
-const listOutOfStockProducts = async (req, res) => {
-    try {
-        const rows = await OutOfStockProductView.findAll({ order: [["productName", "ASC"]] });
-        return res.json({
-            data: rows.map(r => ({
-                productId: r.productId,
-                productName: r.productName,
-            })),
-        });
+        const rows = await fetchProductSummaryRows();
+        const data = rows
+            .filter(r => Number(r.nonExpiredQty) === 0)
+            .sort((a,b) => a.productName.localeCompare(b.productName))
+            .map(r => ({ productId: r.productId, productName: r.productName }));
+        return res.json({ data });
     } catch (err) {
         return res.status(500).json({ message: "Failed to fetch out-of-stock products", error: err.message });
     }
 };
 
+// GET expired-only-products
+const listExpiredOnlyProducts = async (_req, res) => {
+    try {
+        const rows = await fetchProductSummaryRows();
+        const data = rows
+            .filter(r => Number(r.nonExpiredQty) === 0 && Number(r.expiredQty) > 0)
+            .sort((a,b) => a.productName.localeCompare(b.productName))
+            .map(r => ({ productId: r.productId, productName: r.productName, expiredQuantity: Number(r.expiredQty) }));
+        return res.json({ data });
+    } catch (err) {
+        return res.status(500).json({ message: "Failed to fetch expired-only products", error: err.message });
+    }
+};
 
+// GET sellable-products
+const listSellableProducts = async (_req, res) => {
+    try {
+        const rows = await fetchProductSummaryRows();
+        const data = rows
+            .filter(r => r.status === "active" && Number(r.nonExpiredQty) > 0)
+            .sort((a,b) => a.productName.localeCompare(b.productName))
+            .map(r => ({
+                productId: r.productId,
+                productName: r.productName,
+                available: Number(r.nonExpiredQty),
+                reorderLevel: r.reorderLevel,
+            }));
+        return res.json({ data });
+    } catch (err) {
+        return res.status(500).json({ message: "Failed to fetch sellable products", error: err.message });
+    }
+};
 
 module.exports = {
     listActiveProducts,
     listInStockProducts,
     listLowStockProducts,
+    listOutOfStockProducts,
     listExpiredOnlyProducts,
     listSellableProducts,
-    listOutOfStockProducts,
 };

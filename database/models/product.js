@@ -10,6 +10,11 @@ module.exports = (sequelize, DataTypes) => {
                 foreignKey: "categoryId",
                 as: "category",
             });
+
+            Product.hasOne(models.InventoryStockSummary, {
+                foreignKey: "productId",
+                as: "stockSummary",
+            });
         }
     }
 

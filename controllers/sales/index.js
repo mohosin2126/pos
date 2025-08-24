@@ -2,29 +2,41 @@
 const {
     sequelize,
     Sale, SaleItem, SalePayment, Product, InventoryMovement
-} = require("../../../POS/server/database/models");
+} = require("../../database/models");
 
-// Small helpers inside controller (MySQL-safe)
-async function sumNonExpiredQty(productId, t) {
+
+async function getAvailableNonExpired(productId, t) {
     const [rows] = await sequelize.query(
-        `
-    SELECT COALESCE(SUM(
-      CASE WHEN lotExpiryDate IS NULL OR lotExpiryDate >= CURDATE() THEN quantity ELSE 0 END
-    ),0) AS qty
-    FROM inventory_movements
-    WHERE productId = ?
-    `,
+        `SELECT nonExpiredQty AS qty FROM inventory_stock_summary WHERE productId = ?`,
         { replacements: [productId], transaction: t }
     );
-    return rows?.[0]?.qty ? Number(rows[0].qty) : 0;
+    if (rows && rows[0]) return Number(rows[0].qty || 0);
+
+    const [rows2] = await sequelize.query(
+        `SELECT COALESCE(SUM(CASE WHEN lotExpiryDate IS NULL OR lotExpiryDate >= CURDATE() THEN quantity ELSE 0 END),0) AS qty
+     FROM inventory_movements WHERE productId = ?`,
+        { replacements: [productId], transaction: t }
+    );
+    return rows2?.[0]?.qty ? Number(rows2[0].qty) : 0;
 }
 
-async function sumAllLots(productId, t) {
-    const [rows] = await sequelize.query(
-        `SELECT COALESCE(SUM(quantity),0) AS qty FROM inventory_movements WHERE productId = ?`,
-        { replacements: [productId], transaction: t }
+async function applyMovementToSummary({ productId, quantity, lotExpiryDate }, t) {
+    const today = new Date(new Date().toDateString());
+    const exp = lotExpiryDate ? new Date(lotExpiryDate) : null;
+    const isNonExpired = !exp || exp >= today;
+    const non = isNonExpired ? Number(quantity) : 0;
+    const exq = isNonExpired ? 0 : Number(quantity);
+
+    await sequelize.query(
+        `
+    INSERT INTO inventory_stock_summary (productId, nonExpiredQty, expiredQty)
+    VALUES (?, ?, ?)
+    ON DUPLICATE KEY UPDATE
+      nonExpiredQty = nonExpiredQty + VALUES(nonExpiredQty),
+      expiredQty    = expiredQty    + VALUES(expiredQty)
+    `,
+        { replacements: [productId, non, exq], transaction: t }
     );
-    return rows?.[0]?.qty ? Number(rows[0].qty) : 0;
 }
 
 function computeTotals(items, discountType, discountAmount, orderTaxPercent, shippingCharge) {
@@ -38,15 +50,7 @@ function computeTotals(items, discountType, discountAmount, orderTaxPercent, shi
         const taxAmount = (base * taxPct) / 100;
         const lineTotal = base + taxAmount;
         subTotal += lineTotal;
-        return {
-            productId: it.productId,
-            quantity: qty,
-            unitPrice: price,
-            discountAmount: lineDiscount,
-            taxPercent: taxPct,
-            taxAmount,
-            lineTotal,
-        };
+        return { productId: it.productId, quantity: qty, unitPrice: price, discountAmount: lineDiscount, taxPercent: taxPct, taxAmount, lineTotal };
     });
 
     let orderLevelDiscount = 0;
@@ -55,11 +59,22 @@ function computeTotals(items, discountType, discountAmount, orderTaxPercent, shi
 
     const orderTaxAmount = ((subTotal - orderLevelDiscount) * Number(orderTaxPercent || 0)) / 100;
     const totalAmount = subTotal - orderLevelDiscount + orderTaxAmount + Number(shippingCharge || 0);
-
     return { normalized, subTotal, orderLevelDiscount, orderTaxAmount, totalAmount };
 }
 
-// POST /sales  (also used by POS checkout)
+async function assertSellable(it, t) {
+    const product = await Product.findByPk(it.productId, { transaction: t });
+    if (!product) throw new Error("Product not found");
+    if (product.status !== "active") throw new Error("Product is not active");
+
+    if (product.isTrackStock) {
+        const available = await getAvailableNonExpired(it.productId, t);
+        if (available <= 0) throw new Error("Product has no sellable (non-expired) stock");
+        if (available < Number(it.quantity)) throw new Error("Insufficient non-expired stock");
+    }
+}
+
+// POST
 const create = async (req, res) => {
     const t = await sequelize.transaction();
     try {
@@ -76,20 +91,11 @@ const create = async (req, res) => {
 
         if (!items.length) { await t.rollback(); return res.status(400).json({ message: "At least one item is required" }); }
 
-        // Validate: active + in-stock + non-expired
         for (const it of items) {
             if (!it.productId || !it.quantity || !it.unitPrice) {
                 await t.rollback(); return res.status(400).json({ message: "Each item needs productId, quantity, unitPrice" });
             }
-            const product = await Product.findByPk(it.productId, { transaction: t });
-            if (!product) { await t.rollback(); return res.status(404).json({ message: "Product not found" }); }
-            if (product.status !== "active") { await t.rollback(); return res.status(400).json({ message: "Product is not active" }); }
-            if (product.isTrackStock) {
-                const available = await sumNonExpiredQty(it.productId, t);
-                if (available < Number(it.quantity)) {
-                    await t.rollback(); return res.status(400).json({ message: "Insufficient non-expired stock" });
-                }
-            }
+            await assertSellable(it, t);
         }
 
         const { normalized, subTotal, orderLevelDiscount, orderTaxAmount, totalAmount } =
@@ -138,21 +144,31 @@ const create = async (req, res) => {
             }, { transaction: t });
         }
 
-        // Stock out (negative movements)
+        // Create
         for (const it of normalized) {
-            await InventoryMovement.create({
+            const mov = await InventoryMovement.create({
                 productId: it.productId,
                 movementType: "sale",
                 quantity: -Number(it.quantity),
                 relatedEntityType: "Sale",
                 relatedEntityId: sale.id,
+                lotExpiryDate: null,
             }, { transaction: t });
+
+            await applyMovementToSummary({
+                productId: it.productId,
+                quantity: -Number(it.quantity),
+                lotExpiryDate: mov.lotExpiryDate,
+            }, t);
         }
 
-        // Optional: sync Product.stockQuantity from movements (keeps your UI field accurate)
         const touchedIds = Array.from(new Set(normalized.map(i => i.productId)));
         for (const pid of touchedIds) {
-            const onHand = await sumAllLots(pid, t);
+            const [rows] = await sequelize.query(
+                `SELECT COALESCE(SUM(quantity),0) AS qty FROM inventory_movements WHERE productId = ?`,
+                { replacements: [pid], transaction: t }
+            );
+            const onHand = rows?.[0]?.qty ? Number(rows[0].qty) : 0;
             await Product.update({ stockQuantity: onHand }, { where: { id: pid }, transaction: t });
         }
 
@@ -168,8 +184,8 @@ const create = async (req, res) => {
     }
 };
 
-// GET /sales
-const getAll = async (req, res) => {
+// GET
+const getAll = async (_req, res) => {
     try {
         const rows = await Sale.findAll({
             include: [{ model: SaleItem, as: "items" }, { model: SalePayment, as: "payments" }],
@@ -181,7 +197,7 @@ const getAll = async (req, res) => {
     }
 };
 
-// GET /sales/:id
+// GET
 const getOne = async (req, res) => {
     try {
         const row = await Sale.findByPk(req.params.id, {
@@ -194,4 +210,4 @@ const getOne = async (req, res) => {
     }
 };
 
-module.exports = { create,getAll, getOne};
+module.exports = { create, getAll, getOne };
