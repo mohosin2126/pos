@@ -10,6 +10,8 @@ const purchaseManagement = require("./purchase");
 const saleManagement = require("./sale");
 const posManagement = require("./pos");
 const inventoryManagement = require("./inventory");
+const customerManagement = require("./customer");
+const invoiceManagement = require("./invoice");
 
 const commonRoutes = require("./common");
 
@@ -36,6 +38,8 @@ module.exports = function registerRoutes(app) {
     app.use("/api/v1/admin/sale", saleManagement);
     app.use("/api/v1/admin/pos", posManagement);
     app.use("/api/v1/admin/inventory", inventoryManagement);
+    app.use("/api/v1/admin/customer", customerManagement);
+    app.use("/api/v1/admin/invoice",invoiceManagement);
 
 
     // common routes
