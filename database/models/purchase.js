@@ -61,8 +61,8 @@ module.exports = (sequelize, DataTypes) => {
             shippingDetails: { type: DataTypes.TEXT, allowNull: true },
 
             warrantyValue: { type: DataTypes.INTEGER, allowNull: true },
-            warrantyUnit:  { type: DataTypes.ENUM("months", "years"), allowNull: true },
-            expiryDate:    { type: DataTypes.DATE, allowNull: true },
+            warrantyUnit: { type: DataTypes.ENUM("months", "years"), allowNull: true },
+            expiryDate: { type: DataTypes.DATE, allowNull: true },
         },
         {
             sequelize,
@@ -77,6 +77,28 @@ module.exports = (sequelize, DataTypes) => {
             },
         }
     );
+
+    const ensureActiveProduct = async (purchase) => {
+        if (!purchase.productId) {
+            throw new Error("productId is required");
+        }
+        const { Product } = sequelize.models;
+
+        const product = await Product.findByPk(purchase.productId);
+        if (!product) {
+            throw new Error("Invalid productId: product not found");
+        }
+        if (product.status !== "active") {
+            throw new Error("Purchase requires an active product");
+        }
+    };
+
+    Purchase.addHook("beforeCreate", ensureActiveProduct);
+    Purchase.addHook("beforeUpdate", async (purchase) => {
+        if (purchase.changed("productId")) {
+            await ensureActiveProduct(purchase);
+        }
+    });
 
     return Purchase;
 };

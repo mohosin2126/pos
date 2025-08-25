@@ -5,7 +5,23 @@ const { Purchase, Supplier, Product } = require("../../database/models");
 // CREATE
 const create = async (req, res) => {
     try {
+        const { productId } = req.body;
+
+        if (!productId) {
+            return res.status(400).json({ message: "productId is required" });
+        }
+        const product = await Product.findByPk(productId);
+        if (!product) {
+            return res.status(400).json({ message: "Invalid productId: product not found" });
+        }
+        if (product.status !== "active") {
+            return res
+                .status(400)
+                .json({ message: "Cannot create purchase for an inactive product" });
+        }
+
         const purchase = await Purchase.create(req.body);
+
         return res.status(201).json({
             message: "Purchase created successfully",
             data: purchase,
@@ -69,6 +85,17 @@ const update = async (req, res) => {
 
         if (!purchase) {
             return res.status(404).json({ message: "Purchase not found" });
+        }
+        if (req.body.productId !== undefined) {
+            const product = await Product.findByPk(req.body.productId);
+            if (!product) {
+                return res.status(400).json({ message: "Invalid productId: product not found" });
+            }
+            if (product.status !== "active") {
+                return res
+                    .status(400)
+                    .json({ message: "Cannot set purchase to an inactive product" });
+            }
         }
 
         await purchase.update(req.body);
