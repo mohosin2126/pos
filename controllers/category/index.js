@@ -1,14 +1,16 @@
 "use strict";
 
-const {Category} = require("../../database/models");
+const { Category } = require("../../database/models");
+const {created, serverError, success, notFound} = require("../../utils/api-response");
+
 
 // CREATE
 const create = async (req, res) => {
     try {
         const category = await Category.create(req.body);
-        return res.status(201).json(category);
+        return created(res, "Category created successfully", category);
     } catch (err) {
-        return res.status(500).json({message: err.message});
+        return serverError(res, err.message, err);
     }
 };
 
@@ -16,9 +18,9 @@ const create = async (req, res) => {
 const getAll = async (req, res) => {
     try {
         const categories = await Category.findAll();
-        return res.json(categories);
+        return success(res, "Success", categories);
     } catch (err) {
-        return res.status(500).json({message: err.message});
+        return serverError(res, err.message, err);
     }
 };
 
@@ -26,10 +28,10 @@ const getAll = async (req, res) => {
 const getOne = async (req, res) => {
     try {
         const category = await Category.findByPk(req.params.id);
-        if (!category) return res.status(404).json({message: "Category not found"});
-        return res.json(category);
+        if (!category) return notFound(res, "Category not found");
+        return success(res, "Success", category);
     } catch (err) {
-        return res.status(500).json({message: err.message});
+        return serverError(res, err.message, err);
     }
 };
 
@@ -37,12 +39,12 @@ const getOne = async (req, res) => {
 const update = async (req, res) => {
     try {
         const category = await Category.findByPk(req.params.id);
-        if (!category) return res.status(404).json({message: "Category not found"});
+        if (!category) return notFound(res, "Category not found");
 
         await category.update(req.body);
-        return res.json(category);
+        return success(res, "Category updated successfully", category);
     } catch (err) {
-        return res.status(500).json({message: err.message});
+        return serverError(res, err.message, err);
     }
 };
 
@@ -50,13 +52,13 @@ const update = async (req, res) => {
 const destroy = async (req, res) => {
     try {
         const category = await Category.findByPk(req.params.id);
-        if (!category) return res.status(404).json({message: "Category not found"});
+        if (!category) return notFound(res, "Category not found");
 
         await category.destroy();
-        return res.json({message: "Category deleted"});
+        return success(res, "Category deleted", null);
     } catch (err) {
-        return res.status(500).json({message: err.message});
+        return serverError(res, err.message, err);
     }
 };
 
-module.exports = {create, getAll, getOne, update, destroy};
+module.exports = { create, getAll, getOne, update, destroy };

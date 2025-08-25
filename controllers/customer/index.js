@@ -1,14 +1,27 @@
 "use strict";
 
 const { Customer } = require("../../database/models");
+const {parsePagination, paginated, serverError, notFound, success} = require("../../utils/api-response");
+
 
 // GET ALL
 const getAll = async (req, res) => {
     try {
-        const customers = await Customer.findAll();
-        return res.json(customers);
+        const { page, limit, offset } = parsePagination(req.query, {
+            page: 1,
+            limit: 20,
+            maxLimit: 100,
+        });
+
+        const { rows, count } = await Customer.findAndCountAll({
+            limit,
+            offset,
+            order: [["createdAt", "DESC"]],
+        });
+
+        return paginated(res, { rows, count }, { page, limit }, "Fetched successfully");
     } catch (err) {
-        return res.status(500).json({ message: err.message });
+        return serverError(res, err.message, err);
     }
 };
 
@@ -16,10 +29,10 @@ const getAll = async (req, res) => {
 const getOne = async (req, res) => {
     try {
         const customer = await Customer.findByPk(req.params.id);
-        if (!customer) return res.status(404).json({ message: "Customer not found" });
-        return res.json(customer);
+        if (!customer) return notFound(res, "Customer not found");
+        return success(res, "Success", customer);
     } catch (err) {
-        return res.status(500).json({ message: err.message });
+        return serverError(res, err.message, err);
     }
 };
 

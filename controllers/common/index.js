@@ -1,6 +1,8 @@
 "use strict";
 
 const { Supplier, Category, Product } = require("../../database/models");
+const {notFound, success, serverError} = require("../../utils/api-response");
+
 
 const getAllSupplier = async (req, res) => {
     try {
@@ -10,15 +12,12 @@ const getAllSupplier = async (req, res) => {
         });
 
         if (!suppliers || suppliers.length === 0) {
-            return res.status(404).json({ message: "No suppliers found" });
+            return notFound(res, "No suppliers found");
         }
 
-        return res.json({ data: suppliers });
+        return success(res, "Success", suppliers);
     } catch (error) {
-        return res.status(500).json({
-            message: "Failed to fetch supplier list",
-            error: error.message,
-        });
+        return serverError(res, "Failed to fetch supplier list", error);
     }
 };
 
@@ -30,15 +29,12 @@ const getAllCategory = async (req, res) => {
         });
 
         if (!categories || categories.length === 0) {
-            return res.status(404).json({ message: "No categories found" });
+            return notFound(res, "No categories found");
         }
 
-        return res.json({ data: categories });
+        return success(res, "Success", categories);
     } catch (error) {
-        return res.status(500).json({
-            message: "Failed to fetch category list",
-            error: error.message,
-        });
+        return serverError(res, "Failed to fetch category list", error);
     }
 };
 
@@ -50,15 +46,12 @@ const getAllProduct = async (req, res) => {
         });
 
         if (!products || products.length === 0) {
-            return res.status(404).json({ message: "No products found" });
+            return notFound(res, "No products found");
         }
 
-        return res.json({ data: products });
+        return success(res, "Success", products);
     } catch (error) {
-        return res.status(500).json({
-            message: "Failed to fetch product list",
-            error: error.message,
-        });
+        return serverError(res, "Failed to fetch product list", error);
     }
 };
 

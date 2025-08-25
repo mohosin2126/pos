@@ -1,6 +1,19 @@
-const {User} = require("../../database/models");
+"use strict";
+
+const { User } = require("../../database/models");
 const bcrypt = require("bcrypt");
-const {createUserValidation} = require("./validation");
+const { createUserValidation } = require("./validation");
+
+const {
+    success,
+    created,
+    conflict,
+    notFound,
+    unprocessable,
+    serverError,
+    parsePagination,
+    paginated,
+} = require("../../utils/api-response");
 
 const hashIfPresent = async (password) => {
     if (!password) return undefined;
@@ -8,110 +21,94 @@ const hashIfPresent = async (password) => {
     return bcrypt.hash(password, saltRounds);
 };
 
-
 // CREATE
 const create = async (req, res) => {
     try {
-        const {error, value} = createUserValidation.validate(req.body, {
+        const { error, value } = createUserValidation.validate(req.body, {
             abortEarly: false,
             stripUnknown: true,
         });
         if (error) {
-            return res.status(422).json({
-                message: "Validation failed.",
-                details: error.details.map((d) => d.message),
-            });
+            return unprocessable(res, "Validation failed.", error.details.map((d) => d.message));
         }
 
         if (value.password) value.password = await hashIfPresent(value.password);
 
         const user = await User.create(value);
-        return res.status(201).json(user);
+        return created(res, "User created successfully", user);
     } catch (err) {
-        console.error(err);
         if (err.name === "SequelizeUniqueConstraintError") {
-            return res.status(409).json({
-                message: "Email or username already exists.",
-                details: err.errors?.map((e) => e.message),
-            });
+            return conflict(res, "Email or username already exists.", err.errors?.map((e) => e.message));
         }
-        return res.status(500).json({message: "Failed to create user."});
+        return serverError(res, "Failed to create user.", err);
     }
 };
-
 
 // GET ALL
 const getAll = async (req, res) => {
     try {
-        const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
-        const limitRaw = parseInt(req.query.limit, 10) || 20;
-        const limit = Math.min(Math.max(limitRaw, 1), 100);
-        const offset = (page - 1) * limit;
+        const { page, limit, offset } = parsePagination(req.query, {
+            page: 1,
+            limit: 20,
+            maxLimit: 100,
+        });
 
-        const users = await User.findAll({
+        const { rows, count } = await User.findAndCountAll({
             limit,
             offset,
             order: [["createdAt", "DESC"]],
         });
 
-        return res.json(users);
+        return paginated(res, { rows, count }, { page, limit }, "Fetched successfully");
     } catch (err) {
-        console.error(err);
-        return res.status(500).json({message: "Failed to fetch users."});
+        return serverError(res, "Failed to fetch users.", err);
     }
 };
-
 
 // GET ONE
 const getOne = async (req, res) => {
     try {
-        const {id} = req.params;
+        const { id } = req.params;
         const user = await User.findByPk(id);
-        if (!user) return res.status(404).json({message: "User not found."});
-        return res.json(user);
+        if (!user) return notFound(res, "User not found.");
+        return success(res, "Success", user);
     } catch (err) {
-        console.error(err);
-        return res.status(500).json({message: "Failed to fetch user."});
+        return serverError(res, "Failed to fetch user.", err);
     }
 };
 
 // UPDATE
 const update = async (req, res) => {
     try {
-        const {id} = req.params;
-        const data = {...req.body};
+        const { id } = req.params;
+        const data = { ...req.body };
 
         if (data.password) data.password = await hashIfPresent(data.password);
         else delete data.password;
 
-        const [count] = await User.update(data, {where: {id}});
-        if (!count) return res.status(404).json({message: "User not found."});
+        const [count] = await User.update(data, { where: { id } });
+        if (!count) return notFound(res, "User not found.");
 
         const updated = await User.findByPk(id);
-        return res.json(updated);
+        return success(res, "User updated successfully", updated);
     } catch (err) {
-        console.error(err);
         if (err.name === "SequelizeUniqueConstraintError") {
-            return res.status(409).json({
-                message: "Email or username already exists.",
-                details: err.errors?.map((e) => e.message),
-            });
+            return conflict(res, "Email or username already exists.", err.errors?.map((e) => e.message));
         }
-        return res.status(500).json({message: "Failed to update user."});
+        return serverError(res, "Failed to update user.", err);
     }
 };
 
 // DESTROY
 const destroy = async (req, res) => {
     try {
-        const {id} = req.params;
-        const count = await User.destroy({where: {id}});
-        if (!count) return res.status(404).json({message: "User not found."});
-        return res.json({message: "User deleted."});
+        const { id } = req.params;
+        const count = await User.destroy({ where: { id } });
+        if (!count) return notFound(res, "User not found.");
+        return success(res, "User deleted", null);
     } catch (err) {
-        console.error(err);
-        return res.status(500).json({message: "Failed to delete user."});
+        return serverError(res, "Failed to delete user.", err);
     }
 };
 
-module.exports = {create, getAll, getOne, update, destroy};
+module.exports = { create, getAll, getOne, update, destroy };

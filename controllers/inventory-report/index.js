@@ -1,5 +1,7 @@
 "use strict";
 const { sequelize } = require("../../database/models");
+const {parsePagination, paginated, serverError} = require("../../utils/api-response");
+
 
 const LOW_STOCK_THRESHOLD = 5;
 
@@ -15,7 +17,7 @@ async function fetchAggregates() {
         GROUP BY p.productId
     `);
 
-    return rows.map(r => ({
+    return rows.map((r) => ({
         productId: r.productId,
         nonExpiredPurchased: Number(r.nonExpiredPurchased || 0),
         expiredPurchased: Number(r.expiredPurchased || 0),
@@ -25,79 +27,124 @@ async function fetchAggregates() {
 }
 
 // GET /in-stock-products  (not expired & qty > 0)
-const listInStockProducts = async (_req, res) => {
+const listInStockProducts = async (req, res) => {
     try {
         const rows = await fetchAggregates();
         const data = rows
-            .filter(r => r.available > 0)
-            .sort((a,b) => String(a.productId).localeCompare(String(b.productId)))
-            .map(r => ({ productId: r.productId, quantity: r.available }));
-        return res.json({ data });
+            .filter((r) => r.available > 0)
+            .sort((a, b) => String(a.productId).localeCompare(String(b.productId)))
+            .map((r) => ({ productId: r.productId, quantity: r.available }));
+
+        const { page, limit, offset } = parsePagination(req.query);
+        const paginatedData = data.slice(offset, offset + limit);
+
+        return paginated(
+            res,
+            { rows: paginatedData, count: data.length },
+            { page, limit },
+            "Fetched successfully"
+        );
     } catch (err) {
-        return res.status(500).json({ message: "Failed to fetch in-stock products", error: err.message });
+        return serverError(res, "Failed to fetch in-stock products", err);
     }
 };
 
 // GET /low-stock-products (≤5 and >0, non-expired)
-const listLowStockProducts = async (_req, res) => {
+const listLowStockProducts = async (req, res) => {
     try {
         const rows = await fetchAggregates();
         const data = rows
-            .filter(r => r.available > 0 && r.available <= LOW_STOCK_THRESHOLD)
-            .sort((a,b) => String(a.productId).localeCompare(String(b.productId)))
-            .map(r => ({
+            .filter((r) => r.available > 0 && r.available <= LOW_STOCK_THRESHOLD)
+            .sort((a, b) => String(a.productId).localeCompare(String(b.productId)))
+            .map((r) => ({
                 productId: r.productId,
                 quantity: r.available,
                 threshold: LOW_STOCK_THRESHOLD,
             }));
-        return res.json({ data });
+
+        const { page, limit, offset } = parsePagination(req.query);
+        const paginatedData = data.slice(offset, offset + limit);
+
+        return paginated(
+            res,
+            { rows: paginatedData, count: data.length },
+            { page, limit },
+            "Fetched successfully"
+        );
     } catch (err) {
-        return res.status(500).json({ message: "Failed to fetch low-stock products", error: err.message });
+        return serverError(res, "Failed to fetch low-stock products", err);
     }
 };
 
 // GET /out-of-stock-products (≤0, non-expired)
-const listOutOfStockProducts = async (_req, res) => {
+const listOutOfStockProducts = async (req, res) => {
     try {
         const rows = await fetchAggregates();
         const data = rows
-            .filter(r => r.available <= 0)
-            .sort((a,b) => String(a.productId).localeCompare(String(b.productId)))
-            .map(r => ({ productId: r.productId }));
-        return res.json({ data });
+            .filter((r) => r.available <= 0)
+            .sort((a, b) => String(a.productId).localeCompare(String(b.productId)))
+            .map((r) => ({ productId: r.productId }));
+
+        const { page, limit, offset } = parsePagination(req.query);
+        const paginatedData = data.slice(offset, offset + limit);
+
+        return paginated(
+            res,
+            { rows: paginatedData, count: data.length },
+            { page, limit },
+            "Fetched successfully"
+        );
     } catch (err) {
-        return res.status(500).json({ message: "Failed to fetch out-of-stock products", error: err.message });
+        return serverError(res, "Failed to fetch out-of-stock products", err);
     }
 };
 
 // GET /expired-only-products (any expiredPurchased > 0)
-const listExpiredOnlyProducts = async (_req, res) => {
+const listExpiredOnlyProducts = async (req, res) => {
     try {
         const rows = await fetchAggregates();
         const data = rows
-            .filter(r => r.expiredPurchased > 0)
-            .sort((a,b) => String(a.productId).localeCompare(String(b.productId)))
-            .map(r => ({
+            .filter((r) => r.expiredPurchased > 0)
+            .sort((a, b) => String(a.productId).localeCompare(String(b.productId)))
+            .map((r) => ({
                 productId: r.productId,
                 expiredQuantity: r.expiredPurchased,
             }));
-        return res.json({ data });
+
+        const { page, limit, offset } = parsePagination(req.query);
+        const paginatedData = data.slice(offset, offset + limit);
+
+        return paginated(
+            res,
+            { rows: paginatedData, count: data.length },
+            { page, limit },
+            "Fetched successfully"
+        );
     } catch (err) {
-        return res.status(500).json({ message: "Failed to fetch expired-only products", error: err.message });
+        return serverError(res, "Failed to fetch expired-only products", err);
     }
 };
 
 // GET /sellable-products (available > 0, non-expired)
-const listSellableProducts = async (_req, res) => {
+const listSellableProducts = async (req, res) => {
     try {
         const rows = await fetchAggregates();
         const data = rows
-            .filter(r => r.available > 0)
-            .sort((a,b) => String(a.productId).localeCompare(String(b.productId)))
-            .map(r => ({ productId: r.productId, available: r.available }));
-        return res.json({ data });
+            .filter((r) => r.available > 0)
+            .sort((a, b) => String(a.productId).localeCompare(String(b.productId)))
+            .map((r) => ({ productId: r.productId, available: r.available }));
+
+        const { page, limit, offset } = parsePagination(req.query);
+        const paginatedData = data.slice(offset, offset + limit);
+
+        return paginated(
+            res,
+            { rows: paginatedData, count: data.length },
+            { page, limit },
+            "Fetched successfully"
+        );
     } catch (err) {
-        return res.status(500).json({ message: "Failed to fetch sellable products", error: err.message });
+        return serverError(res, "Failed to fetch sellable products", err);
     }
 };
 

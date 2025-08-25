@@ -1,6 +1,7 @@
 "use strict";
 
-const {Product, Category} = require("../../database/models");
+const { Product, Category } = require("../../database/models");
+const {badRequest, created, conflict, serverError, parsePagination, paginated, notFound, success} = require("../../utils/api-response");
 
 // CREATE
 const create = async (req, res) => {
@@ -21,12 +22,12 @@ const create = async (req, res) => {
         } = req.body;
 
         if (!name || !categoryId) {
-            return res.status(400).json({message: "name and categoryId are required"});
+            return badRequest(res, "name and categoryId are required");
         }
 
         const category = await Category.findByPk(categoryId);
         if (!category) {
-            return res.status(400).json({message: "Invalid categoryId: category not found"});
+            return badRequest(res, "Invalid categoryId: category not found");
         }
 
         const product = await Product.create({
@@ -44,21 +45,23 @@ const create = async (req, res) => {
             createdBy,
         });
 
-        return res.status(201).json({message: "Product created", data: product});
+        return created(res, "Product created", product);
     } catch (err) {
         if (err?.name === "SequelizeUniqueConstraintError") {
-            return res.status(409).json({message: "SKU must be unique"});
+            return conflict(res, "SKU must be unique");
         }
-        return res.status(500).json({message: "Failed to create product", error: err.message});
+        return serverError(res, "Failed to create product", err);
     }
 };
 
 // GET ALL
 const getAll = async (req, res) => {
     try {
-        const page = Number(req.query.page || 1);
-        const limit = Number(req.query.limit || 20);
-        const offset = (page - 1) * limit;
+        const { page, limit, offset } = parsePagination(req.query, {
+            page: 1,
+            limit: 20,
+            maxLimit: 100,
+        });
 
         const where = {};
         if (req.query.status) where.status = req.query.status;
@@ -70,7 +73,10 @@ const getAll = async (req, res) => {
         }
 
         const sortBy = req.query.sortBy || "name";
-        const order = req.query.order && req.query.order.toUpperCase() === "DESC" ? "DESC" : "ASC";
+        const order =
+            req.query.order && req.query.order.toUpperCase() === "DESC"
+                ? "DESC"
+                : "ASC";
 
         const result = await Product.findAndCountAll({
             where,
@@ -87,28 +93,18 @@ const getAll = async (req, res) => {
             ],
         });
 
-        const data = result.rows.map((row) => {
-            const p = row.get({plain: true});
-            return {
-                ...p,
-            };
-        });
+        const data = result.rows.map((row) => row.get({ plain: true }));
 
-        return res.json({
-            total: result.count,
-            page,
-            pages: Math.ceil(result.count / limit),
-            data,
-        });
+        return paginated(res, { rows: data, count: result.count }, { page, limit }, "Fetched successfully");
     } catch (err) {
-        return res.status(500).json({message: "Failed to fetch products", error: err.message});
+        return serverError(res, "Failed to fetch products", err);
     }
 };
 
 // GET ONE
 const getOne = async (req, res) => {
     try {
-        const {id} = req.params;
+        const { id } = req.params;
 
         const product = await Product.findByPk(id, {
             include: [
@@ -121,32 +117,27 @@ const getOne = async (req, res) => {
             ],
         });
 
-        if (!product) return res.status(404).json({message: "Product not found"});
-        const p = product.get({plain: true});
+        if (!product) return notFound(res, "Product not found");
+        const p = product.get({ plain: true });
 
-
-        return res.json({
-            data: {
-                ...p,
-            },
-        });
+        return success(res, "Success", p);
     } catch (err) {
-        return res.status(500).json({message: "Failed to fetch product", error: err.message});
+        return serverError(res, "Failed to fetch product", err);
     }
 };
 
 // UPDATE
 const update = async (req, res) => {
     try {
-        const {id} = req.params;
+        const { id } = req.params;
 
         const product = await Product.findByPk(id);
-        if (!product) return res.status(404).json({message: "Product not found"});
+        if (!product) return notFound(res, "Product not found");
 
         if (req.body.categoryId !== undefined) {
             const category = await Category.findByPk(req.body.categoryId);
             if (!category) {
-                return res.status(400).json({message: "Invalid categoryId: category not found"});
+                return badRequest(res, "Invalid categoryId: category not found");
             }
         }
 
@@ -169,28 +160,28 @@ const update = async (req, res) => {
         });
 
         await product.save();
-        return res.json({message: "Product updated", data: product});
+        return success(res, "Product updated", product);
     } catch (err) {
         if (err?.name === "SequelizeUniqueConstraintError") {
-            return res.status(409).json({message: "SKU must be unique"});
+            return conflict(res, "SKU must be unique");
         }
-        return res.status(500).json({message: "Failed to update product", error: err.message});
+        return serverError(res, "Failed to update product", err);
     }
 };
 
 // DELETE
 const destroy = async (req, res) => {
     try {
-        const {id} = req.params;
+        const { id } = req.params;
 
         const product = await Product.findByPk(id);
-        if (!product) return res.status(404).json({message: "Product not found"});
+        if (!product) return notFound(res, "Product not found");
 
         await product.destroy();
-        return res.json({message: "Product deleted"});
+        return success(res, "Product deleted", null);
     } catch (err) {
-        return res.status(500).json({message: "Failed to delete product", error: err.message});
+        return serverError(res, "Failed to delete product", err);
     }
 };
 
-module.exports = {create, getAll, getOne, update, destroy};
+module.exports = { create, getAll, getOne, update, destroy };

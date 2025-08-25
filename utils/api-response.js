@@ -1,17 +1,23 @@
 "use strict";
 
-function success(res, message = "Success", data = null, status = 200, extra = {}) {
-    return res.status(status).json({ success: true, message, data, ...extra });
+function wrapData(key, value) {
+    if (value === null || value === undefined) return null;
+    return { [key]: value };
+}
+
+function success(res, message = "Success", data = null, status = 200, extra = {}, wrapKey = null) {
+    const wrappedData = wrapKey && data ? wrapData(wrapKey, data) : data;
+    return res.status(status).json({ success: true, message, data: wrappedData, ...extra });
 }
 function error(res, message = "Error", status = 500, err = null) {
     return res.status(status).json({ success: false, message, error: err });
 }
 
-function created(res, message = "Created", data = null) {
-    return success(res, message, data, 201);
+function created(res, message = "Created", data = null, wrapKey = null) {
+    return success(res, message, data, 201, {}, wrapKey);
 }
-function accepted(res, message = "Accepted", data = null) {
-    return success(res, message, data, 202);
+function accepted(res, message = "Accepted", data = null, wrapKey = null) {
+    return success(res, message, data, 202, {}, wrapKey);
 }
 function noContent(res) {
     return res.status(204).send();
@@ -38,7 +44,6 @@ function unprocessable(res, message = "Unprocessable Entity", err = null) {
 function tooManyRequests(res, message = "Too Many Requests") {
     return error(res, message, 429);
 }
-
 function serverError(res, message = "Internal Server Error", err = null) {
     return error(res, message, 500, err);
 }
@@ -63,9 +68,12 @@ function pageMeta({ page, limit, total }) {
     };
 }
 
-function paginated(res, result, pageInfo, message = "Fetched successfully", extra = {}) {
+function paginated(res, result, pageInfo, message = "Fetched successfully", extra = {}, wrapKey = null) {
     const meta = pageMeta({ ...pageInfo, total: result.count || 0 });
-    return success(res, message, result.rows || [], 200, { pagination: meta, ...extra });
+    const rows = result.rows || [];
+    const wrappedRows = wrapKey ? rows.map(r => wrapData(wrapKey, r)) : rows;
+
+    return success(res, message, wrappedRows, 200, { pagination: meta, ...extra });
 }
 
 module.exports = {

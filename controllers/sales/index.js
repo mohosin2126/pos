@@ -2,9 +2,22 @@
 
 const {
     sequelize,
-    Sale, SaleItem, SalePayment, Customer, Invoice
+    Sale,
+    SaleItem,
+    SalePayment,
+    Customer,
+    Invoice,
 } = require("../../database/models");
 
+const {
+    success,
+    created,
+    badRequest,
+    notFound,
+    serverError,
+    parsePagination,
+    paginated,
+} = require("../../utils/api-response");
 
 async function getNonExpiredPurchased(productId, t) {
     const [rows] = await sequelize.query(
@@ -51,23 +64,26 @@ function computeTotals(items, discountType, discountAmount, orderTaxPercent, shi
             discountAmount: lineDiscount,
             taxPercent: taxPct,
             taxAmount,
-            lineTotal
+            lineTotal,
         };
     });
 
     let orderLevelDiscount = 0;
-    if (discountType === "percent") orderLevelDiscount = (subTotal * Number(discountAmount || 0)) / 100;
+    if (discountType === "percent")
+        orderLevelDiscount = (subTotal * Number(discountAmount || 0)) / 100;
     else if (discountType === "fixed") orderLevelDiscount = Number(discountAmount || 0);
 
     const orderTaxAmount = ((subTotal - orderLevelDiscount) * Number(orderTaxPercent || 0)) / 100;
-    const totalAmount = subTotal - orderLevelDiscount + orderTaxAmount + Number(shippingCharge || 0);
+    const totalAmount =
+        subTotal - orderLevelDiscount + orderTaxAmount + Number(shippingCharge || 0);
     return { normalized, subTotal, orderLevelDiscount, orderTaxAmount, totalAmount };
 }
 
 async function assertSellable(it, t) {
     const available = await getSellableAvailable(it.productId, t);
     if (available <= 0) throw new Error("Product is not sellable (no non-expired stock)");
-    if (available < Number(it.quantity)) throw new Error("Insufficient sellable (non-expired) stock");
+    if (available < Number(it.quantity))
+        throw new Error("Insufficient sellable (non-expired) stock");
 }
 
 function makeInvoiceNoForSale(saleId, date = new Date()) {
@@ -104,18 +120,18 @@ const create = async (req, res) => {
 
         if (!items.length) {
             await t.rollback();
-            return res.status(400).json({ message: "At least one item is required" });
+            return badRequest(res, "At least one item is required");
         }
 
         for (const it of items) {
             if (!it.productId || !it.quantity || !it.unitPrice) {
                 await t.rollback();
-                return res.status(400).json({ message: "Each item needs productId, quantity, unitPrice" });
+                return badRequest(res, "Each item needs productId, quantity, unitPrice");
             }
             await assertSellable(it, t);
         }
 
-        // find customer
+        // find or create customer
         let customerRecord = null;
         if (customerPhone) {
             customerRecord = await Customer.findOne({ where: { phone: customerPhone }, transaction: t });
@@ -142,7 +158,7 @@ const create = async (req, res) => {
             if (!customerRecord.name && customerName) patch.name = customerName;
             if (!customerRecord.phone && customerPhone) patch.phone = customerPhone;
             if (!customerRecord.email && customerEmail) patch.email = customerEmail;
-            if ((customerRecord.address == null) && customerAddress) patch.address = customerAddress;
+            if (customerRecord.address == null && customerAddress) patch.address = customerAddress;
             if (Object.keys(patch).length) await customerRecord.update(patch, { transaction: t });
         }
 
@@ -150,7 +166,7 @@ const create = async (req, res) => {
             computeTotals(items, discountType, discountAmount, orderTaxPercent, shippingCharge);
 
         const amountPaid = (payments || []).reduce((s, p) => s + Number(p.amount || 0), 0);
-        const changeDue = amountPaid > totalAmount ? (amountPaid - totalAmount) : 0;
+        const changeDue = amountPaid > totalAmount ? amountPaid - totalAmount : 0;
 
         let paymentStatus = "unpaid";
         if (amountPaid <= 0) paymentStatus = "unpaid";
@@ -200,9 +216,9 @@ const create = async (req, res) => {
             );
         }
 
-        // Invoice
         const invoiceNumber = makeInvoiceNoForSale(sale.id, sale.saleDate);
-        const invoiceStatus = (paymentStatus === "paid" || paymentStatus === "overpaid") ? "paid" : "issued";
+        const invoiceStatus =
+            paymentStatus === "paid" || paymentStatus === "overpaid" ? "paid" : "issued";
 
         await Invoice.create(
             {
@@ -227,7 +243,7 @@ const create = async (req, res) => {
 
         await t.commit();
 
-        const created = await Sale.findByPk(sale.id, {
+        const createdSale = await Sale.findByPk(sale.id, {
             include: [
                 { model: SaleItem, as: "items" },
                 { model: SalePayment, as: "payments" },
@@ -236,17 +252,23 @@ const create = async (req, res) => {
             ],
         });
 
-        return res.status(201).json({ message: "Sale created", data: created });
+        return created(res, "Sale created", createdSale);
     } catch (err) {
-        await (t?.rollback?.());
-        return res.status(400).json({ message: "Failed to create sale", error: err.message });
+        await t.rollback();
+        return serverError(res, "Failed to create sale", err);
     }
 };
 
-// GET
-const getAll = async (_req, res) => {
+// GET ALL
+const getAll = async (req, res) => {
     try {
-        const rows = await Sale.findAll({
+        const { page, limit, offset } = parsePagination(req.query, {
+            page: 1,
+            limit: 20,
+            maxLimit: 100,
+        });
+
+        const { rows, count } = await Sale.findAndCountAll({
             include: [
                 { model: SaleItem, as: "items" },
                 { model: SalePayment, as: "payments" },
@@ -254,14 +276,17 @@ const getAll = async (_req, res) => {
                 { model: Invoice, as: "invoice" },
             ],
             order: [["createdAt", "DESC"]],
+            limit,
+            offset,
         });
-        return res.json({ data: rows });
+
+        return paginated(res, { rows, count }, { page, limit }, "Fetched successfully");
     } catch (err) {
-        return res.status(500).json({ message: "Failed to fetch sales", error: err.message });
+        return serverError(res, "Failed to fetch sales", err);
     }
 };
 
-// GET
+// GET ONE
 const getOne = async (req, res) => {
     try {
         const row = await Sale.findByPk(req.params.id, {
@@ -272,10 +297,10 @@ const getOne = async (req, res) => {
                 { model: Invoice, as: "invoice" },
             ],
         });
-        if (!row) return res.status(404).json({ message: "Sale not found" });
-        return res.json({ data: row });
+        if (!row) return notFound(res, "Sale not found");
+        return success(res, "Success", row);
     } catch (err) {
-        return res.status(500).json({ message: "Failed to fetch sale", error: err.message });
+        return serverError(res, "Failed to fetch sale", err);
     }
 };
 
