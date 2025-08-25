@@ -1,6 +1,6 @@
 "use strict";
 
-const {Supplier, Category,Product} = require("../../database/models");
+const { Supplier, Category, Product } = require("../../database/models");
 
 const getAllSupplier = async (req, res) => {
     try {
@@ -9,7 +9,11 @@ const getAllSupplier = async (req, res) => {
             order: [["companyName", "ASC"]],
         });
 
-        return res.json({data: suppliers});
+        if (!suppliers || suppliers.length === 0) {
+            return res.status(404).json({ message: "No suppliers found" });
+        }
+
+        return res.json({ data: suppliers });
     } catch (error) {
         return res.status(500).json({
             message: "Failed to fetch supplier list",
@@ -25,7 +29,11 @@ const getAllCategory = async (req, res) => {
             order: [["name", "ASC"]],
         });
 
-        return res.json({data: categories});
+        if (!categories || categories.length === 0) {
+            return res.status(404).json({ message: "No categories found" });
+        }
+
+        return res.json({ data: categories });
     } catch (error) {
         return res.status(500).json({
             message: "Failed to fetch category list",
@@ -41,6 +49,10 @@ const getAllProduct = async (req, res) => {
             order: [["name", "ASC"]],
         });
 
+        if (!products || products.length === 0) {
+            return res.status(404).json({ message: "No products found" });
+        }
+
         return res.json({ data: products });
     } catch (error) {
         return res.status(500).json({
@@ -50,4 +62,4 @@ const getAllProduct = async (req, res) => {
     }
 };
 
-module.exports = {getAllSupplier, getAllCategory,getAllProduct};
+module.exports = { getAllSupplier, getAllCategory, getAllProduct };
