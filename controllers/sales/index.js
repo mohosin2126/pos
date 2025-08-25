@@ -2,42 +2,35 @@
 
 const {
     sequelize,
-    Sale, SaleItem, SalePayment, Product, InventoryMovement,
-    Customer, Invoice
+    Sale, SaleItem, SalePayment, Customer, Invoice
 } = require("../../database/models");
 
-async function getAvailableNonExpired(productId, t) {
-    const [rows] = await sequelize.query(
-        `SELECT nonExpiredQty AS qty FROM inventory_stock_summary WHERE productId = ?`,
-        { replacements: [productId], transaction: t }
-    );
-    if (rows && rows[0]) return Number(rows[0].qty || 0);
 
-    const [rows2] = await sequelize.query(
-        `SELECT COALESCE(SUM(CASE WHEN lotExpiryDate IS NULL OR lotExpiryDate >= CURDATE() THEN quantity ELSE 0 END),0) AS qty
-         FROM inventory_movements WHERE productId = ?`,
+async function getNonExpiredPurchased(productId, t) {
+    const [rows] = await sequelize.query(
+        `SELECT COALESCE(SUM(p.totalItems),0) AS qty
+         FROM purchases p
+         WHERE p.productId = ?
+           AND (p.expiryDate IS NULL OR p.expiryDate >= CURDATE())`,
         { replacements: [productId], transaction: t }
     );
-    return rows2?.[0]?.qty ? Number(rows2[0].qty) : 0;
+    return Number(rows?.[0]?.qty || 0);
 }
 
-async function applyMovementToSummary({ productId, quantity, lotExpiryDate }, t) {
-    const today = new Date(new Date().toDateString());
-    const exp = lotExpiryDate ? new Date(lotExpiryDate) : null;
-    const isNonExpired = !exp || exp >= today;
-    const non = isNonExpired ? Number(quantity) : 0;
-    const exq = isNonExpired ? 0 : Number(quantity);
-
-    await sequelize.query(
-        `
-            INSERT INTO inventory_stock_summary (productId, nonExpiredQty, expiredQty)
-            VALUES (?, ?, ?)
-                ON DUPLICATE KEY UPDATE
-                                     nonExpiredQty = nonExpiredQty + VALUES(nonExpiredQty),
-                                     expiredQty    = expiredQty    + VALUES(expiredQty)
-        `,
-        { replacements: [productId, non, exq], transaction: t }
+async function getTotalSold(productId, t) {
+    const [rows] = await sequelize.query(
+        `SELECT COALESCE(SUM(si.quantity),0) AS qty
+         FROM sale_items si
+         WHERE si.productId = ?`,
+        { replacements: [productId], transaction: t }
     );
+    return Number(rows?.[0]?.qty || 0);
+}
+
+async function getSellableAvailable(productId, t) {
+    const nonExp = await getNonExpiredPurchased(productId, t);
+    const sold = await getTotalSold(productId, t);
+    return Math.max(nonExp - sold, 0);
 }
 
 function computeTotals(items, discountType, discountAmount, orderTaxPercent, shippingCharge) {
@@ -72,15 +65,9 @@ function computeTotals(items, discountType, discountAmount, orderTaxPercent, shi
 }
 
 async function assertSellable(it, t) {
-    const product = await Product.findByPk(it.productId, { transaction: t });
-    if (!product) throw new Error("Product not found");
-    if (product.status !== "active") throw new Error("Product is not active");
-
-    if (product.isTrackStock) {
-        const available = await getAvailableNonExpired(it.productId, t);
-        if (available <= 0) throw new Error("Product has no sellable (non-expired) stock");
-        if (available < Number(it.quantity)) throw new Error("Insufficient non-expired stock");
-    }
+    const available = await getSellableAvailable(it.productId, t);
+    if (available <= 0) throw new Error("Product is not sellable (no non-expired stock)");
+    if (available < Number(it.quantity)) throw new Error("Insufficient sellable (non-expired) stock");
 }
 
 function makeInvoiceNoForSale(saleId, date = new Date()) {
@@ -89,7 +76,6 @@ function makeInvoiceNoForSale(saleId, date = new Date()) {
     const DD = String(date.getDate()).padStart(2, "0");
     return `INV-${YYYY}${MM}${DD}-${saleId}`;
 }
-
 
 // POST
 const create = async (req, res) => {
@@ -129,8 +115,8 @@ const create = async (req, res) => {
             await assertSellable(it, t);
         }
 
+        // find customer
         let customerRecord = null;
-
         if (customerPhone) {
             customerRecord = await Customer.findOne({ where: { phone: customerPhone }, transaction: t });
         }
@@ -214,39 +200,7 @@ const create = async (req, res) => {
             );
         }
 
-        for (const it of normalized) {
-            const mov = await InventoryMovement.create(
-                {
-                    productId: it.productId,
-                    movementType: "sale",
-                    quantity: -Number(it.quantity),
-                    relatedEntityType: "Sale",
-                    relatedEntityId: sale.id,
-                    lotExpiryDate: null,
-                },
-                { transaction: t }
-            );
-
-            await applyMovementToSummary(
-                {
-                    productId: it.productId,
-                    quantity: -Number(it.quantity),
-                    lotExpiryDate: mov.lotExpiryDate,
-                },
-                t
-            );
-        }
-
-        const touchedIds = Array.from(new Set(normalized.map((i) => i.productId)));
-        for (const pid of touchedIds) {
-            const [rows] = await sequelize.query(
-                `SELECT COALESCE(SUM(quantity),0) AS qty FROM inventory_movements WHERE productId = ?`,
-                { replacements: [pid], transaction: t }
-            );
-            const onHand = rows?.[0]?.qty ? Number(rows[0].qty) : 0;
-            await Product.update({ stockQuantity: onHand }, { where: { id: pid }, transaction: t });
-        }
-
+        // Invoice
         const invoiceNumber = makeInvoiceNoForSale(sale.id, sale.saleDate);
         const invoiceStatus = (paymentStatus === "paid" || paymentStatus === "overpaid") ? "paid" : "issued";
 
@@ -256,7 +210,7 @@ const create = async (req, res) => {
                 customerId: customerRecord.id,
                 invoiceNo: invoiceNumber,
                 invoiceDate: sale.saleDate,
-                dueDate: null, // set your terms if needed
+                dueDate: null,
                 subTotal,
                 discountAmount: orderLevelDiscount,
                 orderTaxAmount,

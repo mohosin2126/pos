@@ -5,7 +5,7 @@ const { Purchase, Supplier, Product } = require("../../database/models");
 // CREATE
 const create = async (req, res) => {
     try {
-        const { productId } = req.body;
+        const { productId ,totalItems} = req.body;
 
         if (!productId) {
             return res.status(400).json({ message: "productId is required" });
@@ -19,7 +19,9 @@ const create = async (req, res) => {
                 .status(400)
                 .json({ message: "Cannot create purchase for an inactive product" });
         }
-
+        if (totalItems == null || Number(totalItems) < 0) {
+            return res.status(400).json({ message: "totalItems must be ≥ 0" });
+        }
         const purchase = await Purchase.create(req.body);
 
         return res.status(201).json({

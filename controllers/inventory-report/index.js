@@ -1,69 +1,53 @@
 "use strict";
-const { sequelize } =require("../../database/models");
+const { sequelize } = require("../../database/models");
 
 const LOW_STOCK_THRESHOLD = 5;
 
-async function fetchProductSummaryRows() {
+async function fetchAggregates() {
     const [rows] = await sequelize.query(`
-    SELECT
-      p.id AS productId,
-      p.name AS productName,
-      p.status,
-      p.isTrackStock,
-      p.reorderLevel,
-      COALESCE(s.nonExpiredQty, 0) AS nonExpiredQty,
-      COALESCE(s.expiredQty, 0)    AS expiredQty
-    FROM products p
-    LEFT JOIN inventory_stock_summary s ON s.productId = p.id
-  `);
-    return rows;
+        SELECT
+            p.productId,
+            COALESCE(SUM(iss.nonExpiredQty), 0) AS nonExpiredPurchased,
+            COALESCE(SUM(iss.expiredQty), 0)     AS expiredPurchased,
+            COALESCE(SUM(iss.nonExpiredQty), 0)  AS available
+        FROM inventory_stock_summary iss
+                 JOIN purchases p ON p.id = iss.purchaseId
+        GROUP BY p.productId
+    `);
+
+    return rows.map(r => ({
+        productId: r.productId,
+        nonExpiredPurchased: Number(r.nonExpiredPurchased || 0),
+        expiredPurchased: Number(r.expiredPurchased || 0),
+        soldQty: 0,
+        available: Number(r.available || 0),
+    }));
 }
 
-// GET active-products
-const listActiveProducts = async (_req, res) => {
-    try {
-        const rows = await fetchProductSummaryRows();
-        const data = rows
-            .filter(r => r.status === "active")
-            .sort((a,b) => a.productName.localeCompare(b.productName))
-            .map(r => ({
-                productId: r.productId,
-                productName: r.productName,
-                isTrackStock: !!r.isTrackStock,
-                reorderLevel: r.reorderLevel,
-            }));
-        return res.json({ data });
-    } catch (err) {
-        return res.status(500).json({ message: "Failed to fetch active products", error: err.message });
-    }
-};
-
-// GET in-stock-products
+// GET /in-stock-products  (not expired & qty > 0)
 const listInStockProducts = async (_req, res) => {
     try {
-        const rows = await fetchProductSummaryRows();
+        const rows = await fetchAggregates();
         const data = rows
-            .filter(r => r.status === "active" && Number(r.nonExpiredQty) > 0)
-            .sort((a,b) => a.productName.localeCompare(b.productName))
-            .map(r => ({ productId: r.productId, productName: r.productName, quantity: Number(r.nonExpiredQty) }));
+            .filter(r => r.available > 0)
+            .sort((a,b) => String(a.productId).localeCompare(String(b.productId)))
+            .map(r => ({ productId: r.productId, quantity: r.available }));
         return res.json({ data });
     } catch (err) {
         return res.status(500).json({ message: "Failed to fetch in-stock products", error: err.message });
     }
 };
 
-// GET low-stock-products
+// GET /low-stock-products (≤5 and >0, non-expired)
 const listLowStockProducts = async (_req, res) => {
     try {
-        const rows = await fetchProductSummaryRows();
+        const rows = await fetchAggregates();
         const data = rows
-            .filter(r => Number(r.nonExpiredQty) <= LOW_STOCK_THRESHOLD)
-            .sort((a,b) => a.productName.localeCompare(b.productName))
+            .filter(r => r.available > 0 && r.available <= LOW_STOCK_THRESHOLD)
+            .sort((a,b) => String(a.productId).localeCompare(String(b.productId)))
             .map(r => ({
                 productId: r.productId,
-                productName: r.productName,
-                quantity: Number(r.nonExpiredQty),
-                reorderLevel: r.reorderLevel,
+                quantity: r.available,
                 threshold: LOW_STOCK_THRESHOLD,
             }));
         return res.json({ data });
@@ -72,47 +56,45 @@ const listLowStockProducts = async (_req, res) => {
     }
 };
 
-// GET out-of-stock-products
+// GET /out-of-stock-products (≤0, non-expired)
 const listOutOfStockProducts = async (_req, res) => {
     try {
-        const rows = await fetchProductSummaryRows();
+        const rows = await fetchAggregates();
         const data = rows
-            .filter(r => Number(r.nonExpiredQty) === 0)
-            .sort((a,b) => a.productName.localeCompare(b.productName))
-            .map(r => ({ productId: r.productId, productName: r.productName }));
+            .filter(r => r.available <= 0)
+            .sort((a,b) => String(a.productId).localeCompare(String(b.productId)))
+            .map(r => ({ productId: r.productId }));
         return res.json({ data });
     } catch (err) {
         return res.status(500).json({ message: "Failed to fetch out-of-stock products", error: err.message });
     }
 };
 
-// GET expired-only-products
+// GET /expired-only-products (any expiredPurchased > 0)
 const listExpiredOnlyProducts = async (_req, res) => {
     try {
-        const rows = await fetchProductSummaryRows();
+        const rows = await fetchAggregates();
         const data = rows
-            .filter(r => Number(r.nonExpiredQty) === 0 && Number(r.expiredQty) > 0)
-            .sort((a,b) => a.productName.localeCompare(b.productName))
-            .map(r => ({ productId: r.productId, productName: r.productName, expiredQuantity: Number(r.expiredQty) }));
+            .filter(r => r.expiredPurchased > 0)
+            .sort((a,b) => String(a.productId).localeCompare(String(b.productId)))
+            .map(r => ({
+                productId: r.productId,
+                expiredQuantity: r.expiredPurchased,
+            }));
         return res.json({ data });
     } catch (err) {
         return res.status(500).json({ message: "Failed to fetch expired-only products", error: err.message });
     }
 };
 
-// GET sellable-products
+// GET /sellable-products (available > 0, non-expired)
 const listSellableProducts = async (_req, res) => {
     try {
-        const rows = await fetchProductSummaryRows();
+        const rows = await fetchAggregates();
         const data = rows
-            .filter(r => r.status === "active" && Number(r.nonExpiredQty) > 0)
-            .sort((a,b) => a.productName.localeCompare(b.productName))
-            .map(r => ({
-                productId: r.productId,
-                productName: r.productName,
-                available: Number(r.nonExpiredQty),
-                reorderLevel: r.reorderLevel,
-            }));
+            .filter(r => r.available > 0)
+            .sort((a,b) => String(a.productId).localeCompare(String(b.productId)))
+            .map(r => ({ productId: r.productId, available: r.available }));
         return res.json({ data });
     } catch (err) {
         return res.status(500).json({ message: "Failed to fetch sellable products", error: err.message });
@@ -120,7 +102,6 @@ const listSellableProducts = async (_req, res) => {
 };
 
 module.exports = {
-    listActiveProducts,
     listInStockProducts,
     listLowStockProducts,
     listOutOfStockProducts,
