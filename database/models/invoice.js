@@ -13,11 +13,9 @@ module.exports = (sequelize, DataTypes) => {
         {
             saleId: { type: DataTypes.INTEGER, allowNull: false },
             customerId: { type: DataTypes.INTEGER, allowNull: false },
-
             invoiceNo: { type: DataTypes.STRING(64), allowNull: false, unique: true },
             invoiceDate: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
             dueDate: { type: DataTypes.DATE, allowNull: true },
-
             subTotal: { type: DataTypes.DECIMAL(18, 2), allowNull: false, defaultValue: 0 },
             discountAmount: { type: DataTypes.DECIMAL(18, 2), allowNull: false, defaultValue: 0 },
             orderTaxAmount: { type: DataTypes.DECIMAL(18, 2), allowNull: false, defaultValue: 0 },
@@ -25,7 +23,6 @@ module.exports = (sequelize, DataTypes) => {
             totalAmount: { type: DataTypes.DECIMAL(18, 2), allowNull: false, defaultValue: 0 },
             amountPaid: { type: DataTypes.DECIMAL(18, 2), allowNull: false, defaultValue: 0 },
             balanceDue: { type: DataTypes.DECIMAL(18, 2), allowNull: false, defaultValue: 0 },
-
             status: { type: DataTypes.ENUM("issued", "paid", "void"), allowNull: false, defaultValue: "issued" },
             notes: { type: DataTypes.TEXT, allowNull: true },
             pdfUrl: { type: DataTypes.STRING(255), allowNull: true },

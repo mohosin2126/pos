@@ -1,6 +1,5 @@
 "use strict";
 const { Model } = require("sequelize");
-
 module.exports = (sequelize, DataTypes) => {
     class Sale extends Model {
         static associate(models) {
@@ -14,16 +13,13 @@ module.exports = (sequelize, DataTypes) => {
     Sale.init(
         {
             customerId: { type: DataTypes.INTEGER, allowNull: true },
-
             invoiceNo: { type: DataTypes.STRING(64), allowNull: true, unique: true },
             saleDate: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
             billerName: { type: DataTypes.STRING(128), allowNull: true },
             customerName: { type: DataTypes.STRING(128), allowNull: true },
             customerPhone: { type: DataTypes.STRING(32), allowNull: true },
-
             status: { type: DataTypes.ENUM("draft","completed","cancelled","returned"), allowNull: false, defaultValue: "completed" },
             paymentStatus: { type: DataTypes.ENUM("unpaid","partial","paid","overpaid"), allowNull: false, defaultValue: "unpaid" },
-
             subTotal: { type: DataTypes.DECIMAL(18,2), allowNull: false, defaultValue: 0 },
             discountType: { type: DataTypes.ENUM("none","percent","fixed"), allowNull: false, defaultValue: "none" },
             discountAmount: { type: DataTypes.DECIMAL(18,2), allowNull: false, defaultValue: 0 },

@@ -5,8 +5,21 @@ module.exports = {
     await q.createTable("sales", {
       id: { type: Sequelize.INTEGER, autoIncrement: true, primaryKey: true },
 
+      // FK to customers (nullable, since model allows null)
+      customerId: {
+        type: Sequelize.INTEGER,
+        allowNull: true,
+        references: { model: "customers", key: "id" },
+        onUpdate: "CASCADE",
+        onDelete: "SET NULL",
+      },
+
       invoiceNo: { type: Sequelize.STRING(64), allowNull: true, unique: true },
-      saleDate: { type: Sequelize.DATE, allowNull: false, defaultValue: Sequelize.fn("NOW") },
+      saleDate: {
+        type: Sequelize.DATE,
+        allowNull: false,
+        defaultValue: Sequelize.fn("NOW"),
+      },
 
       billerName: { type: Sequelize.STRING(128), allowNull: true },
       customerName: { type: Sequelize.STRING(128), allowNull: true },
@@ -23,16 +36,16 @@ module.exports = {
         defaultValue: "unpaid",
       },
 
-      subTotal: { type: Sequelize.DECIMAL(18,2), allowNull: false, defaultValue: 0 },
-      discountType: { type: Sequelize.ENUM("none","percent","fixed"), allowNull: false, defaultValue: "none" },
-      discountAmount: { type: Sequelize.DECIMAL(18,2), allowNull: false, defaultValue: 0 },
-      orderTaxPercent: { type: Sequelize.DECIMAL(5,2), allowNull: false, defaultValue: 0 },
-      orderTaxAmount: { type: Sequelize.DECIMAL(18,2), allowNull: false, defaultValue: 0 },
-      shippingCharge: { type: Sequelize.DECIMAL(18,2), allowNull: false, defaultValue: 0 },
+      subTotal:        { type: Sequelize.DECIMAL(18, 2), allowNull: false, defaultValue: 0 },
+      discountType:    { type: Sequelize.ENUM("none", "percent", "fixed"), allowNull: false, defaultValue: "none" },
+      discountAmount:  { type: Sequelize.DECIMAL(18, 2), allowNull: false, defaultValue: 0 },
+      orderTaxPercent: { type: Sequelize.DECIMAL(5, 2),  allowNull: false, defaultValue: 0 },
+      orderTaxAmount:  { type: Sequelize.DECIMAL(18, 2), allowNull: false, defaultValue: 0 },
+      shippingCharge:  { type: Sequelize.DECIMAL(18, 2), allowNull: false, defaultValue: 0 },
 
-      totalAmount: { type: Sequelize.DECIMAL(18,2), allowNull: false, defaultValue: 0 },
-      amountPaid:  { type: Sequelize.DECIMAL(18,2), allowNull: false, defaultValue: 0 },
-      changeDue:   { type: Sequelize.DECIMAL(18,2), allowNull: false, defaultValue: 0 },
+      totalAmount: { type: Sequelize.DECIMAL(18, 2), allowNull: false, defaultValue: 0 },
+      amountPaid:  { type: Sequelize.DECIMAL(18, 2), allowNull: false, defaultValue: 0 },
+      changeDue:   { type: Sequelize.DECIMAL(18, 2), allowNull: false, defaultValue: 0 },
 
       notes: { type: Sequelize.TEXT, allowNull: true },
 
@@ -40,6 +53,7 @@ module.exports = {
       updatedAt: { type: Sequelize.DATE, allowNull: false, defaultValue: Sequelize.fn("NOW") },
     });
 
+    await q.addIndex("sales", ["customerId"]);
     await q.addIndex("sales", ["saleDate"]);
     await q.addIndex("sales", ["paymentStatus"]);
     await q.addIndex("sales", ["status"]);
@@ -49,6 +63,8 @@ module.exports = {
     await q.removeIndex("sales", ["status"]);
     await q.removeIndex("sales", ["paymentStatus"]);
     await q.removeIndex("sales", ["saleDate"]);
+    await q.removeIndex("sales", ["customerId"]);
     await q.dropTable("sales");
+
   },
 };
