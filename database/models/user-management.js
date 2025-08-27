@@ -1,8 +1,9 @@
-const { Model, DataTypes } = require("sequelize");
+const {Model, DataTypes} = require("sequelize");
 
 module.exports = (sequelize) => {
     class User extends Model {
-        static associate(_models) {}
+        static associate(_models) {
+        }
     }
 
     User.init(
@@ -16,7 +17,7 @@ module.exports = (sequelize) => {
                 type: DataTypes.STRING,
                 allowNull: false,
                 unique: true,
-                validate: { isEmail: true },
+                validate: {isEmail: true},
             },
             isActive: {
                 type: DataTypes.BOOLEAN,

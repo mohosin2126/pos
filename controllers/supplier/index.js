@@ -1,6 +1,8 @@
 "use strict";
 
 const { Supplier } = require("../../database/models");
+const {badRequest, conflict, created, serverError, parsePagination, paginated, notFound, success, noContent} = require("../../utils/api-response");
+
 
 // CREATE
 const create = async (req, res) => {
@@ -8,34 +10,34 @@ const create = async (req, res) => {
         const value = req.body || {};
 
         if (!value.supplierCode || String(value.supplierCode).trim() === "") {
-            return res.status(400).json({ message: "supplierCode is required" });
+            return badRequest(res, "supplierCode is required");
         }
 
         const exists = await Supplier.findOne({
             where: { supplierCode: value.supplierCode },
         });
         if (exists) {
-            return res.status(409).json({ message: "Supplier code already in use" });
+            return conflict(res, "Supplier code already in use");
         }
 
-        const created = await Supplier.create(value, { fields: Object.keys(value) });
+        const createdSupplier = await Supplier.create(value, {
+            fields: Object.keys(value),
+        });
 
-        return res
-            .status(201)
-            .json({ message: "Supplier created successfully", data: created });
+        return created(res, "Supplier created successfully", createdSupplier);
     } catch (err) {
-        return res
-            .status(500)
-            .json({ message: err.message || "Something went wrong" });
+        return serverError(res, err.message || "Something went wrong", err);
     }
 };
 
 // GET ALL
 const getAll = async (req, res) => {
     try {
-        const page = Math.max(parseInt(req.query.page || "1", 10), 1);
-        const limit = Math.max(parseInt(req.query.limit || "20", 10), 1);
-        const offset = (page - 1) * limit;
+        const { page, limit, offset } = parsePagination(req.query, {
+            page: 1,
+            limit: 20,
+            maxLimit: 100,
+        });
 
         const where = {};
         const allowedFilters = [
@@ -60,17 +62,14 @@ const getAll = async (req, res) => {
             order: [["createdAt", "DESC"]],
         });
 
-        return res.json({
-            data: rows,
-            pagination: {
-                page,
-                limit,
-                total: count,
-                pages: Math.ceil(count / limit),
-            },
-        });
+        return paginated(
+            res,
+            { rows, count },
+            { page, limit },
+            "Fetched successfully"
+        );
     } catch (err) {
-        return res.status(500).json({ message: "Failed to fetch suppliers" });
+        return serverError(res, "Failed to fetch suppliers", err);
     }
 };
 
@@ -78,14 +77,14 @@ const getAll = async (req, res) => {
 const getOne = async (req, res) => {
     try {
         const id = Number(req.params.id);
-        if (!id) return res.status(400).json({ message: "Invalid supplier id" });
+        if (!id) return badRequest(res, "Invalid supplier id");
 
         const supplier = await Supplier.findByPk(id);
-        if (!supplier) return res.status(404).json({ message: "Supplier not found" });
+        if (!supplier) return notFound(res, "Supplier not found");
 
-        return res.json({ data: supplier });
+        return success(res, "Success", supplier);
     } catch (err) {
-        return res.status(500).json({ message: "Failed to fetch supplier" });
+        return serverError(res, "Failed to fetch supplier", err);
     }
 };
 
@@ -93,23 +92,23 @@ const getOne = async (req, res) => {
 const update = async (req, res) => {
     try {
         const id = Number(req.params.id);
-        if (!id) return res.status(400).json({ message: "Invalid supplier id" });
+        if (!id) return badRequest(res, "Invalid supplier id");
 
         if (req.body.supplierCode !== undefined) {
-            return res.status(400).json({ message: "supplierCode cannot be updated" });
+            return badRequest(res, "supplierCode cannot be updated");
         }
 
         if (Object.keys(req.body).length === 0) {
-            return res.status(400).json({ message: "No fields provided for update" });
+            return badRequest(res, "No fields provided for update");
         }
 
         const [affected] = await Supplier.update(req.body, { where: { id } });
-        if (!affected) return res.status(404).json({ message: "Supplier not found" });
+        if (!affected) return notFound(res, "Supplier not found");
 
         const updated = await Supplier.findByPk(id);
-        return res.json({ message: "Supplier updated successfully", data: updated });
+        return success(res, "Supplier updated successfully", updated);
     } catch (err) {
-        return res.status(500).json({ message: "Failed to update supplier" });
+        return serverError(res, "Failed to update supplier", err);
     }
 };
 
@@ -117,14 +116,14 @@ const update = async (req, res) => {
 const destroy = async (req, res) => {
     try {
         const id = Number(req.params.id);
-        if (!id) return res.status(400).json({ message: "Invalid supplier id" });
+        if (!id) return badRequest(res, "Invalid supplier id");
 
         const deleted = await Supplier.destroy({ where: { id } });
-        if (!deleted) return res.status(404).json({ message: "Supplier not found" });
+        if (!deleted) return notFound(res, "Supplier not found");
 
-        return res.status(204).send();
+        return noContent(res);
     } catch (err) {
-        return res.status(500).json({ message: "Failed to delete supplier" });
+        return serverError(res, "Failed to delete supplier", err);
     }
 };
 
