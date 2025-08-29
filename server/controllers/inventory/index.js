@@ -1,9 +1,7 @@
 "use strict";
 
 const { sequelize, StockSummary } = require("../../database/models");
-const {
-    success, serverError,
-} = require("../../utils/api-response");
+const { success, serverError } = require("../../utils/api-response");
 
 // Recompute summaries and materialized lists for all or specific productIds
 const rebuild = async (req, res) => {
@@ -13,21 +11,27 @@ const rebuild = async (req, res) => {
                 ? req.body.productIds.map(Number).filter(Boolean)
                 : [];
 
+            // If no ids provided, backfill from purchases
             if (!productIds.length) {
                 const [ids] = await sequelize.query(
                     `SELECT DISTINCT productId FROM purchases`,
                     { transaction: t }
                 );
-                productIds = ids.map(r => Number(r.productId));
+                productIds = ids.map((r) => Number(r.productId)).filter(Boolean);
             }
+
+            // Nothing to do
             if (!productIds.length) return;
 
+            // Normalize day boundary to detect expiry
             const today = new Date(new Date().toDateString());
             const now = new Date();
 
-            // Purchases aggregated per product per lot
+            // Purchases aggregated per product per lot (expiryDate is the lot key)
             const [pLots] = await sequelize.query(
-                `SELECT productId, expiryDate, COALESCE(SUM(totalItems),0) AS purchasedQty
+                `SELECT productId,
+                        expiryDate,
+                        COALESCE(SUM(totalItems), 0) AS purchasedQty
                  FROM purchases
                  WHERE productId IN (${productIds.map(() => "?").join(",")})
                  GROUP BY productId, expiryDate`,
@@ -40,7 +44,7 @@ const rebuild = async (req, res) => {
                  FROM sale_items si
                           JOIN sales s ON s.id = si.saleId
                  WHERE si.productId IN (${productIds.map(() => "?").join(",")})
-                   AND s.status='completed'`,
+                   AND s.status = 'completed'`,
                 { replacements: productIds, transaction: t }
             );
 
@@ -49,7 +53,10 @@ const rebuild = async (req, res) => {
             for (const r of sAllocRows) {
                 const allocs = Array.isArray(r.allocations)
                     ? r.allocations
-                    : (r.allocations ? JSON.parse(r.allocations) : []);
+                    : r.allocations
+                        ? JSON.parse(r.allocations)
+                        : [];
+
                 for (const a of allocs) {
                     const lotKey = a.expiryDate
                         ? new Date(a.expiryDate).toISOString().slice(0, 10)
@@ -63,7 +70,10 @@ const rebuild = async (req, res) => {
             const byProd = new Map();
             for (const row of pLots) {
                 const pid = Number(row.productId);
-                const lotKey = row.expiryDate ? new Date(row.expiryDate).toISOString().slice(0,10) : "NULL";
+                const lotKey = row.expiryDate
+                    ? new Date(row.expiryDate).toISOString().slice(0, 10)
+                    : "NULL";
+
                 const purchased = Number(row.purchasedQty || 0);
                 const sold = Number(soldByProdLot.get(`${pid}__${lotKey}`) || 0);
                 const remaining = Math.max(0, purchased - sold);
@@ -72,24 +82,32 @@ const rebuild = async (req, res) => {
                 const isExpired = exp && exp < today;
 
                 const prev = byProd.get(pid) || { unexp: 0, expd: 0 };
-                if (isExpired) prev.expd += remaining; else prev.unexp += remaining;
+                if (isExpired) prev.expd += remaining;
+                else prev.unexp += remaining;
                 byProd.set(pid, prev);
             }
 
             // Prepare upserts & list rows
             const upserts = [];
-            const inStock = [], lowStock = [], expired = [], sellable = [], oos = [];
+            const inStock = [];
+            const lowStock = [];
+            const expired = [];
+            const sellable = [];
+            const oos = [];
 
             for (const pid of productIds) {
                 const agg = byProd.get(pid) || { unexp: 0, expd: 0 };
                 const qoh = Number(agg.unexp + agg.expd);
+
+                // IMPORTANT: unexpiredQty is the correct column name (NOT nonExpiredQty)
                 upserts.push([pid, qoh, agg.unexp, agg.expd, 5, now]);
 
                 if (agg.expd > 0) expired.push([pid, agg.expd]);
+
                 if (qoh > 0) {
                     inStock.push([pid, qoh]);
                     if (qoh < 5) lowStock.push([pid, qoh]);
-                    if (agg.unexp > 0) sellable.push([pid, agg.unexp]); // NOTE: unexpiredQty (NOT nonExpiredQty)
+                    if (agg.unexp > 0) sellable.push([pid, agg.unexp]); // unexpiredQty
                 } else {
                     oos.push([pid, qoh]);
                 }
@@ -102,31 +120,48 @@ const rebuild = async (req, res) => {
                      (productId, quantityOnHand, unexpiredQty, expiredQty, reorderPoint, lastComputedAt)
                      VALUES ${ph}
                          ON DUPLICATE KEY UPDATE
-                                              quantityOnHand=VALUES(quantityOnHand),
-                                              unexpiredQty=VALUES(unexpiredQty),
-                                              expiredQty=VALUES(expiredQty),
-                                              reorderPoint=VALUES(reorderPoint),
-                                              lastComputedAt=VALUES(lastComputedAt)`,
+                                              quantityOnHand = VALUES(quantityOnHand),
+                                              unexpiredQty   = VALUES(unexpiredQty),
+                                              expiredQty     = VALUES(expiredQty),
+                                              reorderPoint   = VALUES(reorderPoint),
+                                              lastComputedAt = VALUES(lastComputedAt)`,
                     { replacements: upserts.flat(), transaction: t }
                 );
             }
 
             const inClause = productIds.map(() => "?").join(",");
             await Promise.all([
-                sequelize.query(`DELETE FROM list_in_stock_products WHERE productId IN (${inClause})`, { replacements: productIds, transaction: t }),
-                sequelize.query(`DELETE FROM list_low_stock_products WHERE productId IN (${inClause})`, { replacements: productIds, transaction: t }),
-                sequelize.query(`DELETE FROM list_expired_products WHERE productId IN (${inClause})`, { replacements: productIds, transaction: t }),
-                sequelize.query(`DELETE FROM list_sellable_products WHERE productId IN (${inClause})`, { replacements: productIds, transaction: t }),
-                sequelize.query(`DELETE FROM list_out_of_stock_products WHERE productId IN (${inClause})`, { replacements: productIds, transaction: t }),
+                sequelize.query(
+                    `DELETE FROM list_in_stock_products WHERE productId IN (${inClause})`,
+                    { replacements: productIds, transaction: t }
+                ),
+                sequelize.query(
+                    `DELETE FROM list_low_stock_products WHERE productId IN (${inClause})`,
+                    { replacements: productIds, transaction: t }
+                ),
+                sequelize.query(
+                    `DELETE FROM list_expired_products WHERE productId IN (${inClause})`,
+                    { replacements: productIds, transaction: t }
+                ),
+                sequelize.query(
+                    `DELETE FROM list_sellable_products WHERE productId IN (${inClause})`,
+                    { replacements: productIds, transaction: t }
+                ),
+                sequelize.query(
+                    `DELETE FROM list_out_of_stock_products WHERE productId IN (${inClause})`,
+                    { replacements: productIds, transaction: t }
+                ),
             ]);
 
             async function insert(table, cols, rows) {
                 if (!rows.length) return;
-                const ph = rows.map(() => `(${cols.map(() => "?").join(",")})`).join(",");
-                await sequelize.query(`INSERT INTO ${table} (${cols.join(",")}) VALUES ${ph}`, {
-                    replacements: rows.flat(), transaction: t,
-                });
+                const rowPh = rows.map(() => `(${cols.map(() => "?").join(",")})`).join(",");
+                await sequelize.query(
+                    `INSERT INTO ${table} (${cols.join(",")}) VALUES ${rowPh}`,
+                    { replacements: rows.flat(), transaction: t }
+                );
             }
+
             await insert("list_expired_products", ["productId", "expiredQty"], expired);
             await insert("list_in_stock_products", ["productId", "quantityOnHand"], inStock);
             await insert("list_low_stock_products", ["productId", "quantityOnHand"], lowStock);
@@ -143,44 +178,59 @@ const rebuild = async (req, res) => {
 // Simple readers (from materialized lists)
 const listInStockProducts = async (_req, res) => {
     try {
-        const [rows] = await sequelize.query(`SELECT * FROM list_in_stock_products`);
+        const [rows] = await sequelize.query(
+            `SELECT productId, quantityOnHand FROM list_in_stock_products ORDER BY productId ASC`
+        );
         return success(res, "Success", rows);
     } catch (error) {
-        return serverError(res, "Error fetching in-stock list", error);
+        return serverError(res, "Failed to fetch in-stock products", error);
     }
 };
+
 const listLowStockProducts = async (_req, res) => {
     try {
-        const [rows] = await sequelize.query(`SELECT * FROM list_low_stock_products`);
+        const [rows] = await sequelize.query(
+            `SELECT productId, quantityOnHand FROM list_low_stock_products ORDER BY productId ASC`
+        );
         return success(res, "Success", rows);
     } catch (error) {
-        return serverError(res, "Error fetching low-stock list", error);
+        return serverError(res, "Failed to fetch low-stock products", error);
     }
 };
+
 const listExpiredOnlyProducts = async (_req, res) => {
     try {
-        const [rows] = await sequelize.query(`SELECT * FROM list_expired_products`);
+        const [rows] = await sequelize.query(
+            `SELECT productId, expiredQty FROM list_expired_products ORDER BY productId ASC`
+        );
         return success(res, "Success", rows);
     } catch (error) {
-        return serverError(res, "Error fetching expired list", error);
+        return serverError(res, "Failed to fetch expired products", error);
     }
 };
+
 const listSellableProducts = async (_req, res) => {
     try {
-        const [rows] = await sequelize.query(`SELECT * FROM list_sellable_products`);
+        const [rows] = await sequelize.query(
+            `SELECT productId, unexpiredQty FROM list_sellable_products ORDER BY productId ASC`
+        );
         return success(res, "Success", rows);
     } catch (error) {
-        return serverError(res, "Error fetching sellable list", error);
+        return serverError(res, "Failed to fetch sellable products", error);
     }
 };
+
 const listOutOfStockProducts = async (_req, res) => {
     try {
-        const [rows] = await sequelize.query(`SELECT * FROM list_out_of_stock_products`);
+        const [rows] = await sequelize.query(
+            `SELECT productId, quantityOnHand FROM list_out_of_stock_products ORDER BY productId ASC`
+        );
         return success(res, "Success", rows);
     } catch (error) {
-        return serverError(res, "Error fetching out-of-stock list", error);
+        return serverError(res, "Failed to fetch out-of-stock products", error);
     }
 };
+
 const listSummary = async (_req, res) => {
     try {
         const data = await StockSummary.findAll({ raw: true });
