@@ -1,9 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const {listActiveProducts, listInStockProducts, listLowStockProducts, listExpiredOnlyProducts, listOutOfStockProducts,  listSellableProducts} = require("../../controllers/inventory");
-
-// Active products (status = 'active')
-router.get("/active-products", listActiveProducts);
+const { listInStockProducts, listLowStockProducts, listExpiredOnlyProducts, listOutOfStockProducts,  listSellableProducts} = require("../../controllers/inventory");
 
 // In-stock (non-expired > 0)
 router.get("/stock-products", listInStockProducts);
