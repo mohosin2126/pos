@@ -4,6 +4,7 @@
 module.exports = {
     async up(queryInterface, Sequelize) {
         const { DataTypes } = Sequelize;
+        const tableOpts = { engine: "InnoDB", charset: "utf8mb4", collate: "utf8mb4_unicode_ci" };
 
         await queryInterface.createTable(
             "invoices",
@@ -43,15 +44,16 @@ module.exports = {
                 createdAt: { allowNull: false, type: DataTypes.DATE, defaultValue: Sequelize.fn("NOW") },
                 updatedAt: { allowNull: false, type: DataTypes.DATE, defaultValue: Sequelize.fn("NOW") },
             },
-            {
-                engine: "InnoDB",
-                charset: "utf8mb4",
-                collate: "utf8mb4_unicode_ci",
-            }
+            tableOpts
         );
+
+        await queryInterface.addIndex("invoices", ["invoiceNo"]);
+        await queryInterface.addIndex("invoices", ["saleId"]);
+        await queryInterface.addIndex("invoices", ["customerId"]);
+        await queryInterface.addIndex("invoices", ["invoiceDate"]);
     },
 
-    async down(queryInterface) {
+    async down(queryInterface /*, Sequelize */) {
         await queryInterface.dropTable("invoices");
     },
 };
