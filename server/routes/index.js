@@ -6,12 +6,10 @@ const supplierManagement = require("./supplier");
 const categoryManagement = require("./category");
 const productManagement = require("./product");
 const purchaseManagement = require("./purchase");
-
 const saleManagement = require("./sale");
 const inventoryManagement = require("./inventory");
 const customerManagement = require("./customer");
 const invoiceManagement = require("./invoice");
-
 const commonRoutes = require("./common");
 
 module.exports = function registerRoutes(app) {

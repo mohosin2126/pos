@@ -25,7 +25,6 @@ module.exports = (sequelize, DataTypes) => {
             balanceDue: { type: DataTypes.DECIMAL(18, 2), allowNull: false, defaultValue: 0 },
             status: { type: DataTypes.ENUM("issued", "paid", "void"), allowNull: false, defaultValue: "issued" },
             notes: { type: DataTypes.TEXT, allowNull: true },
-            pdfUrl: { type: DataTypes.STRING(255), allowNull: true },
         },
         { sequelize, modelName: "Invoice", tableName: "invoices" }
     );

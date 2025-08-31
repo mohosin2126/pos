@@ -31,10 +31,16 @@ module.exports = {
             netTotalAmount: { type: Sequelize.DECIMAL(18, 2), allowNull: false, defaultValue: 0 },
             totalAmount: { type: Sequelize.DECIMAL(18, 2), allowNull: false, defaultValue: 0 },
             amountPaid: { type: Sequelize.DECIMAL(18, 2), allowNull: false, defaultValue: 0 },
+            customerId: {
+                type: DataTypes.INTEGER,
+                allowNull: true,
+                references: { model: "customers", key: "id" },
+                onUpdate: "CASCADE",
+                onDelete: "SET NULL",
+            },
 
             // Optional references
             notes: { type: Sequelize.TEXT, allowNull: true },
-            customerId: { type: Sequelize.INTEGER, allowNull: true }, // link to your customers table if/when you add it
             meta: { type: Sequelize.JSON, allowNull: true },
 
             createdAt: { type: Sequelize.DATE, allowNull: false, defaultValue: Sequelize.fn("NOW") },
