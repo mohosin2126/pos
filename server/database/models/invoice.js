@@ -1,34 +1,50 @@
 "use strict";
-const { Model } = require("sequelize");
 
-module.exports = (sequelize, DataTypes) => {
-    class Invoice extends Model {
-        static associate(models) {
-            Invoice.belongsTo(models.Sale, { foreignKey: "saleId", as: "sale" });
-            Invoice.belongsTo(models.Customer, { foreignKey: "customerId", as: "customer" });
-        }
-    }
+/** @type {import('sequelize-cli').Migration} */
+module.exports = {
+    async up(queryInterface, Sequelize) {
+        await queryInterface.createTable(
+            "invoices",
+            {
+                id: { type: Sequelize.INTEGER, primaryKey: true, autoIncrement: true },
+                saleId: {
+                    type: Sequelize.INTEGER,
+                    allowNull: false,
+                    references: { model: "sales", key: "id" },
+                    onUpdate: "CASCADE",
+                    onDelete: "CASCADE",
+                },
+                customerId: {
+                    type: Sequelize.INTEGER,
+                    allowNull: false,
+                    references: { model: "customers", key: "id" },
+                    onUpdate: "CASCADE",
+                    onDelete: "RESTRICT",
+                },
 
-    Invoice.init(
-        {
-            saleId: { type: DataTypes.INTEGER, allowNull: false },
-            customerId: { type: DataTypes.INTEGER, allowNull: false },
-            invoiceNo: { type: DataTypes.STRING(64), allowNull: false, unique: true },
-            invoiceDate: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
-            dueDate: { type: DataTypes.DATE, allowNull: true },
-            subTotal: { type: DataTypes.DECIMAL(18, 2), allowNull: false, defaultValue: 0 },
-            discountAmount: { type: DataTypes.DECIMAL(18, 2), allowNull: false, defaultValue: 0 },
-            orderTaxAmount: { type: DataTypes.DECIMAL(18, 2), allowNull: false, defaultValue: 0 },
-            shippingCharge: { type: DataTypes.DECIMAL(18, 2), allowNull: false, defaultValue: 0 },
-            totalAmount: { type: DataTypes.DECIMAL(18, 2), allowNull: false, defaultValue: 0 },
-            amountPaid: { type: DataTypes.DECIMAL(18, 2), allowNull: false, defaultValue: 0 },
-            balanceDue: { type: DataTypes.DECIMAL(18, 2), allowNull: false, defaultValue: 0 },
-            status: { type: DataTypes.ENUM("issued", "paid", "void"), allowNull: false, defaultValue: "issued" },
-            notes: { type: DataTypes.TEXT, allowNull: true },
-            pdfUrl: { type: DataTypes.STRING(255), allowNull: true },
-        },
-        { sequelize, modelName: "Invoice", tableName: "invoices" }
-    );
+                invoiceNo: { type: Sequelize.STRING(64), allowNull: false, unique: true },
+                invoiceDate: { type: Sequelize.DATE, allowNull: false, defaultValue: Sequelize.fn("NOW") },
+                dueDate: { type: Sequelize.DATE, allowNull: true },
 
-    return Invoice;
+                subTotal: { type: Sequelize.DECIMAL(18, 2), allowNull: false, defaultValue: 0 },
+                discountAmount: { type: Sequelize.DECIMAL(18, 2), allowNull: false, defaultValue: 0 },
+                orderTaxAmount: { type: Sequelize.DECIMAL(18, 2), allowNull: false, defaultValue: 0 },
+                shippingCharge: { type: Sequelize.DECIMAL(18, 2), allowNull: false, defaultValue: 0 },
+                totalAmount: { type: Sequelize.DECIMAL(18, 2), allowNull: false, defaultValue: 0 },
+                amountPaid: { type: Sequelize.DECIMAL(18, 2), allowNull: false, defaultValue: 0 },
+                balanceDue: { type: Sequelize.DECIMAL(18, 2), allowNull: false, defaultValue: 0 },
+
+                status: { type: Sequelize.ENUM("issued", "paid", "void"), allowNull: false, defaultValue: "issued" },
+                notes: { type: Sequelize.TEXT, allowNull: true },
+
+                createdAt: { allowNull: false, type: Sequelize.DATE, defaultValue: Sequelize.fn("NOW") },
+                updatedAt: { allowNull: false, type: Sequelize.DATE, defaultValue: Sequelize.fn("NOW") },
+            },
+            { engine: "InnoDB", charset: "utf8mb4", collate: "utf8mb4_unicode_ci" }
+        );
+    },
+
+    async down(queryInterface) {
+        await queryInterface.dropTable("invoices");
+    },
 };

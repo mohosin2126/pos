@@ -1,11 +1,13 @@
 "use strict";
 
-const { sequelize, Sale, SaleItem } = require("../../database/models");
+const { sequelize, Sale, SaleItem, Customer, Invoice } = require("../../database/models");
 const {
     success, created, badRequest, notFound, serverError, parsePagination, paginated,
 } = require("../../utils/api-response");
 
 const LOW_STOCK_THRESHOLD = 5;
+
+// ---- helpers (unchanged core logic from your code) ----
 
 // Remaining quantity per lot (expiryDate) = purchases - sold allocations
 async function getRemainingLots(productId, t) {
@@ -25,7 +27,7 @@ async function getRemainingLots(productId, t) {
         { replacements: [productId], transaction: t }
     );
 
-    const soldByLot = new Map(); // key = "YYYY-MM-DD" or "NULL"
+    const soldByLot = new Map();
     for (const r of sRows) {
         const allocs = Array.isArray(r.allocations)
             ? r.allocations
@@ -43,7 +45,6 @@ async function getRemainingLots(productId, t) {
         lotMap.set(key, Math.max(0, rem));
     }
 
-    // FEFO: unexpired first by earliest expiry; NULL last
     const today = new Date(new Date().toDateString());
     const lots = [];
     for (const [key, qty] of lotMap.entries()) {
@@ -68,18 +69,18 @@ async function recomputeProducts(productIds, t) {
 
     const [pLots] = await sequelize.query(
         `SELECT productId, expiryDate, COALESCE(SUM(totalItems),0) AS purchasedQty
-     FROM purchases
-     WHERE productId IN (${productIds.map(() => "?").join(",")})
-     GROUP BY productId, expiryDate`,
+         FROM purchases
+         WHERE productId IN (${productIds.map(() => "?").join(",")})
+         GROUP BY productId, expiryDate`,
         { replacements: productIds, transaction: t }
     );
 
     const [sAllocRows] = await sequelize.query(
         `SELECT si.productId, si.allocations
-     FROM sale_items si
-     JOIN sales s ON s.id = si.saleId
-     WHERE si.productId IN (${productIds.map(() => "?").join(",")})
-       AND s.status='completed'`,
+         FROM sale_items si
+                  JOIN sales s ON s.id = si.saleId
+         WHERE si.productId IN (${productIds.map(() => "?").join(",")})
+           AND s.status='completed'`,
         { replacements: productIds, transaction: t }
     );
 
@@ -125,7 +126,7 @@ async function recomputeProducts(productIds, t) {
         if (qoh > 0) {
             inStock.push([pid, qoh]);
             if (qoh < LOW_STOCK_THRESHOLD) lowStock.push([pid, qoh]);
-            if (agg.unexp > 0) sellable.push([pid, agg.unexp]); // NOTE: unexpiredQty
+            if (agg.unexp > 0) sellable.push([pid, agg.unexp]); // unexpiredQty
         } else {
             oos.push([pid, qoh]);
         }
@@ -170,9 +171,70 @@ async function recomputeProducts(productIds, t) {
     await insert("list_out_of_stock_products", ["productId", "quantityOnHand"], oos);
 }
 
+// ---- new helpers (customer + invoice) ----
+async function resolveCustomerIdFromPayload(payload, t) {
+    if (!payload) return null;
+
+    if (payload.customerId) {
+        const found = await Customer.findByPk(payload.customerId, { transaction: t });
+        if (!found) throw new Error(`Customer ${payload.customerId} not found`);
+        return found.id;
+    }
+
+    const { name, email, phone, address, notes, status } = payload.customer || {};
+    if (!name && !email && !phone) return null;
+
+    let where = {};
+    if (email) where.email = email;
+    else if (phone) where.phone = phone;
+
+    let existing = (email || phone)
+        ? await Customer.findOne({ where, transaction: t })
+        : null;
+
+    if (existing) {
+        await existing.update(
+            {
+                name: name ?? existing.name,
+                address: address ?? existing.address,
+                notes: notes ?? existing.notes,
+                status: status ?? existing.status,
+            },
+            { transaction: t }
+        );
+        return existing.id;
+    }
+
+    if (!name) throw new Error("Customer name is required to create a new customer");
+    const created = await Customer.create(
+        { name, email: email || null, phone: phone || null, address: address || null, notes: notes || null, status: status || "active" },
+        { transaction: t }
+    );
+    return created.id;
+}
+
+async function generateInvoiceNo(t) {
+    const today = new Date();
+    const ymd = today.toISOString().slice(0, 10).replace(/-/g, "");
+    const prefix = `INV-${ymd}-`;
+
+    const [rows] = await sequelize.query(
+        `SELECT invoiceNo FROM invoices WHERE invoiceNo LIKE ? ORDER BY invoiceNo DESC LIMIT 1`,
+        { replacements: [`${prefix}%`], transaction: t }
+    );
+
+    let seq = 1;
+    if (rows && rows.length) {
+        const last = rows[0].invoiceNo;
+        const m = last && last.match(/-(\d+)$/);
+        if (m) seq = Number(m[1]) + 1;
+    }
+    return `${prefix}${seq.toString().padStart(4, "0")}`;
+}
+
 // ---- controller actions ----
 
-// CREATE SALE w/ FEFO allocations (no Op)
+// CREATE SALE w/ FEFO allocations + Customer + Invoice
 const create = async (req, res) => {
     try {
         const { items } = req.body;
@@ -180,7 +242,7 @@ const create = async (req, res) => {
             return badRequest(res, "items are required");
         }
 
-        // Only allow products that have been purchased at least once
+        // Ensure products exist in purchases
         const productIds = [...new Set(items.map(i => Number(i.productId)).filter(Boolean))];
         const [seen] = await sequelize.query(
             `SELECT DISTINCT productId FROM purchases WHERE productId IN (${productIds.map(() => "?").join(",")})`,
@@ -193,6 +255,17 @@ const create = async (req, res) => {
         }
 
         const sale = await sequelize.transaction(async (t) => {
+            // Resolve/Upsert Customer (optional)
+            let resolvedCustomerId = null;
+            try {
+                resolvedCustomerId = await resolveCustomerIdFromPayload(
+                    { customerId: req.body.customerId, customer: req.body.customer },
+                    t
+                );
+            } catch (e) {
+                throw { _badRequest: e.message };
+            }
+
             // create sale shell
             const sale = await Sale.create({
                 referenceNo: req.body.referenceNo || null,
@@ -208,13 +281,13 @@ const create = async (req, res) => {
                 totalAmount: 0,
                 amountPaid: req.body.amountPaid || 0,
                 notes: req.body.notes || null,
-                customerId: req.body.customerId || null,
+                customerId: resolvedCustomerId || null,
                 meta: req.body.meta || null,
             }, { transaction: t });
 
             const affected = new Set();
 
-            // process each item (FEFO)
+            // FEFO per item
             for (const item of items) {
                 const pid = Number(item.productId);
                 const qty = Number(item.quantity);
@@ -222,7 +295,6 @@ const create = async (req, res) => {
 
                 const { unexpiredLots } = await getRemainingLots(pid, t);
 
-                // allocate
                 let remaining = qty;
                 const allocations = [];
                 for (const lot of unexpiredLots) {
@@ -237,10 +309,10 @@ const create = async (req, res) => {
                     }
                 }
                 if (remaining > 0) {
-                    return badRequest(res, `Insufficient stock for product ${pid}. Need ${qty}.`);
+                    throw { _badRequest: `Insufficient stock for product ${pid}. Need ${qty}.` };
                 }
 
-                // compute line totals
+                // line totals
                 const base = Number(item.unitPrice) * qty;
                 const disc = item.discountType === "percent"
                     ? (base * Number(item.discountAmount || 0)) / 100
@@ -268,10 +340,11 @@ const create = async (req, res) => {
             // totals
             const [tot] = await sequelize.query(
                 `SELECT
-                     COALESCE(SUM(quantity),0) AS totalItems,
-                     COALESCE(SUM(lineTotal - taxAmount),0) AS netTotalAmount,
-                     COALESCE(SUM(lineTotal),0) AS totalAmount
-                 FROM sale_items WHERE saleId = ?`,
+             COALESCE(SUM(quantity),0) AS totalItems,
+             COALESCE(SUM(lineTotal - taxAmount),0) AS netTotalAmount,
+             COALESCE(SUM(lineTotal),0) AS totalAmount,
+             COALESCE(SUM(taxAmount),0) AS totalTax
+           FROM sale_items WHERE saleId = ?`,
                 { replacements: [sale.id], transaction: t }
             );
             const tr = Array.isArray(tot) ? tot[0] : tot;
@@ -280,14 +353,56 @@ const create = async (req, res) => {
                 totalItems: Number(tr.totalItems || 0),
                 netTotalAmount: Number(tr.netTotalAmount || 0),
                 totalAmount: Number(tr.totalAmount || 0),
+                orderTaxAmount: Number(tr.totalTax || 0),
             }, { transaction: t });
 
             await recomputeProducts([...affected], t);
+
+            // Create invoice if completed
+            if (sale.status === "completed") {
+                const invoiceNo = await generateInvoiceNo(t);
+
+                const subTotal = Number(tr.netTotalAmount || 0);
+                const discountAmount = Number(sale.discountAmount || 0);
+                const orderTaxAmount = Number(tr.totalTax || 0);
+                const shippingCharge = Number(sale.shippingCharge || 0);
+                const totalAmount = Number(sale.totalAmount || 0);
+                const amountPaid = Number(sale.amountPaid || 0);
+                const balanceDue = Math.max(0, totalAmount - amountPaid);
+                const status = balanceDue <= 0 ? "paid" : "issued";
+
+                await Invoice.create({
+                    saleId: sale.id,
+                    customerId: sale.customerId,
+                    invoiceNo,
+                    invoiceDate: req.body.invoiceDate || new Date(),
+                    dueDate: req.body.dueDate || null,
+                    subTotal,
+                    discountAmount,
+                    orderTaxAmount,
+                    shippingCharge,
+                    totalAmount,
+                    amountPaid,
+                    balanceDue,
+                    status,
+                    notes: req.body.invoiceNotes || null,
+                }, { transaction: t });
+            }
+
             return sale;
         });
 
-        return created(res, "Sale created successfully", sale);
+        const fullSale = await Sale.findByPk(sale.id, {
+            include: [
+                { model: SaleItem, as: "items" },
+                { model: sequelize.models.Customer, as: "customer" },
+                { model: sequelize.models.Invoice, as: "invoice" },
+            ],
+        });
+
+        return created(res, "Sale created successfully", fullSale);
     } catch (error) {
+        if (error && error._badRequest) return badRequest(res, error._badRequest);
         return serverError(res, "Error creating sale", error);
     }
 };
@@ -297,7 +412,11 @@ const getAll = async (req, res) => {
         const { page, limit, offset } = parsePagination(req.query, { page: 1, limit: 20, maxLimit: 100 });
 
         const { rows, count } = await Sale.findAndCountAll({
-            include: [{ model: SaleItem, as: "items" }],
+            include: [
+                { model: SaleItem, as: "items" },
+                { model: sequelize.models.Customer, as: "customer" },
+                { model: sequelize.models.Invoice, as: "invoice" },
+            ],
             order: [["createdAt", "DESC"]],
             limit, offset,
         });
@@ -311,7 +430,11 @@ const getAll = async (req, res) => {
 const getOne = async (req, res) => {
     try {
         const sale = await Sale.findByPk(req.params.id, {
-            include: [{ model: SaleItem, as: "items" }],
+            include: [
+                { model: SaleItem, as: "items" },
+                { model: sequelize.models.Customer, as: "customer" },
+                { model: sequelize.models.Invoice, as: "invoice" },
+            ],
         });
         if (!sale) return notFound(res, "Sale not found");
         return success(res, "Success", sale);
