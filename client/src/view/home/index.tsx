@@ -4,6 +4,7 @@ import LocomotiveScroll from "locomotive-scroll";
 import Features from "./features";
 import Banner from "./banner";
 import Services from "./services";
+import DeliveryProcess from "./deliver-process";
 
 export default function HomePage() {
 
@@ -14,6 +15,7 @@ export default function HomePage() {
             <Banner/>
             <Features/>
             <Services/>
+            <DeliveryProcess/>
             <Footer />
         </div>
     );
