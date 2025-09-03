@@ -3,6 +3,7 @@ import Footer from "./footer";
 import LocomotiveScroll from "locomotive-scroll";
 import Features from "./features";
 import Banner from "./banner";
+import Services from "./services";
 
 export default function HomePage() {
 
@@ -12,6 +13,7 @@ export default function HomePage() {
         <div className="pt-28 container mx-auto space-y-6 lg:space-y-16">
             <Banner/>
             <Features/>
+            <Services/>
             <Footer />
         </div>
     );
