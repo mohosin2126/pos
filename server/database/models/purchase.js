@@ -4,48 +4,26 @@ const { Model } = require("sequelize");
 module.exports = (sequelize, DataTypes) => {
     class Purchase extends Model {
         static associate(models) {
-            Purchase.belongsTo(models.Supplier, {
-                foreignKey: "supplierId",
-                as: "supplier",
-            });
-            Purchase.belongsTo(models.Product, {
-                foreignKey: "productId",
-                as: "product",
-            });
+            Purchase.belongsTo(models.Supplier, { foreignKey: "supplierId", as: "supplier" });
+            Purchase.belongsTo(models.Product,  { foreignKey: "productId",  as: "product"  });
         }
     }
 
     Purchase.init(
         {
-            supplierId: {
-                type: DataTypes.INTEGER,
-                allowNull: false,
-                references: { model: "suppliers", key: "id" },
-            },
+            supplierId: { type: DataTypes.INTEGER, allowNull: false },
             supplierAddress: { type: DataTypes.STRING(500), allowNull: true },
 
             referenceNo: { type: DataTypes.STRING(64), allowNull: true, unique: true },
             purchaseDate: { type: DataTypes.DATE, allowNull: false },
-            status: {
-                type: DataTypes.ENUM("draft", "ordered", "received", "partial", "cancelled"),
-                allowNull: false,
-                defaultValue: "ordered",
-            },
+            status: { type: DataTypes.ENUM("draft", "ordered", "received", "partial", "cancelled"), allowNull: false, defaultValue: "ordered" },
 
-            productId: {
-                type: DataTypes.INTEGER,
-                allowNull: false,
-                references: { model: "products", key: "id" },
-            },
+            productId: { type: DataTypes.INTEGER, allowNull: false },
 
             payTermValue: { type: DataTypes.INTEGER, allowNull: true },
             payTermUnit: { type: DataTypes.ENUM("days", "months"), allowNull: true },
 
-            discountType: {
-                type: DataTypes.ENUM("none", "percent", "fixed"),
-                allowNull: false,
-                defaultValue: "none",
-            },
+            discountType: { type: DataTypes.ENUM("none", "percent", "fixed"), allowNull: false, defaultValue: "none" },
             discountAmount: { type: DataTypes.DECIMAL(18, 2), defaultValue: 0 },
             orderTaxPercent: { type: DataTypes.DECIMAL(5, 2), defaultValue: 0 },
             orderTaxAmount: { type: DataTypes.DECIMAL(18, 2), defaultValue: 0 },

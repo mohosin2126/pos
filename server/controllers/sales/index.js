@@ -5,11 +5,9 @@ const {
     success, created, badRequest, notFound, serverError, parsePagination, paginated,
 } = require("../../utils/api-response");
 
+// ===================== inline inventory helpers =====================
 const LOW_STOCK_THRESHOLD = 5;
 
-// ---- helpers (unchanged core logic from your code) ----
-
-// Remaining quantity per lot (expiryDate) = purchases - sold allocations
 async function getRemainingLots(productId, t) {
     const [pRows] = await sequelize.query(
         `SELECT expiryDate, COALESCE(SUM(totalItems),0) AS purchasedQty
@@ -29,9 +27,7 @@ async function getRemainingLots(productId, t) {
 
     const soldByLot = new Map();
     for (const r of sRows) {
-        const allocs = Array.isArray(r.allocations)
-            ? r.allocations
-            : (r.allocations ? JSON.parse(r.allocations) : []);
+        const allocs = Array.isArray(r.allocations) ? r.allocations : (r.allocations ? JSON.parse(r.allocations) : []);
         for (const a of allocs) {
             const key = a.expiryDate ? new Date(a.expiryDate).toISOString().slice(0,10) : "NULL";
             soldByLot.set(key, (soldByLot.get(key) || 0) + Number(a.qty || 0));
@@ -52,6 +48,7 @@ async function getRemainingLots(productId, t) {
         const isExpired = exp && exp < today;
         lots.push({ expiryDate: exp, qty, isExpired });
     }
+
     const unexpiredLots = lots
         .filter(l => !l.isExpired)
         .sort((a, b) => {
@@ -64,8 +61,8 @@ async function getRemainingLots(productId, t) {
     return { unexpiredLots, allLots: lots };
 }
 
-async function recomputeProducts(productIds, t) {
-    if (!productIds.length) return;
+async function recomputeForProducts(productIds, t) {
+    if (!Array.isArray(productIds) || !productIds.length) return;
 
     const [pLots] = await sequelize.query(
         `SELECT productId, expiryDate, COALESCE(SUM(totalItems),0) AS purchasedQty
@@ -86,20 +83,17 @@ async function recomputeProducts(productIds, t) {
 
     const today = new Date(new Date().toDateString());
     const soldByProdLot = new Map();
+
     for (const r of sAllocRows) {
-        const allocs = Array.isArray(r.allocations)
-            ? r.allocations
-            : (r.allocations ? JSON.parse(r.allocations) : []);
+        const allocs = Array.isArray(r.allocations) ? r.allocations : (r.allocations ? JSON.parse(r.allocations) : []);
         for (const a of allocs) {
-            const lotKey = a.expiryDate
-                ? new Date(a.expiryDate).toISOString().slice(0,10)
-                : "NULL";
+            const lotKey = a.expiryDate ? new Date(a.expiryDate).toISOString().slice(0,10) : "NULL";
             const key = `${r.productId}__${lotKey}`;
             soldByProdLot.set(key, (soldByProdLot.get(key) || 0) + Number(a.qty || 0));
         }
     }
 
-    const byProd = new Map(); // id -> {unexp, expd}
+    const byProd = new Map();
     for (const row of pLots) {
         const pid = Number(row.productId);
         const lotKey = row.expiryDate ? new Date(row.expiryDate).toISOString().slice(0,10) : "NULL";
@@ -114,19 +108,20 @@ async function recomputeProducts(productIds, t) {
         byProd.set(pid, prev);
     }
 
+    const now = new Date();
     const upserts = [];
     const inStock = [], lowStock = [], expired = [], sellable = [], oos = [];
 
     for (const pid of productIds) {
         const agg = byProd.get(pid) || { unexp: 0, expd: 0 };
         const qoh = Number(agg.unexp + agg.expd);
-        upserts.push([pid, qoh, agg.unexp, agg.expd, 5, new Date()]);
+        upserts.push([pid, qoh, agg.unexp, agg.expd, LOW_STOCK_THRESHOLD, now]);
 
         if (agg.expd > 0) expired.push([pid, agg.expd]);
         if (qoh > 0) {
             inStock.push([pid, qoh]);
             if (qoh < LOW_STOCK_THRESHOLD) lowStock.push([pid, qoh]);
-            if (agg.unexp > 0) sellable.push([pid, agg.unexp]); // unexpiredQty
+            if (agg.unexp > 0) sellable.push([pid, agg.unexp]);
         } else {
             oos.push([pid, qoh]);
         }
@@ -159,19 +154,22 @@ async function recomputeProducts(productIds, t) {
 
     async function insert(table, cols, rows) {
         if (!rows.length) return;
-        const ph = rows.map(() => `(${cols.map(() => "?").join(",")})`).join(",");
-        await sequelize.query(`INSERT INTO ${table} (${cols.join(",")}) VALUES ${ph}`, {
-            replacements: rows.flat(), transaction: t
-        });
+        const rowPh = rows.map(() => `(${cols.map(() => "?").join(",")})`).join(",");
+        await sequelize.query(
+            `INSERT INTO ${table} (${cols.join(",")}) VALUES ${rowPh}`,
+            { replacements: rows.flat(), transaction: t }
+        );
     }
+
     await insert("list_expired_products", ["productId", "expiredQty"], expired);
     await insert("list_in_stock_products", ["productId", "quantityOnHand"], inStock);
     await insert("list_low_stock_products", ["productId", "quantityOnHand"], lowStock);
     await insert("list_sellable_products", ["productId", "unexpiredQty"], sellable);
     await insert("list_out_of_stock_products", ["productId", "quantityOnHand"], oos);
 }
+// ===================== end inventory helpers =====================
 
-// ---- new helpers (customer + invoice) ----
+// ---- customer + invoice helpers ----
 async function resolveCustomerIdFromPayload(payload, t) {
     if (!payload) return null;
 
@@ -188,9 +186,7 @@ async function resolveCustomerIdFromPayload(payload, t) {
     if (email) where.email = email;
     else if (phone) where.phone = phone;
 
-    let existing = (email || phone)
-        ? await Customer.findOne({ where, transaction: t })
-        : null;
+    let existing = (email || phone) ? await Customer.findOne({ where, transaction: t }) : null;
 
     if (existing) {
         await existing.update(
@@ -232,17 +228,12 @@ async function generateInvoiceNo(t) {
     return `${prefix}${seq.toString().padStart(4, "0")}`;
 }
 
-// ---- controller actions ----
-
-// CREATE SALE w/ FEFO allocations + Customer + Invoice
+// ---- CONTROLLER ACTIONS ----
 const create = async (req, res) => {
     try {
         const { items } = req.body;
-        if (!Array.isArray(items) || !items.length) {
-            return badRequest(res, "items are required");
-        }
+        if (!Array.isArray(items) || !items.length) return badRequest(res, "items are required");
 
-        // Ensure products exist in purchases
         const productIds = [...new Set(items.map(i => Number(i.productId)).filter(Boolean))];
         const [seen] = await sequelize.query(
             `SELECT DISTINCT productId FROM purchases WHERE productId IN (${productIds.map(() => "?").join(",")})`,
@@ -250,23 +241,18 @@ const create = async (req, res) => {
         );
         const purchasedSet = new Set(seen.map(r => Number(r.productId)));
         const notPurchased = productIds.filter(id => !purchasedSet.has(id));
-        if (notPurchased.length) {
-            return badRequest(res, `Cannot sell unpurchased products: ${notPurchased.join(", ")}`);
-        }
+        if (notPurchased.length) return badRequest(res, `Cannot sell unpurchased products: ${notPurchased.join(", ")}`);
 
         const sale = await sequelize.transaction(async (t) => {
-            // Resolve/Upsert Customer (optional)
             let resolvedCustomerId = null;
             try {
                 resolvedCustomerId = await resolveCustomerIdFromPayload(
-                    { customerId: req.body.customerId, customer: req.body.customer },
-                    t
+                    { customerId: req.body.customerId, customer: req.body.customer }, t
                 );
             } catch (e) {
                 throw { _badRequest: e.message };
             }
 
-            // create sale shell
             const sale = await Sale.create({
                 referenceNo: req.body.referenceNo || null,
                 saleDate: req.body.saleDate || new Date(),
@@ -287,7 +273,6 @@ const create = async (req, res) => {
 
             const affected = new Set();
 
-            // FEFO per item
             for (const item of items) {
                 const pid = Number(item.productId);
                 const qty = Number(item.quantity);
@@ -302,17 +287,14 @@ const create = async (req, res) => {
                     if (take > 0) {
                         allocations.push({
                             expiryDate: lot.expiryDate ? lot.expiryDate.toISOString().slice(0,10) : null,
-                            qty: take
+                            qty: take,
                         });
                         remaining -= take;
                         if (remaining <= 0) break;
                     }
                 }
-                if (remaining > 0) {
-                    throw { _badRequest: `Insufficient stock for product ${pid}. Need ${qty}.` };
-                }
+                if (remaining > 0) throw { _badRequest: `Insufficient stock for product ${pid}. Need ${qty}.` };
 
-                // line totals
                 const base = Number(item.unitPrice) * qty;
                 const disc = item.discountType === "percent"
                     ? (base * Number(item.discountAmount || 0)) / 100
@@ -337,14 +319,13 @@ const create = async (req, res) => {
                 affected.add(pid);
             }
 
-            // totals
             const [tot] = await sequelize.query(
                 `SELECT
-             COALESCE(SUM(quantity),0) AS totalItems,
-             COALESCE(SUM(lineTotal - taxAmount),0) AS netTotalAmount,
-             COALESCE(SUM(lineTotal),0) AS totalAmount,
-             COALESCE(SUM(taxAmount),0) AS totalTax
-           FROM sale_items WHERE saleId = ?`,
+                     COALESCE(SUM(quantity),0) AS totalItems,
+                     COALESCE(SUM(lineTotal - taxAmount),0) AS netTotalAmount,
+                     COALESCE(SUM(lineTotal),0) AS totalAmount,
+                     COALESCE(SUM(taxAmount),0) AS totalTax
+                 FROM sale_items WHERE saleId = ?`,
                 { replacements: [sale.id], transaction: t }
             );
             const tr = Array.isArray(tot) ? tot[0] : tot;
@@ -356,9 +337,8 @@ const create = async (req, res) => {
                 orderTaxAmount: Number(tr.totalTax || 0),
             }, { transaction: t });
 
-            await recomputeProducts([...affected], t);
+            await recomputeForProducts([...affected], t);
 
-            // Create invoice if completed
             if (sale.status === "completed") {
                 const invoiceNo = await generateInvoiceNo(t);
 
@@ -392,9 +372,10 @@ const create = async (req, res) => {
             return sale;
         });
 
+        // include full product under each item
         const fullSale = await Sale.findByPk(sale.id, {
             include: [
-                { model: SaleItem, as: "items" },
+                { model: SaleItem, as: "items", include: [{ model: sequelize.models.Product, as: "product" }] },
                 { model: sequelize.models.Customer, as: "customer" },
                 { model: sequelize.models.Invoice, as: "invoice" },
             ],
@@ -410,17 +391,15 @@ const create = async (req, res) => {
 const getAll = async (req, res) => {
     try {
         const { page, limit, offset } = parsePagination(req.query, { page: 1, limit: 20, maxLimit: 100 });
-
         const { rows, count } = await Sale.findAndCountAll({
             include: [
-                { model: SaleItem, as: "items" },
+                { model: SaleItem, as: "items", include: [{ model: sequelize.models.Product, as: "product" }] },
                 { model: sequelize.models.Customer, as: "customer" },
                 { model: sequelize.models.Invoice, as: "invoice" },
             ],
             order: [["createdAt", "DESC"]],
             limit, offset,
         });
-
         return paginated(res, { rows, count }, { page, limit }, "Fetched successfully");
     } catch (error) {
         return serverError(res, "Error fetching sales", error);
@@ -431,7 +410,7 @@ const getOne = async (req, res) => {
     try {
         const sale = await Sale.findByPk(req.params.id, {
             include: [
-                { model: SaleItem, as: "items" },
+                { model: SaleItem, as: "items", include: [{ model: sequelize.models.Product, as: "product" }] },
                 { model: sequelize.models.Customer, as: "customer" },
                 { model: sequelize.models.Invoice, as: "invoice" },
             ],
