@@ -32,12 +32,8 @@ module.exports = {
                 netTotalAmount: { type: Sequelize.DECIMAL(18, 2), allowNull: false, defaultValue: 0 },
                 totalAmount: { type: Sequelize.DECIMAL(18, 2), allowNull: false, defaultValue: 0 },
                 amountPaid: { type: Sequelize.DECIMAL(18, 2), allowNull: false, defaultValue: 0 },
-                customerId: {
-                    type: Sequelize.INTEGER,
-                    allowNull: true,
-                },
+                customerId: { type: Sequelize.INTEGER, allowNull: true },
 
-                // Optional references
                 notes: { type: Sequelize.TEXT, allowNull: true },
                 meta: { type: Sequelize.JSON, allowNull: true },
 
@@ -46,11 +42,11 @@ module.exports = {
             },
             tableOpts
         );
+
         await queryInterface.addIndex("sales", ["saleDate"]);
         await queryInterface.addIndex("sales", ["status"]);
         await queryInterface.addIndex("sales", ["customerId"]);
 
-        // SALE ITEMS
         await queryInterface.createTable(
             "sale_items",
             {
@@ -87,10 +83,11 @@ module.exports = {
             },
             tableOpts
         );
+
         await queryInterface.addIndex("sale_items", ["saleId"]);
         await queryInterface.addIndex("sale_items", ["productId"]);
 
-        // STOCK SUMMARY (canonical store)
+        // STOCK SUMMARY (canonical)
         await queryInterface.createTable(
             "stock_summaries",
             {
@@ -102,58 +99,43 @@ module.exports = {
                     onDelete: "CASCADE",
                 },
                 quantityOnHand: { type: Sequelize.DECIMAL(18, 2), allowNull: false, defaultValue: 0 },
-                unexpiredQty: { type: Sequelize.DECIMAL(18, 2), allowNull: false, defaultValue: 0 },
-                expiredQty: { type: Sequelize.DECIMAL(18, 2), allowNull: false, defaultValue: 0 },
-                reorderPoint: { type: Sequelize.DECIMAL(18, 2), allowNull: false, defaultValue: 5 },
+                unexpiredQty:   { type: Sequelize.DECIMAL(18, 2), allowNull: false, defaultValue: 0 },
+                expiredQty:     { type: Sequelize.DECIMAL(18, 2), allowNull: false, defaultValue: 0 },
+                reorderPoint:   { type: Sequelize.DECIMAL(18, 2), allowNull: false, defaultValue: 5 },
                 lastComputedAt: { type: Sequelize.DATE, allowNull: false, defaultValue: Sequelize.fn("NOW") },
             },
             tableOpts
         );
 
-        // LIST TABLES (materialized subsets for fast reads)
+        // LIST TABLES
         await queryInterface.createTable(
             "list_in_stock_products",
-            {
-                productId: { type: Sequelize.INTEGER, primaryKey: true },
-                quantityOnHand: { type: Sequelize.DECIMAL(18, 2), allowNull: false },
-            },
+            { productId: { type: Sequelize.INTEGER, primaryKey: true }, quantityOnHand: { type: Sequelize.DECIMAL(18,2), allowNull: false } },
             tableOpts
         );
         await queryInterface.createTable(
             "list_low_stock_products",
-            {
-                productId: { type: Sequelize.INTEGER, primaryKey: true },
-                quantityOnHand: { type: Sequelize.DECIMAL(18, 2), allowNull: false },
-            },
+            { productId: { type: Sequelize.INTEGER, primaryKey: true }, quantityOnHand: { type: Sequelize.DECIMAL(18,2), allowNull: false } },
             tableOpts
         );
         await queryInterface.createTable(
             "list_expired_products",
-            {
-                productId: { type: Sequelize.INTEGER, primaryKey: true },
-                expiredQty: { type: Sequelize.DECIMAL(18, 2), allowNull: false },
-            },
+            { productId: { type: Sequelize.INTEGER, primaryKey: true }, expiredQty: { type: Sequelize.DECIMAL(18,2), allowNull: false } },
             tableOpts
         );
         await queryInterface.createTable(
             "list_sellable_products",
-            {
-                productId: { type: Sequelize.INTEGER, primaryKey: true },
-                unexpiredQty: { type: Sequelize.DECIMAL(18, 2), allowNull: false },
-            },
+            { productId: { type: Sequelize.INTEGER, primaryKey: true }, unexpiredQty: { type: Sequelize.DECIMAL(18,2), allowNull: false } },
             tableOpts
         );
         await queryInterface.createTable(
             "list_out_of_stock_products",
-            {
-                productId: { type: Sequelize.INTEGER, primaryKey: true },
-                quantityOnHand: { type: Sequelize.DECIMAL(18, 2), allowNull: false },
-            },
+            { productId: { type: Sequelize.INTEGER, primaryKey: true }, quantityOnHand: { type: Sequelize.DECIMAL(18,2), allowNull: false } },
             tableOpts
         );
     },
 
-    async down(queryInterface /*, Sequelize */) {
+    async down(queryInterface/*, Sequelize*/) {
         await queryInterface.dropTable("list_out_of_stock_products");
         await queryInterface.dropTable("list_sellable_products");
         await queryInterface.dropTable("list_expired_products");

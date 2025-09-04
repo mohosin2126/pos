@@ -5,6 +5,8 @@ module.exports = (sequelize, DataTypes) => {
     class SaleItem extends Model {
         static associate(models) {
             SaleItem.belongsTo(models.Sale, { foreignKey: "saleId", as: "sale" });
+            // return full product details with each sale item
+            SaleItem.belongsTo(models.Product, { foreignKey: "productId", as: "product" });
         }
     }
 
@@ -16,11 +18,7 @@ module.exports = (sequelize, DataTypes) => {
             quantity: { type: DataTypes.DECIMAL(18, 2), allowNull: false },
             unitPrice: { type: DataTypes.DECIMAL(18, 2), allowNull: false },
 
-            discountType: {
-                type: DataTypes.ENUM("none", "percent", "fixed"),
-                allowNull: false,
-                defaultValue: "none",
-            },
+            discountType: { type: DataTypes.ENUM("none", "percent", "fixed"), allowNull: false, defaultValue: "none" },
             discountAmount: { type: DataTypes.DECIMAL(18, 2), allowNull: false, defaultValue: 0 },
 
             taxPercent: { type: DataTypes.DECIMAL(5, 2), allowNull: false, defaultValue: 0 },
