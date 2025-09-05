@@ -5,6 +5,7 @@ import Banner from "./banner";
 import Services from "./services";
 import DeliveryProcess from "./deliver-process";
 import Packages from "./packages";
+import Connect from "./connect";
 
 export default function HomePage() {
 
@@ -17,6 +18,7 @@ export default function HomePage() {
             <Services/>
             <DeliveryProcess/>
             <Packages/>
+            <Connect/>
             <Footer />
         </div>
     );
