@@ -1,10 +1,12 @@
-
 import Footer from "./footer";
 import LocomotiveScroll from "locomotive-scroll";
 import Features from "./features";
 import Banner from "./banner";
 import Services from "./services";
 import DeliveryProcess from "./deliver-process";
+import Packages from "./packages";
+import Connect from "./connect";
+import Contact from "./connect";
 
 export default function HomePage() {
 
@@ -16,6 +18,9 @@ export default function HomePage() {
             <Features/>
             <Services/>
             <DeliveryProcess/>
+            <Packages/>
+            <Connect/>
+            <Contact/>
             <Footer />
         </div>
     );
