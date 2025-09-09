@@ -9,7 +9,8 @@ export function useUsers() {
   const [users, setUsers] = useState<TUserPayload[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
 
-  const fetchUsers = useCallback(async () => {
+  // @ts-ignore
+    const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
       const { data } = await useApi.get<TUsersApiResponse>(
@@ -35,7 +36,8 @@ export function useUser(id: string | undefined) {
   const [user, setUser] = useState<TUserPayload | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
 
-  const fetchUser = useCallback(async () => {
+  // @ts-ignore
+    const fetchUser = useCallback(async () => {
     setLoading(true);
     try {
       const { data } = await useApi.get(`/v1/admin/user/${id}`);

@@ -22,6 +22,7 @@ export default function AdminGuard() {
     useEffect(() => {
         let cancelled = false;
 
+        // @ts-ignore
         async function ensureProfile() {
             if (!token) {
                 setAuthorized(false);

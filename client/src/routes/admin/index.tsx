@@ -6,6 +6,9 @@ import Roles from "@/view/admin/roles";
 import AllUsers from "@/view/admin/users/all";
 import UserForm from "@/view/admin/users/form";
 import ViewUser from "@/view/admin/users/view";
+import AllSupplier from "@/view/admin/supplier/all";
+import SupplierForm from "@/view/admin/supplier/form";
+import SupplierDetails from "@/view/admin/supplier/view";
 
 const adminRoutes = [
     { path: "/unauthorized", element: <Unauthorized /> },
@@ -31,6 +34,15 @@ const adminRoutes = [
                             { path: "add", element: <UserForm /> },
                             { path: "update/:id", element: <UserForm /> },
                             { path: "view/:id", element: <ViewUser /> },
+                        ],
+                    },
+                    {
+                        path: "supplier",
+                        children: [
+                            { path: "all", element: <AllSupplier /> },
+                            { path: "create", element: <SupplierForm /> },
+                            { path: "update/:id", element: <SupplierForm /> },
+                            { path: "view/:id", element: <SupplierDetails /> },
                         ],
                     },
                 ],

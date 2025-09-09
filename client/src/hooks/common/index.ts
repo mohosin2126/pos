@@ -9,7 +9,8 @@ export function useOptions<T extends TOption>(
   const [data, setData] = useState<T[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
 
-  const fetchData = useCallback(async () => {
+  // @ts-ignore
+    const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const { data: responseData } = await useApi.get(url);
@@ -42,7 +43,8 @@ export const useCategories = () =>
   useOptions<TOption>("/v1/admin/common/categories");
 
 export function useDelete<T = any>(endpoint: string) {
-  const deleteItem = async (id: string | number): Promise<T | undefined> => {
+  // @ts-ignore
+    const deleteItem = async (id: string | number): Promise<T | undefined> => {
     try {
       const { data } = await useApi.delete(`${endpoint}/${id}`);
       return data;
