@@ -12,6 +12,7 @@ import SupplierDetails from "@/view/admin/supplier/view";
 import AllProducts from "@/view/admin/product/all/intex";
 import ProductForm from "@/view/admin/product/form";
 import ProductDetails from "@/view/admin/product/view";
+import CategoriesAll from "@/view/admin/categories/all";
 
 const adminRoutes = [
     { path: "/unauthorized", element: <Unauthorized /> },
@@ -56,6 +57,10 @@ const adminRoutes = [
                             { path: "update/:id", element: <ProductForm /> },
                             { path: "view/:id", element: <ProductDetails /> },
                         ],
+                    },
+                    {
+                        path: "category",
+                        children: [{ path: "all", element: <CategoriesAll /> }],
                     },
                 ],
             },
