@@ -12,6 +12,7 @@ const customerManagement = require("./customer");
 const invoiceManagement = require("./invoice");
 const authRoutes = require("./auth");
 const commonRoutes = require("./common");
+const requireAuth = require("../middleware/authenticate");
 
 module.exports = function registerRoutes(app) {
     app.get("/", (req, res) => {
@@ -26,7 +27,7 @@ module.exports = function registerRoutes(app) {
             res.status(500).json({status: "error", error: e.message});
         }
     });
-
+    app.use("/api/v1/admin", requireAuth);
     app.use("/api/v1/admin/user", userManagement);
     app.use("/api/v1/admin/role", roleManagement);
     app.use("/api/v1/admin/supplier", supplierManagement);
