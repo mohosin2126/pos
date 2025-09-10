@@ -1,12 +1,15 @@
-import { StrictMode } from "react";
-import { createRoot } from "react-dom/client";
+import {StrictMode} from "react";
+import {createRoot} from "react-dom/client";
 import "./styles/index.css";
 import "antd/dist/reset.css";
-import { RouterProvider } from "react-router-dom";
-import { routes } from "./routes";
+import {RouterProvider} from "react-router-dom";
+import {routes} from "./routes";
+import {UserProvider} from "@/context-api";
 
 createRoot(document.getElementById("root")!).render(
     <StrictMode>
-        <RouterProvider router={routes} />
+        <UserProvider>
+            <RouterProvider router={routes}/>
+        </UserProvider>
     </StrictMode>
 );

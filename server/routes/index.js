@@ -10,7 +10,9 @@ const saleManagement = require("./sale");
 const inventoryManagement = require("./inventory");
 const customerManagement = require("./customer");
 const invoiceManagement = require("./invoice");
+const authRoutes = require("./auth");
 const commonRoutes = require("./common");
+const requireAuth = require("../middleware/authenticate");
 
 module.exports = function registerRoutes(app) {
     app.get("/", (req, res) => {
@@ -25,7 +27,7 @@ module.exports = function registerRoutes(app) {
             res.status(500).json({status: "error", error: e.message});
         }
     });
-
+    app.use("/api/v1/admin", requireAuth);
     app.use("/api/v1/admin/user", userManagement);
     app.use("/api/v1/admin/role", roleManagement);
     app.use("/api/v1/admin/supplier", supplierManagement);
@@ -36,7 +38,7 @@ module.exports = function registerRoutes(app) {
     app.use("/api/v1/admin/inventory", inventoryManagement);
     app.use("/api/v1/admin/customer", customerManagement);
     app.use("/api/v1/admin/invoice",invoiceManagement);
-
+    app.use('/api/v1/auth', authRoutes);
 
     // common routes
     app.use("/api/v1/admin/common", commonRoutes);

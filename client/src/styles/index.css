@@ -3,27 +3,31 @@
 @import "tailwindcss";
 
 @theme {
-    --color-primary: #4fe7c4;
-    --color-secondary: #144443;
-    --font-primary: "Outfit", sans-serif;
-    --font-secondary: "Inter", sans-serif;
+  --color-primary: #4fe7c4;
+  --color-secondary: #144443;
+  --font-primary: "Outfit", sans-serif;
+  --font-secondary: "Inter", sans-serif;
+}
+
+body{
+  @apply bg-[#0b1029];
 }
 
 .sidebar::-webkit-scrollbar {
-    width: 5px;
+  width: 5px;
 }
 
 .sidebar::-webkit-scrollbar-track {
-    background: #e0e9f4;
+  background: #e0e9f4;
 }
 
 .sidebar::-webkit-scrollbar-thumb {
-    background: #a0a1a1;
-    border-radius: 10px;
+  background: #a0a1a1;
+  border-radius: 10px;
 }
 
 .button {
-    @apply bg-[#134843] text-[#49dcbb] px-6 py-2 font-semibold border border-[#49dcbb] rounded-md cursor-pointer;
+  @apply bg-[#134843] text-[#49dcbb] px-6 py-2 font-semibold border border-[#49dcbb] rounded-md cursor-pointer;
 }
 
 /* drop down custom css for set all dropdown use one  */
@@ -34,26 +38,26 @@
 
 
 .ant-dropdown-menu-item:hover {
-  background-color: #186566 !important;
-  color: #69fec1 !important;
+  background-color: #186566 !important; 
+  color: #69fec1 !important; 
 }
 
 .ant-dropdown-menu-item-active {
-  background-color: #186566 !important;
-  color: #69fec1 !important;
+  background-color: #186566 !important; 
+  color: #69fec1 !important; 
 }
 
 
 .ant-dropdown-menu-item-only-child {
-  padding: 0.5rem 1rem;
+  padding: 0.5rem 1rem; 
 } */
 
 .apexcharts-legend {
-    /* flex-wrap: nowrap !important; */
-    justify-content: center !important;
-    width: 100% !important;
-    bottom: 0px !important;
-    height: 60px !important;
+  /* flex-wrap: nowrap !important; */
+  justify-content: center !important;
+  width: 100% !important;
+  bottom: 0px !important;
+  height: 60px !important;
 }
 
 /* for input field  */
@@ -62,68 +66,68 @@
 .ant-input:focus,
 .ant-input-affix-wrapper:hover,
 .ant-input-affix-wrapper-focused {
-    border-color: #005555 !important;
+  border-color: #005555 !important;
 }
 
 /* InputNumber */
 .ant-input-number:hover,
 .ant-input-number-focused {
-    border-color: #005555 !important;
+  border-color: #005555 !important;
 }
 
 /* Select */
 .ant-select-selector:hover,
 .ant-select-focused .ant-select-selector {
-    border-color: #005555 !important;
+  border-color: #005555 !important;
 }
 
 /* DatePicker */
 .ant-picker:hover,
 .ant-picker-focused {
-    border-color: #005555 !important;
+  border-color: #005555 !important;
 }
 
 /* Checkbox */
 .ant-checkbox-checked .ant-checkbox-inner,
 .ant-checkbox:hover .ant-checkbox-inner {
-    border-color: #005555 !important;
-    background-color: #005555 !important;
+  border-color: #005555 !important;
+  background-color: #005555 !important;
 }
 
 /* for button  */
 
 .btn {
-    @apply !bg-[#005555] hover:!bg-[#186566] hover:!text-[#69feb0] !text-white !border-none;
+  @apply !bg-[#005555] hover:!bg-[#186566] hover:!text-[#69feb0] !text-white !border-none;
 }
 
 .action-btn {
-    @apply cursor-pointer w-8 h-8 [transition:0.3s] rounded-full flex items-center justify-center;
+  @apply cursor-pointer w-8 h-8 [transition:0.3s] rounded-full flex items-center justify-center;
 }
 .action-text {
-    @apply text-black group-hover:text-[#005555] [transition:0.3s];
+  @apply text-black group-hover:text-[#005555] [transition:0.3s];
 }
 
 .hero-gradient {
-    background: radial-gradient(rgb(0, 85, 85), transparent 70%) !important;
-    background-repeat: no-repeat !important;
+  background: radial-gradient(rgb(0, 85, 85), transparent 70%) !important;
+  background-repeat: no-repeat !important;
 }
 
 /* Modal scrollbar */
 .ant-modal-body {
-    scrollbar-width: thin;
-    scrollbar-color: #e0e9f4;
+  scrollbar-width: thin;
+  scrollbar-color: #e0e9f4;
 }
 
 .ant-modal-body::-webkit-scrollbar {
-    width: 6px;
+  width: 6px;
 }
 
 .ant-modal-body::-webkit-scrollbar-track {
-    background: #e0e9f4;
-    border-radius: 8px;
+  background: #e0e9f4;
+  border-radius: 8px;
 }
 
 .ant-modal-body::-webkit-scrollbar-thumb {
-    background: #e0e9f4;
-    border-radius: 8px;
+  background: #e0e9f4;
+  border-radius: 8px;
 }
