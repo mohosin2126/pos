@@ -13,6 +13,11 @@ import AllProducts from "@/view/admin/product/all/intex";
 import ProductForm from "@/view/admin/product/form";
 import ProductDetails from "@/view/admin/product/view";
 import CategoriesAll from "@/view/admin/categories/all";
+import Purchases from "@/view/admin/purchases/all";
+import PurchaseForm from "@/view/admin/purchases/form";
+import PurchaseDetails from "@/view/admin/purchases/view";
+import PurchaseOrder from "@/view/admin/purchase-order";
+import PurchaseReturn from "@/view/admin/purchase-return";
 
 const adminRoutes = [
     { path: "/unauthorized", element: <Unauthorized /> },
@@ -62,6 +67,17 @@ const adminRoutes = [
                         path: "category",
                         children: [{ path: "all", element: <CategoriesAll /> }],
                     },
+                    {
+                        path: "purchase",
+                        children: [
+                            { path: "all", element: <Purchases /> },
+                            { path: "add", element: <PurchaseForm /> },
+                            { path: "update/:id", element: <PurchaseForm /> },
+                            { path: "view/:id", element: <PurchaseDetails /> },
+                        ],
+                    },
+                    { path: "purchase-order", element: <PurchaseOrder /> },
+                    { path: "purchase-return", element: <PurchaseReturn /> },
                 ],
             },
         ],
