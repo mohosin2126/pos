@@ -1,12 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { RiCloseLargeFill, RiMenu3Fill } from "react-icons/ri";
-import type { TNavLinkItem } from "../../../interface";
 import { BsDot } from "react-icons/bs";
-
+import type { TNavLinkItem } from "@/interface/menu-and-common";
 
 export default function Navbar() {
-
     const [isScroll, setIsScroll] = useState<boolean>(false);
     const [menuOpen, setMenuOpen] = useState<boolean>(false);
     const [activeMenu, setActiveMenu] = useState<string>("Home");
@@ -45,31 +43,41 @@ export default function Navbar() {
                     : "bg-[#0a131d] lg:bg-transparent lg:py-8"
             }`}
         >
-            <div className="container mx-auto flex items-center justify-between px-4">
+            <div className="container mx-auto grid grid-cols-3 items-center px-4">
                 <div className="flex items-center text-4xl space-x-3">POS</div>
 
-                <nav className="hidden lg:flex space-x-7">
+                <nav className="hidden lg:flex justify-center items-center space-x-7">
                     {navLinks.map((link, index) => (
                         <Link
                             to={link.href}
                             key={index}
-                            className={`${activeMenu == link?.title && "text-[#51f0cb]"} relative font-medium pb-2 group hover:text-[#51f0cb] [transition:0.5s] flex items-center gap-1`}
+                            className={`${
+                                activeMenu == link?.title && "text-[#51f0cb]"
+                            } relative font-medium pb-2 group hover:text-[#51f0cb] [transition:0.5s] flex items-center gap-1`}
                             onClick={() => setActiveMenu(link.title)}
                         >
-                            <BsDot className={`${activeMenu == link?.title ? "opacity-100" : "opacity-0" }`} />
+                            <BsDot
+                                className={`${
+                                    activeMenu == link?.title ? "opacity-100" : "opacity-0"
+                                }`}
+                            />
                             {link.title}
                         </Link>
                     ))}
                 </nav>
 
-                <div className="hidden lg:flex gap-4 items-center">
-                    <button className="button">
-                        Book A Call
-                    </button>
+                <div className="hidden lg:flex justify-end items-center gap-4 items-center">
+                    <Link to="/auth" className="button" aria-label="Go to demo login">
+                        Demo
+                    </Link>
+                    <button className="button">Book A Call</button>
                 </div>
 
                 <div className="lg:hidden">
-                    <button className="text-[#49dcbb] cursor-pointer" onClick={toggleMenu}>
+                    <button
+                        className="text-[#49dcbb] cursor-pointer"
+                        onClick={toggleMenu}
+                    >
                         <RiMenu3Fill size={24} />
                     </button>
                 </div>
@@ -108,10 +116,17 @@ export default function Navbar() {
                         </Link>
                     ))}
                 </nav>
-                <div className="mt-6 text-center">
-                    <button className="button">
-                        Book A Call
-                    </button>
+                <div className="mt-6 text-center flex flex-col gap-3">
+                    {/* NEW: Demo button in mobile menu */}
+                    <Link
+                        to="/auth"
+                        className="button w-full block text-center"
+                        onClick={() => setMenuOpen(false)}
+                        aria-label="Go to demo login"
+                    >
+                        Demo
+                    </Link>
+                    <button className="button w-full">Book A Call</button>
                 </div>
             </aside>
         </header>
