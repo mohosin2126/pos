@@ -21,7 +21,6 @@ export default function LoginForm() {
     const navigate = useNavigate();
     const { setUser } = useUser();
 
-    // @ts-ignore
     const onFinish = async (values: { remember: any; email?: string; password?: string; }) => {
         setLoading(true);
         try {

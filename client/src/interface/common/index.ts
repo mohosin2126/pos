@@ -165,8 +165,8 @@ export interface TInvoice {
   id: number;
   saleId: number;
   customerId: number;
-  invoiceNo: string;
-  invoiceDate: string;
+  invoiceNo?: string;
+  invoiceDate?: string;
   dueDate: string | null;
   subTotal: string;
   discountAmount: string;
@@ -244,6 +244,11 @@ export interface TSaleProps {
   items?: TSaleItem[];
   customer?: TCustomer;
   invoice?: TInvoice;
+}
+
+export interface TSellableProduct {
+  product: TProductPayload;
+  unexpiredQty: string;
 }
 
 export interface TNotifications {
