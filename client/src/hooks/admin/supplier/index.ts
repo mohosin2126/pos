@@ -8,8 +8,7 @@ export function useSuppliers() {
   const [suppliers, setSuppliers] = useState<TSupplierPayload[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
 
-  // @ts-ignore
-    const fetchSuppliers = useCallback(async () => {
+  const fetchSuppliers = useCallback(async () => {
     setLoading(true);
     try {
       const { data } = await useApi.get<TSuppliersApiResponse>(
@@ -34,8 +33,7 @@ export function useSupplier(id: string | undefined) {
   const [supplier, setSupplier] = useState<TSupplierPayload | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
 
-  // @ts-ignore
-    const fetchSupplier = useCallback(async () => {
+  const fetchSupplier = useCallback(async () => {
     setLoading(true);
     try {
       const { data } = await useApi.get(`/v1/admin/supplier/${id}`);

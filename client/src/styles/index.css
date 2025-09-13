@@ -9,7 +9,7 @@
   --font-secondary: "Inter", sans-serif;
 }
 
-body{
+body {
   @apply bg-[#0b1029];
 }
 
@@ -99,6 +99,9 @@ body{
 .btn {
   @apply !bg-[#005555] hover:!bg-[#186566] hover:!text-[#69feb0] !text-white !border-none;
 }
+.outlet-btn {
+  @apply !bg-white !text-black !border !border-[#186566] hover:!text-[#186566];
+}
 
 .action-btn {
   @apply cursor-pointer w-8 h-8 [transition:0.3s] rounded-full flex items-center justify-center;
@@ -130,4 +133,22 @@ body{
 .ant-modal-body::-webkit-scrollbar-thumb {
   background: #e0e9f4;
   border-radius: 8px;
+}
+
+/* for print  */
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #print-section,
+  #print-section * {
+    visibility: visible;
+  }
+  #print-section {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
 }

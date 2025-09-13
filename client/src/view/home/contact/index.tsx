@@ -5,28 +5,28 @@ const Contact = () => {
         {
             icon: <HiMail className="text-2xl text-[#4fe7c4]" />,
             title: "Mail ID",
-            lines: ["contact@megabot.com", "inquiry@megabot.com"],
+            lines: ["mohosin2126@gmail.com"],
         },
         {
             icon: <HiPhone className="text-2xl text-[#4fe7c4]" />,
             title: "Contact No.",
-            lines: ["(406) 555-0120", "(684) 555-0102"],
+            lines: ["+8801774001235"],
         },
         {
             icon: <HiLocationMarker className="text-2xl text-[#4fe7c4]" />,
             title: "Address 1",
-            lines: ["2118 Thornridge Cir.", "Syracuse, Connecticut 35624"],
+            lines: ["Suihari", "Dinajpur 5200"],
         },
         {
             icon: <HiHome className="text-2xl text-[#4fe7c4]" />,
             title: "Address 2",
-            lines: ["2972 Westheimer Rd. Santa", "Ana, Illinois 85486"],
+            lines: ["Chirirbandar", "Dinajpur 5200"],
         },
     ];
 
     return (
         <section className="p-4 lg:p-12 bg-[#0b111a] rounded-md">
-            <div className="">
+            <div  id="contact">
                 {/* top contact info */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-10">
                     {info.map((item, idx) => (
@@ -39,7 +39,19 @@ const Contact = () => {
                             </div>
                             <div className="mt-1 text-[#c9d2df] text-sm leading-relaxed">
                                 {item.lines.map((l, i) => (
-                                    <div key={i}>{l}</div>
+                                    <div key={i}>
+                                        {item.title === "Mail ID" ? (
+                                            <a href={`mailto:${l}`} className="hover:underline">
+                                                {l}
+                                            </a>
+                                        ) : item.title === "Contact No." ? (
+                                            <a href={`tel:${l.replace(/\s+/g, "")}`} className="hover:underline">
+                                                {l}
+                                            </a>
+                                        ) : (
+                                            l
+                                        )}
+                                    </div>
                                 ))}
                             </div>
                         </div>
@@ -103,7 +115,7 @@ const Contact = () => {
                         <div className="w-full h-[300px] md:h-[360px] lg:h-full">
                             <iframe
                                 title="map"
-                                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d214754.33904039948!2d-112.23045594453125!3d33.448377099999996!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x872b12f21f01f1e9%3A0xead46b50d8c3ac01!2sPhoenix%2C%20AZ%2C%20USA!5e0!3m2!1sen!2sus!4v1700000000000!5m2!1sen!2sus"
+                                src="https://www.google.com/maps?q=Dinajpur%205200,%20Bangladesh&output=embed"
                                 width="100%"
                                 height="100%"
                                 style={{ border: 0 }}

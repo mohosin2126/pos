@@ -4,13 +4,12 @@ import useApi from "@/hooks/use-api";
 import {useDelete} from "@/hooks/common";
 ;
 
-// All
+// All users
 export function useUsers() {
   const [users, setUsers] = useState<TUserPayload[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
 
-  // @ts-ignore
-    const fetchUsers = useCallback(async () => {
+  const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
       const { data } = await useApi.get<TUsersApiResponse>(
@@ -31,13 +30,12 @@ export function useUsers() {
   return { users, loading, refetch: fetchUsers };
 }
 
-// Single
+// Single user
 export function useUser(id: string | undefined) {
   const [user, setUser] = useState<TUserPayload | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
 
-  // @ts-ignore
-    const fetchUser = useCallback(async () => {
+  const fetchUser = useCallback(async () => {
     setLoading(true);
     try {
       const { data } = await useApi.get(`/v1/admin/user/${id}`);
@@ -56,7 +54,7 @@ export function useUser(id: string | undefined) {
   return { user, loading, refetch: fetchUser };
 }
 
-// Create
+// Create user
 export function useCreateUser() {
   const [error, setError] = useState<string[]>([]);
 
@@ -75,7 +73,7 @@ export function useCreateUser() {
   return { createUser, error };
 }
 
-// Update
+// Update user
 export function useUpdateUser() {
   const [error, setError] = useState<string[]>([]);
 
