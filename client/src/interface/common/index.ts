@@ -246,7 +246,7 @@ export interface TSaleProps {
   invoice?: TInvoice;
 }
 
-export interface TSellableProduct {
+export interface TActivityProduct {
   product: TProductPayload;
   unexpiredQty: string;
 }

@@ -32,7 +32,16 @@ export default function OutOfStock() {
       key: "product",
       render: (_: any, record: any) => (
         <Space>
-          <Avatar shape="square" src={record?.product?.imageUrl} size={40} />
+          <Avatar
+            shape="square"
+            src={
+              record?.product?.imageUrl ||
+              `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(
+                record?.product?.name
+              )}`
+            }
+            size={40}
+          />
           <div>
             <div className="font-medium">{record?.product?.name}</div>
             <div className="text-gray-500 text-sm">#{record?.product?.sku}</div>
@@ -65,7 +74,6 @@ export default function OutOfStock() {
       ),
     },
     { title: "Unexpired Qty", dataIndex: "unexpiredQty", key: "unexpiredQty" },
-
     {
       title: "Status",
       dataIndex: "status",

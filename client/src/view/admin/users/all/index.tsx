@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import {
   Table,
@@ -208,7 +207,7 @@ export default function AllUsers() {
                 className="md:!w-72 font-normal "
                 allowClear
               />
-              <div className="flex items-center gap-4">
+              <div className="flex flex-col md:flex-row items-center gap-4">
                 <Select
                   value={filterStatus}
                   onChange={setFilterStatus}
