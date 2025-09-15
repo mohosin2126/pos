@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { NavIconbar } from "../side-nav-icon-bar";
 import { useLocation } from "react-router-dom";
-import {TSidebarProps} from "@/interface/menu-and-common";
-import {adminMenuItems} from "@/data";
+import { TSidebarProps } from "@/interface/menu-and-common";
+import { adminMenuItems } from "@/data";
 import NavItem from "@/layout/dashboard/nav-item";
 
 export default function Sidebar({
@@ -14,28 +14,22 @@ export default function Sidebar({
   const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
   const location = useLocation();
 
-  // Toggle submenu open/close
   const handleSubmenuToggle = (label: string) =>
     setOpenSubmenu((prev) => (prev === label ? null : label));
 
-  // Close all submenus
   const closeAllSubmenus = () => setOpenSubmenu(null);
 
-  // Ensure sidebar starts expanded on desktop
   useEffect(() => {
-    const mediaQuery = window.matchMedia("(max-width: 768px)"); // Small / medium devices
+    const mediaQuery = window.matchMedia("(max-width: 768px)");
 
-    // Always close nav on small screens
     const handleMediaChange = (e: MediaQueryListEvent) => {
       if (e.matches) {
         setNavOpened(false);
       }
     };
 
-    // Listen for screen size changes
     mediaQuery.addEventListener("change", handleMediaChange);
 
-    // Set initial state
     if (mediaQuery.matches) {
       setNavOpened(false);
     }
@@ -43,7 +37,19 @@ export default function Sidebar({
     return () => mediaQuery.removeEventListener("change", handleMediaChange);
   }, [setNavOpened]);
 
-  // console.log("sidebar open consition : ", isCollapsed);
+  //  for track dashboard content disable scroll when sidebar open in mobile and enable scroll when sidebar close
+  useEffect(() => {
+    const body = document.body;
+    if (isCollapsed) {
+      body.style.overflow = "hidden";
+    } else {
+      body.style.overflow = "";
+    }
+
+    return () => {
+      body.style.overflow = "";
+    };
+  }, [isCollapsed]);
 
   return (
     <>
@@ -56,7 +62,7 @@ export default function Sidebar({
       ></div>
 
       <div
-        className={`!fixed inset-y-0 h-screen left-0 z-30 [transition:0.3s] sidebar w-64 pb-4 overflow-y-auto overflow-x-hidden transition bg-[#005555] duration-300 transform lg:translate-x-0
+        className={`!fixed inset-y-0 h-screen left-0 z-30 [transition:0.3s] w-64 pb-4 sidebar overflow-y-auto overflow-x-hidden transition bg-[#005555] duration-300 transform lg:translate-x-0
                          ${
                            isCollapsed
                              ? "translate-x-0 ease-out"
@@ -77,7 +83,7 @@ export default function Sidebar({
               <div className="mx-auto w-24 h-10 text-4xl text-white">logo</div>
             </div>
 
-            <nav className="pt-20 lg:pt-6">
+            <nav className="lg:pt-6 lg:pb-0 pb-4 pt-20">
               {adminMenuItems.map((block, blockIndex) => {
                 const menus = Array.isArray(block.menu)
                   ? block.menu

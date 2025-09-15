@@ -1,4 +1,3 @@
-
 import { Avatar, Card, Select, Space, Tag } from "antd";
 import { ArrowUpOutlined } from "@ant-design/icons";
 import { HiMiniSquare3Stack3D } from "react-icons/hi2";
@@ -10,7 +9,7 @@ import { useProducts } from "@/hooks/admin/products";
 export default function SummaryTable() {
   const { products } = useProducts();
   return (
-    <div className="grid grid-cols-1 gap-6 md:grid-cols-3 mt-6">
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 mt-6">
       <Card
         bodyStyle={{ padding: "14px" }}
         title={
@@ -123,6 +122,7 @@ export default function SummaryTable() {
       </Card>
       <Card
         bodyStyle={{ padding: "14px" }}
+        className="block md:hidden lg:block"
         title={
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold flex items-center !m-0">

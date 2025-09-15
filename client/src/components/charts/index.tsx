@@ -85,12 +85,14 @@ export const GraphChart: React.FC = () => {
       className="w-full h-[450px] overflow-hidden"
       title={
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold flex items-center !m-0">
+          <div className="!text-base md:!text-lg font-semibold flex items-center !m-0">
             <Tag className="!py-1 !border-none" color="cyan">
               <HiOutlineShoppingCart size={20} />
             </Tag>
-            Sales Overview
-          </h2>
+            <span className="!text-base md:!text-lg font-semibold !mr-2">
+              Sales Overview
+            </span>
+          </div>
           <ConfigProvider
             theme={{
               components: {
@@ -198,12 +200,14 @@ export const DonutChart: React.FC = () => {
     <Card
       title={
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold flex items-center !m-0">
+          <div className="flex items-center !m-0">
             <Tag className="!py-1 !border-none" color="error">
               <GrOverview size={20} />
             </Tag>
-            POS Overview
-          </h2>
+            <span className="!text-base md:!text-lg font-semibold !mr-2">
+              POS Overview
+            </span>
+          </div>
           <ConfigProvider
             theme={{
               components: {
@@ -228,10 +232,22 @@ export const DonutChart: React.FC = () => {
         </div>
       }
     >
-      <div className="flex justify-center">
+      <div className="flex justify-center overflow-hidden">
         <ReactApexChart
           key={activeIndex ?? "total"}
-          options={options}
+          options={{
+            ...options,
+            responsive: [
+              {
+                breakpoint: 768,
+                options: {
+                  chart: {
+                    width: 280,
+                  },
+                },
+              },
+            ],
+          }}
           series={values}
           type="donut"
           width={420}

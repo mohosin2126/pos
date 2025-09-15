@@ -14,15 +14,15 @@ body {
 }
 
 .sidebar::-webkit-scrollbar {
-  width: 5px;
+  width: 6px;
 }
 
-.sidebar::-webkit-scrollbar-track {
-  background: #e0e9f4;
-}
+/* .sidebar::-webkit-scrollbar-track {
+  background: #1f1f1f;
+} */
 
 .sidebar::-webkit-scrollbar-thumb {
-  background: #a0a1a1;
+  background: #b8bbbb;
   border-radius: 10px;
 }
 

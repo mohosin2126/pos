@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import useApi from "../../use-api";
-import { TSellableProduct } from "@/interface/common";
+import { TActivityProduct } from "@/interface/common";
 export type Product = Record<string, unknown>;
 
 export function useActiveProducts() {
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<TActivityProduct[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
 
   const fetchActiveProducts = useCallback(async () => {
@@ -27,7 +27,7 @@ export function useActiveProducts() {
 }
 
 export function useStockProducts() {
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<TActivityProduct[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
 
   const fetchStockProducts = useCallback(async () => {
@@ -50,7 +50,7 @@ export function useStockProducts() {
 }
 
 export function useLowStockProducts() {
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<TActivityProduct[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
 
   const fetchLowStockProducts = useCallback(async () => {
@@ -75,7 +75,7 @@ export function useLowStockProducts() {
 }
 
 export function useExpiredProducts() {
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<TActivityProduct[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
 
   const fetchExpiredProducts = useCallback(async () => {
@@ -98,7 +98,7 @@ export function useExpiredProducts() {
 }
 
 export function useSellableProducts() {
-  const [products, setProducts] = useState<TSellableProduct[]>([]);
+  const [products, setProducts] = useState<TActivityProduct[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
 
   const fetchSellableProducts = useCallback(async () => {
@@ -123,7 +123,7 @@ export function useSellableProducts() {
 }
 
 export function useOutOfStockProducts() {
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<TActivityProduct[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
 
   const fetchOutOfStockProducts = useCallback(async () => {

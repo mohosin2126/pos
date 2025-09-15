@@ -1,24 +1,12 @@
 import { useState } from "react";
-import type { TProductPayload } from "@/interface/common";
-import { useProducts } from "@/hooks/admin/products";
-import { showConfirmDelete } from "@/components/re-useable/delete-modal";
-import {
-  Avatar,
-  Button,
-  Card,
-  Input,
-  message,
-  Select,
-  Space,
-  Table,
-  Tag,
-} from "antd";
+import { Avatar, Button, Card, Input, Select, Space, Table, Tag } from "antd";
 import { ActionButton } from "@/components/re-useable/action-button";
 import { DashboardTitle } from "@/components/re-useable/dashboard-titile";
 import ToolbarButton from "@/components/re-useable/toolbar-button";
 import { Link } from "react-router-dom";
 import { MdAddCircleOutline, MdOutlineSearch } from "react-icons/md";
 import { useLowStockProducts } from "@/hooks/admin/inventory";
+import dayjs from "dayjs";
 
 const { Option } = Select;
 
@@ -29,23 +17,6 @@ export default function LowStock() {
   >("all");
 
   const { products } = useLowStockProducts();
-  console.log("products :", products);
-
-  // Delete product
-  const handleDelete = (record: TProductPayload) => {
-    if (!record?.id) return;
-    showConfirmDelete({
-      title: "Delete Product",
-      content: `Are you sure you want to delete "${record.name}"?`,
-      onConfirm: async () => {
-        if (record?.id) {
-          // const result = await deleteItem(record?.id);
-
-          message.success("Product deleted successfully");
-        }
-      },
-    });
-  };
 
   const rowSelection = {
     onChange: (selectedRowKeys: React.Key[], selectedRows: any[]) => {
@@ -59,20 +30,21 @@ export default function LowStock() {
       title: "Product",
       dataIndex: "name",
       key: "product",
-      render: (_: any, record: TProductPayload) => (
+      render: (_: any, record: any) => (
         <Space>
           <Avatar
             shape="square"
             src={
-              "https://png.pngtree.com/png-vector/20210602/ourmid/pngtree-3d-beauty-cosmetics-product-design-png-image_3350326.jpg"
+              record?.product?.imageUrl ||
+              `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(
+                record?.product?.name
+              )}`
             }
             size={40}
           />
           <div>
-            <div className="font-medium">{record?.product?.name ?? ""}</div>
-            <div className="text-gray-500 text-sm">
-              #{record?.product?.sku ?? ""}
-            </div>
+            <div className="font-medium">{record?.product?.name}</div>
+            <div className="text-gray-500 text-sm">#{record?.product?.sku}</div>
           </div>
         </Space>
       ),
@@ -81,76 +53,66 @@ export default function LowStock() {
       title: "Category ID",
       dataIndex: "categoryId",
       key: "categoryId",
-      render: (_: any, record: any) => {
-        return <span>{record?.product?.categoryId}</span>;
-      },
+      render: (_: any, record: any) => (
+        <span>{record?.product?.categoryId}</span>
+      ),
     },
     {
       title: "Stock",
       dataIndex: "stockQuantity",
       key: "stockQuantity",
-      render: (_: any, record: any) => {
-        return <span>{record?.product?.stockQuantity}</span>;
-      },
+      render: (_: any, record: any) => (
+        <span>{record?.product?.stockQuantity}</span>
+      ),
     },
     {
       title: "Re-Order",
       dataIndex: "reorderLevel",
       key: "reorderLevel",
-      render: (_: any, record: any) => {
-        return <span>{record?.product?.reorderLevel}</span>;
-      },
+      render: (_: any, record: any) => (
+        <span>{record?.product?.reorderLevel}</span>
+      ),
     },
-
+    { title: "Unexpired Qty", dataIndex: "unexpiredQty", key: "unexpiredQty" },
     {
       title: "Status",
-      dataIndex: ["product", "status"],
+      dataIndex: "status",
+      key: "status",
       render: (_: any, record: any) => {
-        const status = record?.product?.status ?? "unknown";
-        const color =
-          status === "active"
-            ? "green"
-            : status === "inactive"
-            ? "red"
-            : "default";
-
-        return <Tag color={color}>{status.toUpperCase()}</Tag>;
-      },
-    },
-    {
-      title: "Track Stock",
-      dataIndex: "isTrackStock",
-      key: "isTrackStock",
-      render: (trackStock: boolean) => {
-        const color = trackStock ? "green" : "red";
-        const text = trackStock ? "Active" : "Inactive";
-        return <Tag color={color}>{text}</Tag>;
+        const color = record?.product?.status === "active" ? "green" : "red";
+        return <Tag color={color}>{record?.product?.status}</Tag>;
       },
     },
     {
       title: "Tags",
+      dataIndex: "tags",
       key: "tags",
-      dataIndex: ["product", "tags"],
-      render: (tags: string) =>
-        (tags ? tags.split(",") : []).map((t) => (
-          <Tag color="blue" className="capitalize" key={t}>
-            {t.trim()}
-          </Tag>
-        )),
+      render: (_: any, record: any) =>
+        record?.product?.tags ? (
+          record?.product?.tags?.split(",").map((tag) => (
+            <Tag color="blue" className="capitalize" key={tag}>
+              {tag.trim()}
+            </Tag>
+          ))
+        ) : (
+          <span>N/A</span>
+        ),
+    },
+    {
+      title: "Created At",
+      dataIndex: "createdAt",
+      key: "createdAt",
+      render: (_: any, record: any) =>
+        dayjs(record?.product?.createdAt).format("DD MMM YYYY"),
     },
     {
       title: "Actions",
       key: "actions",
-      render: (_: any, record: TProductPayload) => (
-        <ActionButton
-          viewUrl={`#admin/product/view/${record?.product?.id}`}
-          editUrl={`#admin/product/update/${record?.product?.id}`}
-          onDelete={() => handleDelete(record)}
-        />
+      render: (_: any, record: any) => (
+        <ActionButton viewUrl={`/admin/product/view/${record?.product?.id}`} />
       ),
     },
   ];
-
   // Filtered data
   const filteredData = products?.filter((item) => {
     const name = item?.product?.name ?? "";

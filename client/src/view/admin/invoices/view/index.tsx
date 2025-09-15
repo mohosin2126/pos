@@ -108,14 +108,14 @@ export default function ViewInvoice() {
 
         <Divider className="!my-6" />
 
-        <div className="overflow-hidden rounded border border-gray-200">
+        <div className="overflow-y-auto rounded border border-gray-200">
           <div className="grid grid-cols-12 bg-gray-50 text-[11px] text-gray-500 py-2 px-3">
             <div className="col-span-6">DESCRIPTION</div>
             <div className="col-span-2 text-center">QTY</div>
             <div className="col-span-2 text-center">RATE</div>
             <div className="col-span-2 text-right">AMOUNT</div>
           </div>
-          <div className="grid grid-cols-12 items-center py-3 px-3 border-t border-t-gray-200">
+          <div className="grid grid-cols-12 items-center py-3 px-3 border-t border-t-gray-200 space-x-4">
             <div className="col-span-6">Sale Reference #{invoice.saleId}</div>
             <div className="col-span-2 text-center">1</div>
             <div className="col-span-2 text-center">
