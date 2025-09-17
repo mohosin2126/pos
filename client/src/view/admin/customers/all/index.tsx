@@ -21,11 +21,12 @@ import type { TCustomer } from "@/interface/common";
 import { showConfirmDelete } from "@/components/re-useable/delete-modal";
 import { useState } from "react";
 import type { ColumnsType } from "antd/es/table";
+import Loader from "@/components/re-useable/loader";
 const { Option } = Select;
 
 export default function AllCustomer() {
-  const { customers } = useCustomers();
-  console.log("customers data :", customers);
+  const { customers, refetch, loading } = useCustomers();
+  // console.log("customers data :", customers);
   const [searchText, setSearchText] = useState<string>("");
   const [filterStatus, setFilterStatus] = useState<
     "all" | "active" | "inactive"
@@ -135,11 +136,7 @@ export default function AllCustomer() {
           description="Show all customer and more view"
         />
         <div className="flex items-center gap-x-3">
-          <ToolbarButton
-            onPdfClick={() => console.log("PDF Export")}
-            onExcelClick={() => console.log("Excel Export")}
-            onRefreshClick={() => console.log("Data Refreshed")}
-          />
+          <ToolbarButton onRefreshClick={() => refetch()} />
           <Link to="/admin/user/add">
             <Button
               type="primary"
@@ -153,29 +150,25 @@ export default function AllCustomer() {
       </div>
       <Card
         title={
-          <div className="flex items-center justify-between gap-4 flex-wrap my-6">
-            <div className="flex md:items-center justify-between flex-col md:flex-row gap-4 w-full">
-              <Input
-                placeholder="Search by name or email..."
-                prefix={<MdOutlineSearch color="gray" size={16} />}
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-                className="md:!w-72 font-normal "
-                allowClear
-              />
-              <div className="flex items-center gap-4">
-                <Select
-                  value={filterStatus}
-                  onChange={setFilterStatus}
-                  className="md:!w-40 w-full "
-                >
-                  <Option value="all">All Status</Option>
-                  <Option value="active">Active</Option>
-                  <Option value="inactive">Inactive</Option>
-                  <Option value="suspended">Suspended</Option>
-                </Select>
-              </div>
-            </div>
+          <div className="flex md:items-center flex-col md:flex-row gap-4 w-full my-6">
+            <Input
+              placeholder="Search by name or email..."
+              prefix={<MdOutlineSearch color="gray" size={16} />}
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              className="md:!w-72 font-normal "
+              allowClear
+            />
+            <Select
+              value={filterStatus}
+              onChange={setFilterStatus}
+              className="md:!w-40 w-full "
+            >
+              <Option value="all">All Status</Option>
+              <Option value="active">Active</Option>
+              <Option value="inactive">Inactive</Option>
+              <Option value="suspended">Suspended</Option>
+            </Select>
           </div>
         }
       >
@@ -183,6 +176,7 @@ export default function AllCustomer() {
           rowSelection={rowSelection}
           dataSource={filteredCustomers}
           columns={columns}
+          loading={Loader({ loading })}
           rowKey="id"
           pagination={
             filteredCustomers.length > 10

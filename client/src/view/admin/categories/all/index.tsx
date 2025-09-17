@@ -1,6 +1,15 @@
 import { useState } from "react";
 import { showConfirmDelete } from "@/components/re-useable/delete-modal";
-import { Button, Card, Col, Dropdown, Input, message, Typography } from "antd";
+import {
+  Button,
+  Card,
+  Col,
+  Dropdown,
+  Input,
+  message,
+  Skeleton,
+  Typography,
+} from "antd";
 import { DashboardTitle } from "@/components/re-useable/dashboard-titile";
 import ToolbarButton from "@/components/re-useable/toolbar-button";
 import { MdAddCircleOutline, MdOutlineSearch } from "react-icons/md";
@@ -10,6 +19,7 @@ import CategoryForm from "../form";
 import { useCategories, useDeleteCategory } from "@/hooks/admin/categories";
 import { BsBox, BsThreeDots } from "react-icons/bs";
 import dayjs from "dayjs";
+import Loader from "@/components/re-useable/loader";
 
 const { Title, Text } = Typography;
 
@@ -18,7 +28,7 @@ export default function CategoriesAll() {
   const [searchText, setSearchText] = useState<string>("");
   const [updateData, setUpdateData] = useState<TCategoryPayload | null>(null);
   const { deleteItem } = useDeleteCategory();
-  const { categories, refetch } = useCategories();
+  const { categories, refetch, loading } = useCategories();
 
   // Add Category
   const handleAdd = () => {
@@ -91,11 +101,7 @@ export default function CategoriesAll() {
           description="Manage and organize all categories in one place"
         />
         <div className="flex items-center gap-x-3">
-          <ToolbarButton
-            onPdfClick={() => console.log("PDF Export")}
-            onExcelClick={() => console.log("Excel Export")}
-            onRefreshClick={() => console.log("Data Refreshed")}
-          />
+          <ToolbarButton onRefreshClick={() => refetch()} />
           <Button
             onClick={handleAdd}
             type="primary"
@@ -142,53 +148,92 @@ export default function CategoriesAll() {
           </div>
         }
       >
-        <div className="grid gap-4 md:grid-cols-3 sm:grid-cols-2 grid-cols-1">
-          {filteredCategories?.map((cat) => (
-            <Col key={cat.id}>
-              <Card className=" text-center relative">
-                {/* Dropdown for dots */}
-                <Dropdown
-                  menu={{
-                    items: menuItems,
-                    onClick: (e) => handleMenuClick(e, cat), // pass cat explicitly
-                  }}
-                  trigger={["click"]}
-                  placement="bottomRight"
-                  overlayStyle={{ minWidth: "8rem" }}
-                >
-                  <div className="absolute right-3 top-3 cursor-pointer w-8 h-8 bg-[#005555]/10 hover:bg-[#005555]/20 rounded-full flex items-center justify-center">
-                    <BsThreeDots color="#005555" size={22} />
+        {loading ? (
+          <div className="grid gap-4 md:grid-cols-3 sm:grid-cols-2 grid-cols-1">
+            {[...Array(6)].map((_, index) => (
+              <Col key={index}>
+                <Card className="text-center relative">
+                  {/* Skeleton Icon */}
+                  <div className="bg-blue-100 rounded-full p-4 mb-4 flex w-max mx-auto items-center justify-center">
+                    <Skeleton.Avatar active size={24} shape="circle" />
                   </div>
-                </Dropdown>
 
-                {/* Optional Icon */}
-                <div className="bg-blue-100 text-blue-600 rounded-full p-4 mb-4 flex w-max mx-auto items-center text-center">
-                  <BsBox size={24} />
-                </div>
-                {/* Category Name */}
-                <Title level={5} className="!mb-2 ">
-                  {cat?.name}
-                </Title>
+                  {/* Skeleton Title */}
+                  <Skeleton.Input
+                    style={{ width: "100%", height: 24, margin: "0 auto 8px" }}
+                    active
+                    size="small"
+                  />
 
-                {/* Description */}
-                <Text type="secondary" className="">
-                  {cat?.description}
-                </Text>
+                  {/* Skeleton Description */}
+                  <Skeleton
+                    paragraph={{
+                      rows: 1,
+                      width: "100%",
+                      style: { margin: "12px 0 0" },
+                    }}
+                    active
+                  />
 
-                {/* Date */}
-                <Text type="secondary" className="text-xs block !mt-4">
-                  Added: {dayjs(cat?.createdAt).format("MMMM D, YYYY")}
-                </Text>
-              </Card>
-            </Col>
-          ))}
+                  {/* Skeleton Date */}
+                  <Skeleton.Input
+                    style={{ width: 100, height: 14, margin: "12px auto 0" }}
+                    active
+                    size="small"
+                  />
+                </Card>
+              </Col>
+            ))}
+          </div>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-3 sm:grid-cols-2 grid-cols-1">
+            {filteredCategories?.map((cat) => (
+              <Col key={cat.id}>
+                <Card className=" text-center relative">
+                  {/* Dropdown for dots */}
+                  <Dropdown
+                    menu={{
+                      items: menuItems,
+                      onClick: (e) => handleMenuClick(e, cat), // pass cat explicitly
+                    }}
+                    trigger={["click"]}
+                    placement="bottomRight"
+                    overlayStyle={{ minWidth: "8rem" }}
+                  >
+                    <div className="absolute right-3 top-3 cursor-pointer w-8 h-8 bg-[#005555]/10 hover:bg-[#005555]/20 rounded-full flex items-center justify-center">
+                      <BsThreeDots color="#005555" size={22} />
+                    </div>
+                  </Dropdown>
 
-          {filteredCategories.length === 0 && (
-            <p className="text-center text-gray-500 col-span-full">
-              No categories found
-            </p>
-          )}
-        </div>
+                  {/* Optional Icon */}
+                  <div className="bg-blue-100 text-blue-600 rounded-full p-4 mb-4 flex w-max mx-auto items-center text-center">
+                    <BsBox size={24} />
+                  </div>
+                  {/* Category Name */}
+                  <Title level={5} className="!mb-2 ">
+                    {cat?.name}
+                  </Title>
+
+                  {/* Description */}
+                  <Text type="secondary" className="">
+                    {cat?.description}
+                  </Text>
+
+                  {/* Date */}
+                  <Text type="secondary" className="text-xs block !mt-4">
+                    Added: {dayjs(cat?.createdAt).format("MMMM D, YYYY")}
+                  </Text>
+                </Card>
+              </Col>
+            ))}
+          </div>
+        )}
+
+        {filteredCategories.length === 0 && (
+          <p className="text-center text-gray-500 col-span-full">
+            No categories found
+          </p>
+        )}
       </Card>
     </div>
   );

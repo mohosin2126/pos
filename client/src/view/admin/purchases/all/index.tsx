@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import { DashboardTitle } from "@/components/re-useable/dashboard-titile";
 import ToolbarButton from "@/components/re-useable/toolbar-button";
@@ -11,9 +10,10 @@ import { ActionButton } from "@/components/re-useable/action-button";
 const { Option } = Select;
 import { MdAddCircleOutline } from "react-icons/md";
 import { useDeletePurchase, usePurchases } from "@/hooks/admin/purchase";
+import Loader from "@/components/re-useable/loader";
 
 export default function Purchases() {
-  const { purchases, refetch } = usePurchases();
+  const { purchases, refetch, loading } = usePurchases();
   const [searchText, setSearchText] = useState<string>("");
   const [filterStatus, setFilterStatus] = useState<
     "all" | "pending" | "approved" | "rejected"
@@ -131,11 +131,7 @@ export default function Purchases() {
           description="Manage and track all purchase orders in one place"
         />
         <div className="flex items-center gap-x-3">
-          <ToolbarButton
-            onPdfClick={() => console.log("PDF Export")}
-            onExcelClick={() => console.log("Excel Export")}
-            onRefreshClick={() => console.log("Data Refreshed")}
-          />
+          <ToolbarButton onRefreshClick={() => refetch()} />
           <Link to="/admin/purchase/add">
             <Button
               type="primary"
@@ -149,30 +145,26 @@ export default function Purchases() {
       </div>
       <Card
         title={
-          <div className="flex items-center justify-between gap-4 flex-wrap my-6">
-            <div className="flex md:items-center justify-between flex-col md:flex-row gap-4 w-full">
-              <Input
-                placeholder="Search by reference no or supplier..."
-                prefix={<MdOutlineSearch color="gray" size={16} />}
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-                className="md:!w-72 "
-                allowClear
-              />
-              <div className="flex items-center gap-4">
-                <Select
-                  value={filterStatus}
-                  onChange={setFilterStatus}
-                  className="md:!w-40 w-full "
-                >
-                  <Option value="all">All Status</Option>
-                  <Option value="ordered">Ordered</Option>
-                  <Option value="received">Received</Option>
-                  <Option value="pending">Pending</Option>
-                  <Option value="cancelled">Cancelled</Option>
-                </Select>
-              </div>
-            </div>
+          <div className="flex md:items-center flex-col md:flex-row gap-4 w-full my-6">
+            <Input
+              placeholder="Search by reference no or supplier..."
+              prefix={<MdOutlineSearch color="gray" size={16} />}
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              className="md:!w-72 !font-normal"
+              allowClear
+            />
+            <Select
+              value={filterStatus}
+              onChange={setFilterStatus}
+              className="md:!w-40 w-full "
+            >
+              <Option value="all">All Status</Option>
+              <Option value="ordered">Ordered</Option>
+              <Option value="received">Received</Option>
+              <Option value="pending">Pending</Option>
+              <Option value="cancelled">Cancelled</Option>
+            </Select>
           </div>
         }
       >
@@ -180,6 +172,7 @@ export default function Purchases() {
           rowSelection={rowSelection}
           dataSource={filteredData}
           columns={columns}
+          loading={Loader({ loading })}
           rowKey="id"
           pagination={
             filteredData.length > 10

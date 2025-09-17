@@ -21,9 +21,11 @@ import ToolbarButton from "@/components/re-useable/toolbar-button";
 import type { TableProps } from "antd";
 import type { TUserPayload, TUseUsersResult } from "@/interface/common";
 import { useDeleteUser, useUsers } from "@/hooks/admin/user";
+import { RiResetLeftFill } from "react-icons/ri";
+import Loader from "@/components/re-useable/loader";
 
 export default function AllUsers() {
-  const { users, refetch }: TUseUsersResult = useUsers();
+  const { users, refetch, loading }: TUseUsersResult = useUsers();
   const [searchText, setSearchText] = useState<string>("");
   const [filterStatus, setFilterStatus] = useState<
     "all" | "active" | "inactive"
@@ -171,6 +173,13 @@ export default function AllUsers() {
     return matchesSearch && matchesStatus && matchesRole && matchesBlood;
   });
 
+  const handleReset = () => {
+    setSearchText("");
+    setFilterStatus("all");
+    setFilterRole("all");
+    setFilterBlood("all");
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex md:items-center justify-between flex-col md:flex-row gap-6">
@@ -179,11 +188,7 @@ export default function AllUsers() {
           description="Show all user and more view"
         />
         <div className="flex items-center gap-x-3">
-          <ToolbarButton
-            onPdfClick={() => console.log("PDF Export")}
-            onExcelClick={() => console.log("Excel Export")}
-            onRefreshClick={() => console.log("Data Refreshed")}
-          />
+          <ToolbarButton onRefreshClick={() => refetch()} />
           <Link to="/admin/user/add">
             <Button
               type="primary"
@@ -197,55 +202,61 @@ export default function AllUsers() {
       </div>
       <Card
         title={
-          <div className="flex items-center justify-between gap-4 flex-wrap my-6">
-            <div className="flex md:items-center justify-between flex-col md:flex-row gap-4 w-full">
-              <Input
-                placeholder="Search by name or email..."
-                prefix={<MdOutlineSearch color="gray" size={16} />}
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-                className="md:!w-72 font-normal "
-                allowClear
-              />
-              <div className="flex flex-col md:flex-row items-center gap-4">
-                <Select
-                  value={filterStatus}
-                  onChange={setFilterStatus}
-                  className="md:!w-40 w-full "
-                >
-                  <Option value="all">All Status</Option>
-                  <Option value="active">Active</Option>
-                  <Option value="inactive">Inactive</Option>
-                  <Option value="suspended">Suspended</Option>
-                </Select>
-                <Select
-                  value={filterRole}
-                  onChange={setFilterRole}
-                  className="md:!w-40 w-full "
-                >
-                  <Option value="all">All Role</Option>
-                  <Option value="admin">Admin</Option>
-                  <Option value="manager">Manager</Option>
-                  <Option value="user">User</Option>
-                </Select>
+          <div className="flex md:items-center flex-col md:flex-row gap-4 w-full my-6">
+            <Input
+              placeholder="Search by name or email..."
+              prefix={<MdOutlineSearch color="gray" size={16} />}
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              className="md:!w-72 font-normal "
+              allowClear
+            />
 
-                <Select
-                  value={filterBlood}
-                  onChange={setFilterBlood}
-                  className="md:!w-40 w-full "
-                >
-                  <Option value="all">All Blood</Option>
-                  <Option value="A+">A+</Option>
-                  <Option value="A-">A-</Option>
-                  <Option value="B+">B+</Option>
-                  <Option value="B-">B-</Option>
-                  <Option value="AB+">AB+</Option>
-                  <Option value="AB-">AB-</Option>
-                  <Option value="O+">O+</Option>
-                  <Option value="O-">O-</Option>
-                </Select>
-              </div>
-            </div>
+            <Select
+              value={filterStatus}
+              onChange={setFilterStatus}
+              className="md:!w-40 w-full "
+            >
+              <Option value="all">All Status</Option>
+              <Option value="active">Active</Option>
+              <Option value="inactive">Inactive</Option>
+              <Option value="suspended">Suspended</Option>
+            </Select>
+            <Select
+              value={filterRole}
+              onChange={setFilterRole}
+              className="md:!w-40 w-full "
+            >
+              <Option value="all">All Role</Option>
+              <Option value="admin">Admin</Option>
+              <Option value="manager">Manager</Option>
+              <Option value="user">User</Option>
+            </Select>
+
+            <Select
+              value={filterBlood}
+              onChange={setFilterBlood}
+              className="md:!w-40 w-full "
+            >
+              <Option value="all">All Blood</Option>
+              <Option value="A+">A+</Option>
+              <Option value="A-">A-</Option>
+              <Option value="B+">B+</Option>
+              <Option value="B-">B-</Option>
+              <Option value="AB+">AB+</Option>
+              <Option value="AB-">AB-</Option>
+              <Option value="O+">O+</Option>
+              <Option value="O-">O-</Option>
+            </Select>
+            <Button
+              type="primary"
+              onClick={handleReset}
+              danger
+              className="w-max"
+              icon={<RiResetLeftFill size={16} />}
+            >
+              Reset
+            </Button>
           </div>
         }
       >
@@ -253,6 +264,7 @@ export default function AllUsers() {
           rowSelection={rowSelection}
           dataSource={filteredUsers}
           columns={columns}
+          loading={Loader({ loading })}
           rowKey="username"
           pagination={
             users.length > 10

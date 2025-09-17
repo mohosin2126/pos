@@ -18,6 +18,7 @@ import POSForm from "@/view/admin/pos/create";
 import PurchaseOrder from "@/view/admin/purchase-order";
 import PurchaseReturn from "@/view/admin/purchase-return";
 import SalesRecords from "@/view/admin/sales-records/all";
+import RolesAndPermissions from "@/view/admin/roles-and-permissions";
 import Stock from "@/view/admin/stock";
 import OutOfStock from "@/view/admin/activity-products/out-of-stock";
 import LowStock from "@/view/admin/activity-products/low-stock";
@@ -31,6 +32,7 @@ import AllInvoice from "@/view/admin/invoices/all/";
 import Unauthorized from "@/components/unauthorized";
 import AdminGuard from "@/routes/private";
 import ViewInvoice from "@/view/admin/invoices/view";
+
 const adminRoutes = [
   { path: "/unauthorized", element: <Unauthorized /> },
   {
@@ -60,6 +62,10 @@ const adminRoutes = [
             path: "access",
             children: [
               { path: "roles", element: <Roles /> },
+              {
+                path: "roles-and-permissions",
+                element: <RolesAndPermissions />,
+              },
             ],
           },
           {

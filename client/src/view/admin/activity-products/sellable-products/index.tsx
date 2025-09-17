@@ -7,6 +7,7 @@ import { useSellableProducts } from "@/hooks/admin/inventory";
 import { useState } from "react";
 import { ActionButton } from "@/components/re-useable/action-button";
 import dayjs from "dayjs";
+import Loader from "@/components/re-useable/loader";
 
 const { Option } = Select;
 
@@ -16,7 +17,7 @@ export default function SellableProducts() {
     "all" | "active" | "inactive"
   >("all");
 
-  const { products, refetch } = useSellableProducts();
+  const { products, refetch, loading } = useSellableProducts();
   // console.log("products :", products);
 
   const rowSelection = {
@@ -142,11 +143,7 @@ export default function SellableProducts() {
           description="View and manage all products that are currently available for sale"
         />
         <div className="flex items-center gap-x-3">
-          <ToolbarButton
-            onPdfClick={() => console.log("PDF Export")}
-            onExcelClick={() => console.log("Excel Export")}
-            onRefreshClick={() => console.log("Data Refreshed")}
-          />
+          <ToolbarButton onRefreshClick={() => refetch()} />
           <Link to="/admin/product/create">
             <Button
               type="primary"
@@ -161,26 +158,24 @@ export default function SellableProducts() {
 
       <Card
         title={
-          <div className="flex items-center justify-between gap-4 flex-wrap my-6">
-            <div className="flex md:items-center justify-between flex-col md:flex-row gap-4 w-full">
-              <Input
-                placeholder="Search by name or SKU..."
-                prefix={<MdOutlineSearch color="gray" size={16} />}
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-                className="md:!w-72 !font-normal"
-                allowClear
-              />
-              <Select
-                value={filterStatus}
-                onChange={setFilterStatus}
-                className="md:!w-40 w-full"
-              >
-                <Option value="all">All Status</Option>
-                <Option value="active">Active</Option>
-                <Option value="inactive">Inactive</Option>
-              </Select>
-            </div>
+          <div className="flex md:items-center flex-col md:flex-row gap-4 w-full my-6">
+            <Input
+              placeholder="Search by name or SKU..."
+              prefix={<MdOutlineSearch color="gray" size={16} />}
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              className="md:!w-72 !font-normal"
+              allowClear
+            />
+            <Select
+              value={filterStatus}
+              onChange={setFilterStatus}
+              className="md:!w-40 w-full"
+            >
+              <Option value="all">All Status</Option>
+              <Option value="active">Active</Option>
+              <Option value="inactive">Inactive</Option>
+            </Select>
           </div>
         }
       >
@@ -188,6 +183,7 @@ export default function SellableProducts() {
           rowSelection={rowSelection}
           dataSource={filteredData}
           columns={columns}
+          loading={Loader({ loading })}
           rowKey="id"
           pagination={
             filteredData.length > 10

@@ -18,6 +18,8 @@ import type { TSupplierPayload } from "@/interface/common";
 import { useSuppliers } from "@/hooks/admin/supplier";
 import { DashboardTitle } from "@/components/re-useable/dashboard-titile";
 import ToolbarButton from "@/components/re-useable/toolbar-button";
+import { RiResetLeftFill } from "react-icons/ri";
+import Loader from "@/components/re-useable/loader";
 
 const { Option } = Select;
 
@@ -26,7 +28,7 @@ export default function AllSupplier() {
   const [filterStatus, setFilterStatus] = useState<
     "all" | "active" | "inactive"
   >("all");
-  const { suppliers, refetch } = useSuppliers();
+  const { suppliers, refetch, loading } = useSuppliers();
 
   const handleDelete = (record: any) => {
     showConfirmDelete({
@@ -139,11 +141,7 @@ export default function AllSupplier() {
           description="Manage and track all suppliers in one place"
         />
         <div className="flex items-center gap-x-3">
-          <ToolbarButton
-            onPdfClick={() => console.log("PDF Export")}
-            onExcelClick={() => console.log("Excel Export")}
-            onRefreshClick={() => console.log("Data Refreshed")}
-          />
+          <ToolbarButton onRefreshClick={() => refetch()} />
           <Link to="/admin/supplier/create">
             <Button
               type="primary"
@@ -158,28 +156,24 @@ export default function AllSupplier() {
 
       <Card
         title={
-          <div className="flex items-center justify-between gap-4 flex-wrap my-6">
-            <div className="flex md:items-center justify-between flex-col md:flex-row gap-4 w-full">
-              <Input
-                placeholder="Search by company or contact..."
-                prefix={<MdOutlineSearch color="gray" size={16} />}
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-                className="md:!w-72"
-                allowClear
-              />
-              <div className="flex items-center gap-4">
-                <Select
-                  value={filterStatus}
-                  onChange={setFilterStatus}
-                  className="md:!w-40 w-full"
-                >
-                  <Option value="all">All Status</Option>
-                  <Option value="active">Active</Option>
-                  <Option value="inactive">Inactive</Option>
-                </Select>
-              </div>
-            </div>
+          <div className="flex md:items-center  flex-col md:flex-row gap-4 w-full my-6">
+            <Input
+              placeholder="Search by company or contact..."
+              prefix={<MdOutlineSearch color="gray" size={16} />}
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              className="md:!w-72 font-normal"
+              allowClear
+            />
+            <Select
+              value={filterStatus}
+              onChange={setFilterStatus}
+              className="md:!w-40 w-full"
+            >
+              <Option value="all">All Status</Option>
+              <Option value="active">Active</Option>
+              <Option value="inactive">Inactive</Option>
+            </Select>
           </div>
         }
       >
@@ -187,6 +181,7 @@ export default function AllSupplier() {
           rowSelection={rowSelection}
           dataSource={filteredData}
           columns={columns}
+          loading={Loader({ loading })}
           rowKey="id"
           pagination={
             filteredData.length > 10

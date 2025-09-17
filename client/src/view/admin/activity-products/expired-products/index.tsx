@@ -7,6 +7,7 @@ import { useExpiredProducts } from "@/hooks/admin/inventory";
 import { useState } from "react";
 import dayjs from "dayjs";
 import { ActionButton } from "@/components/re-useable/action-button";
+import Loader from "@/components/re-useable/loader";
 const { Option } = Select;
 
 export default function ExpiredProducts() {
@@ -15,7 +16,7 @@ export default function ExpiredProducts() {
     "all" | "active" | "inactive"
   >("all");
 
-  const { products } = useExpiredProducts();
+  const { products, refetch, loading } = useExpiredProducts();
 
   const rowSelection = {
     onChange: (selectedRowKeys: React.Key[], selectedRows: any[]) => {
@@ -141,11 +142,7 @@ export default function ExpiredProducts() {
         />
 
         <div className="flex items-center gap-x-3">
-          <ToolbarButton
-            onPdfClick={() => console.log("PDF Export")}
-            onExcelClick={() => console.log("Excel Export")}
-            onRefreshClick={() => console.log("Data Refreshed")}
-          />
+          <ToolbarButton onRefreshClick={() => refetch()} />
           <Link to="#">
             <Button
               type="primary"
@@ -159,26 +156,24 @@ export default function ExpiredProducts() {
       </div>
       <Card
         title={
-          <div className="flex items-center justify-between gap-4 flex-wrap my-6">
-            <div className="flex md:items-center justify-between flex-col md:flex-row gap-4 w-full">
-              <Input
-                placeholder="Search by name or SKU..."
-                prefix={<MdOutlineSearch color="gray" size={16} />}
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-                className="md:!w-72 !font-normal"
-                allowClear
-              />
-              <Select
-                value={filterStatus}
-                onChange={setFilterStatus}
-                className="md:!w-40 w-full"
-              >
-                <Option value="all">All Status</Option>
-                <Option value="active">Active</Option>
-                <Option value="inactive">Inactive</Option>
-              </Select>
-            </div>
+          <div className="flex md:items-center flex-col md:flex-row gap-4 w-full my-6">
+            <Input
+              placeholder="Search by name or SKU..."
+              prefix={<MdOutlineSearch color="gray" size={16} />}
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              className="md:!w-72 !font-normal"
+              allowClear
+            />
+            <Select
+              value={filterStatus}
+              onChange={setFilterStatus}
+              className="md:!w-40 w-full"
+            >
+              <Option value="all">All Status</Option>
+              <Option value="active">Active</Option>
+              <Option value="inactive">Inactive</Option>
+            </Select>
           </div>
         }
       >
@@ -186,6 +181,7 @@ export default function ExpiredProducts() {
           rowSelection={rowSelection}
           dataSource={filteredData}
           columns={columns}
+          loading={Loader({ loading })}
           rowKey="id"
           pagination={
             filteredData.length > 10

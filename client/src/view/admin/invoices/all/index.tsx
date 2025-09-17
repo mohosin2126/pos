@@ -10,11 +10,12 @@ import type { ColumnsType } from "antd/es/table";
 import type { TInvoice } from "@/interface/common";
 import dayjs from "dayjs";
 import { ActionButton } from "@/components/re-useable/action-button";
+import Loader from "@/components/re-useable/loader";
 
 const { Option } = Select;
 
 export default function AllInvoice() {
-  const { invoices, loading } = useInvoices();
+  const { invoices, refetch, loading } = useInvoices();
   const [searchText, setSearchText] = useState<string>("");
   const [filterStatus, setFilterStatus] = useState<
     "all" | "issued" | "paid" | "overdue"
@@ -94,6 +95,13 @@ export default function AllInvoice() {
     return matchesSearch && matchesStatus;
   });
 
+  const rowSelection = {
+    onChange: (selectedRowKeys: React.Key[], selectedRows: any[]) => {
+      console.log("Selected Row Keys: ", selectedRowKeys);
+      console.log("Selected Rows: ", selectedRows);
+    },
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex md:items-center justify-between flex-col md:flex-row gap-6">
@@ -102,11 +110,7 @@ export default function AllInvoice() {
           description="Manage and track all invoices with status, payments, and balances"
         />
         <div className="flex items-center gap-x-3">
-          <ToolbarButton
-            onPdfClick={() => console.log("PDF Export")}
-            onExcelClick={() => console.log("Excel Export")}
-            onRefreshClick={() => console.log("Data Refreshed")}
-          />
+          <ToolbarButton onRefreshClick={() => refetch()} />
           <Link to="#">
             <Button
               type="primary"
@@ -121,39 +125,37 @@ export default function AllInvoice() {
 
       <Card
         title={
-          <div className="flex items-center justify-between gap-4 flex-wrap my-6">
-            <div className="flex md:items-center justify-between flex-col md:flex-row gap-4 w-full">
-              {/* 🔍 Search */}
-              <Input
-                placeholder="Search by invoice no or amount..."
-                prefix={<MdOutlineSearch color="gray" size={16} />}
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-                className="md:!w-72 font-normal "
-                allowClear
-              />
+          <div className="flex md:items-center flex-col md:flex-row gap-4 w-full my-6">
+            <Input
+              placeholder="Search by invoice no or amount..."
+              prefix={<MdOutlineSearch color="gray" size={16} />}
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              className="md:!w-72 font-normal "
+              allowClear
+            />
 
-              <Space>
-                <Select
-                  value={filterStatus}
-                  onChange={setFilterStatus}
-                  className="md:!w-40 w-full"
-                >
-                  <Option value="all">All Status</Option>
-                  <Option value="issued">Issued</Option>
-                  <Option value="paid">Paid</Option>
-                  <Option value="overdue">Overdue</Option>
-                </Select>
-              </Space>
-            </div>
+            <Space>
+              <Select
+                value={filterStatus}
+                onChange={setFilterStatus}
+                className="md:!w-40 w-full"
+              >
+                <Option value="all">All Status</Option>
+                <Option value="issued">Issued</Option>
+                <Option value="paid">Paid</Option>
+                <Option value="overdue">Overdue</Option>
+              </Select>
+            </Space>
           </div>
         }
       >
         <Table<TInvoice>
+          rowSelection={rowSelection}
           dataSource={filteredInvoices}
           columns={columns}
+          loading={Loader({ loading })}
           rowKey="id"
-          loading={loading}
           pagination={
             filteredInvoices.length > 10
               ? {

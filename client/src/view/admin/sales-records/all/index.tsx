@@ -9,17 +9,16 @@ import { ActionButton } from "@/components/re-useable/action-button";
 import { Link } from "react-router-dom";
 import dayjs from "dayjs";
 import { useSales } from "@/hooks/admin/sales";
+import Loader from "@/components/re-useable/loader";
 
 const { Option } = Select;
 
 export default function SalesRecords() {
-  const { sales } = useSales();
+  const { sales, refetch, loading } = useSales();
   const [searchText, setSearchText] = useState<string>("");
   const [filterStatus, setFilterStatus] = useState<
     "all" | "issued" | "paid" | "void"
   >("all");
-
-  console.log("sales data is: ", sales);
 
   const rowSelection: TableProps<any>["rowSelection"] = {
     onChange: (selectedRowKeys, selectedRows) => {
@@ -145,11 +144,7 @@ export default function SalesRecords() {
           description="Manage and track all sales invoices"
         />
         <div className="flex items-center gap-x-3">
-          <ToolbarButton
-            onPdfClick={() => console.log("PDF Export")}
-            onExcelClick={() => console.log("Excel Export")}
-            onRefreshClick={() => console.log("Data Refreshed")}
-          />
+          <ToolbarButton onRefreshClick={() => refetch()} />
           <Link to="#">
             <Button
               type="primary"
@@ -164,29 +159,25 @@ export default function SalesRecords() {
 
       <Card
         title={
-          <div className="flex items-center justify-between gap-4 flex-wrap my-6">
-            <div className="flex md:items-center justify-between flex-col md:flex-row gap-4 w-full">
-              <Input
-                placeholder="Search by invoice no or customer ID..."
-                prefix={<MdOutlineSearch color="gray" size={16} />}
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-                className="md:!w-72 !font-normal"
-                allowClear
-              />
-              <div className="flex items-center gap-4">
-                <Select
-                  value={filterStatus}
-                  onChange={setFilterStatus}
-                  className="md:!w-40 w-full"
-                >
-                  <Option value="all">All Status</Option>
-                  <Option value="issued">Issued</Option>
-                  <Option value="paid">Paid</Option>
-                  <Option value="void">Void</Option>
-                </Select>
-              </div>
-            </div>
+          <div className="flex md:items-center flex-col md:flex-row gap-4 w-full my-6">
+            <Input
+              placeholder="Search by invoice no or customer ID..."
+              prefix={<MdOutlineSearch color="gray" size={16} />}
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              className="md:!w-72 !font-normal"
+              allowClear
+            />
+            <Select
+              value={filterStatus}
+              onChange={setFilterStatus}
+              className="md:!w-40 w-full"
+            >
+              <Option value="all">All Status</Option>
+              <Option value="issued">Issued</Option>
+              <Option value="paid">Paid</Option>
+              <Option value="void">Void</Option>
+            </Select>
           </div>
         }
       >
@@ -194,6 +185,7 @@ export default function SalesRecords() {
           rowSelection={rowSelection}
           dataSource={filteredData}
           columns={columns}
+          loading={Loader({ loading })}
           rowKey="saleId"
           pagination={
             filteredData?.length > 10

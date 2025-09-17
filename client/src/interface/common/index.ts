@@ -1,3 +1,5 @@
+import { SpinProps } from "antd";
+
 // for common hooks
 export interface TOption {
   label: string;
@@ -313,3 +315,7 @@ export interface TInvoiceResponse {
   data: TInvoice[];
   pagination: TPagination;
 }
+
+export type LoaderProps = {
+  loading: boolean | SpinProps;
+};
