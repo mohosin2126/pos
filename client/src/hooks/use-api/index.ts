@@ -25,11 +25,11 @@ useApi.interceptors.response.use(
   (error) => {
     if (
       error.response?.status === 401 &&
-      window.location.pathname !== "/auth/login"
+      window.location.pathname !== "/auth"
     ) {
       Cookies.remove("token");
       Cookies.remove("user");
-      window.location.href = "/auth/login";
+      window.location.href = "/auth";
     }
     return Promise.reject(error);
   }
