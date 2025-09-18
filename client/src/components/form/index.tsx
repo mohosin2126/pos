@@ -15,12 +15,15 @@ import { EyeInvisibleOutlined, EyeTwoTone } from "@ant-design/icons";
 import type { UploadProps } from "antd";
 import React from "react";
 import {
-    TCustomCheckboxProps, TCustomDateProps, TCustomDateRangeProps,
-    TCustomInputProps,
-    TCustomNumberInputProps,
-    TCustomSelectBoxProps,
-    TCustomSelectProps, TCustomTextAreaProps,
-    TFileUploadProps
+  TCustomCheckboxProps,
+  TCustomDateProps,
+  TCustomDateRangeProps,
+  TCustomInputProps,
+  TCustomNumberInputProps,
+  TCustomSelectBoxProps,
+  TCustomSelectProps,
+  TCustomTextAreaProps,
+  TFileUploadProps,
 } from "@/interface/form";
 
 const { RangePicker } = DatePicker;

@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { DashboardTitle } from "@/components/re-useable/dashboard-titile";
 import ToolbarButton from "@/components/re-useable/toolbar-button";
-import { Button, Card, Divider, Input, message, Modal } from "antd";
+import { Button, Card, Divider, Form, Input, message, Modal } from "antd";
 import { MdAddCircleOutline, MdStore } from "react-icons/md";
 import { useEffect, useRef, useState } from "react";
 import type { TPOSOrderPayload } from "@/interface/common";
@@ -23,7 +23,11 @@ import {
   FaUser,
 } from "react-icons/fa";
 import { useProducts } from "@/hooks/admin/products";
-import { useSales } from "@/hooks/admin/sales";
+import { useCreateSale, useSales } from "@/hooks/admin/sales";
+import CustomModal from "@/components/modal";
+import POSForm from "../create";
+import { CustomInput } from "@/components/form";
+import { generateReferenceNo } from "@/utils/generate-ref";
 
 const { Search } = Input;
 
@@ -95,16 +99,27 @@ const mockProducts = [
   },
 ];
 
-interface CartItem {
+export type CartItem = {
+  barcode: string;
+  category?: string;
+  discount: number;
   id: number;
   name: string;
   price: number;
+  productId: number;
   quantity: number;
-  barcode: string;
-  category: string;
-  discount: number;
   tax: number;
-}
+};
+
+export type PayloadItem = {
+  productId: number;
+  quantity: number;
+  unitPrice: number;
+  discountType: "none" | "percentage" | "fixed";
+  discountAmount: number;
+  taxPercent: number;
+};
+
 export default function AllPos() {
   const [data, setData] = useState<TPOSOrderPayload[]>(demoPOSOrders);
   const { categories } = useCategories();
@@ -117,9 +132,14 @@ export default function AllPos() {
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [showInvoice, setShowInvoice] = useState<boolean>(false);
   const [orderNumber, setOrderNumber] = useState<string>(`ORD-${Date.now()}`);
-  const navigate = useNavigate();
+  const { createSale } = useCreateSale();
+
   const barcodeInputRef = useRef<any>(null);
-  const { products } = useProducts();
+  // const { products } = useProducts();
+
+  const [posAddress, setPosAddress] = useState<any | null>(null);
+
+  const [isOpen, setIsOpen] = useState(false);
 
   const { sales } = useSales();
 
@@ -144,7 +164,6 @@ export default function AllPos() {
     }
   };
 
-  // Add product to cart
   // Add product to cart
   const addToCart = (item: any) => {
     const existingItem = cartItems?.find((cart) => cart?.id === item?.id);
@@ -222,27 +241,52 @@ export default function AllPos() {
       message.error("Please enter customer name");
       return;
     }
-
+    if (!posAddress) {
+      message.error(
+        "Please fill the information.\nClick the Add More Information button"
+      );
+      return;
+    }
     setLoading(true);
     try {
       const totals = calculateTotals();
       const orderData = {
-        id: Date.now(),
-        orderNumber,
+        referenceNo: generateReferenceNo(),
+        saleDate: new Date().toISOString(),
+        status: "completed",
+        discountType: posAddress?.discountType || "none",
+        discountAmount: posAddress?.discountAmount || 0,
+        orderTaxPercent: posAddress?.orderTaxPercent || 0,
+        orderTaxAmount: posAddress?.orderTaxAmount || 0,
+        shippingCharge: posAddress?.shippingCharge || 0,
+        amountPaid: totals?.total || 0,
+        notes: posAddress?.notes || "Walk-in customer",
+        // orderNumber,
         customer: {
           name: customerName,
           phone: customerPhone || "N/A",
+          email: posAddress?.email || "N/A",
+          address: posAddress?.address || "N/A",
+          status: "active",
+          notes: "First time buyer",
         },
-        items: cartItems,
-        paymentMethod,
-        totals,
-        timestamp: new Date().toISOString(),
-        billerName: "Main POS",
+        items: cartItems.map((item: CartItem) => ({
+          productId: item.productId,
+          quantity: item.quantity,
+          unitPrice: item.price,
+          discountType: "none",
+          discountAmount: item.discount,
+          taxPercent: item.tax,
+        })),
+        // paymentMethod,
+        // billerName: "Main POS",
       };
-
-      console.log("Order placed:", orderData);
-      message.success("Order placed successfully!");
-      setShowInvoice(true);
+      const result = await createSale(orderData);
+      // console.log("Order placed:", orderData);
+      if (result?.success) {
+        message.success("Order placed successfully!");
+        setShowInvoice(true);
+      }
     } catch (error) {
       console.error(error);
       message.error("Failed to place order");
@@ -262,43 +306,27 @@ export default function AllPos() {
   // Filter items (check product fields)
   const filteredProducts = allItems.filter((item) => {
     const matchesSearch =
-      item.product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.product.barcode.includes(searchTerm);
+      ((item?.product?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ??
+        false) ||
+        item?.product?.barcode?.includes(searchTerm)) ??
+      false;
+
     return matchesSearch;
   });
 
   const totals = calculateTotals();
 
+  // console.log("pos address :", posAddress);
+
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex md:items-center justify-between flex-col md:flex-row gap-6">
-        <DashboardTitle
-          title="POS (Point of Sale) Orders"
-          description="Manage and track all POS sales in one place"
-        />
-        <div className="flex items-center gap-x-3">
-          <ToolbarButton
-            onPdfClick={() => console.log("PDF Export")}
-            onExcelClick={() => console.log("Excel Export")}
-            onRefreshClick={() => console.log("Data Refreshed")}
-          />
-          <Link to="/admin/pos/create">
-            <Button
-              type="primary"
-              icon={<MdAddCircleOutline />}
-              className="btn"
-            >
-              Create POS Order
-            </Button>
-          </Link>
-        </div>
-      </div>
+      <DashboardTitle
+        title="POS (Point of Sale) Orders"
+        description="Manage and track all POS sales in one place"
+      />
       <Card bodyStyle={{ padding: "0px 14px 14px" }}>
         <div className="flex-1 flex overflow-hidden">
-          {/* Left Panel - Product Search */}
           <div className="w-1/3 bg-white border-r border-gray-200 flex flex-col">
-            {/* Barcode Scanner */}
             <div className="p-4 border-b border-gray-200">
               <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
                 <FaBarcode />
@@ -315,7 +343,6 @@ export default function AllPos() {
               />
             </div>
 
-            {/* Product Search */}
             <div className="p-4 border-b border-gray-200">
               <Search
                 placeholder="Search products..."
@@ -325,12 +352,11 @@ export default function AllPos() {
               />
             </div>
 
-            {/* Products List */}
             <div className="flex-1 p-4 overflow-y-auto">
               <div className="space-y-2">
                 {filteredProducts.map((product) => (
                   <Card
-                    key={product.id}
+                    key={product?.id}
                     size="small"
                     className="cursor-pointer hover:shadow-md transition-shadow !mb-3"
                     onClick={() => addToCart(product)}
@@ -339,26 +365,26 @@ export default function AllPos() {
                       <div>
                         <Link
                           className="!w-max"
-                          to={`/admin/sales/view/${product.product.id}`}
+                          to={`/admin/sales/view/${product?.product.id}`}
                         >
                           <div className="font-medium text-sm !w-max">
-                            {product.product.name}
+                            {product?.product?.name}
                           </div>
                         </Link>
 
                         <div className="text-xs text-gray-500">
-                          {product.product?.category?.name}
+                          {product?.product?.category?.name}
                         </div>
                         <div className="text-xs text-gray-400">
-                          Stock: {product.product?.stockQuantity}
+                          Stock: {product?.product?.stockQuantity}
                         </div>
                       </div>
                       <div className="text-right">
                         <div className="font-bold text-green-600">
-                          ৳{product.unitPrice}
+                          ৳{product?.unitPrice}
                         </div>
                         <div className="text-xs text-gray-400">
-                          {product.product.barcode}
+                          {product?.product.barcode}
                         </div>
                       </div>
                     </div>
@@ -368,7 +394,6 @@ export default function AllPos() {
             </div>
           </div>
 
-          {/* Middle Panel - Shopping Cart */}
           <div className="w-1/3 bg-white border-r border-gray-200 flex flex-col">
             <div className="p-4 border-b border-gray-200">
               <h3 className="font-semibold text-gray-900 flex items-center gap-2">
@@ -438,9 +463,7 @@ export default function AllPos() {
             </div>
           </div>
 
-          {/* Right Panel - Customer & Payment */}
           <div className="w-1/3 bg-white flex flex-col">
-            {/* Customer Input */}
             <div className="p-4 border-b border-gray-200">
               <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
                 <FaUser />
@@ -461,6 +484,15 @@ export default function AllPos() {
                   prefix={<FaPhone className="text-gray-400" />}
                   className="w-full"
                 />
+                <Button className="outlet-btn" onClick={() => setIsOpen(true)}>
+                  Add More Information
+                </Button>
+                {!posAddress && (
+                  <p className="text-red-500 mt-2 text-sm">
+                    you have need to fill up more information, please add
+                    information.
+                  </p>
+                )}
               </div>
             </div>
 
@@ -475,7 +507,11 @@ export default function AllPos() {
                   type={paymentMethod === "cash" ? "primary" : "default"}
                   icon={<FaMoneyBillWave />}
                   onClick={() => setPaymentMethod("cash")}
-                  className="h-12"
+                  className={`${
+                    paymentMethod === "cash"
+                      ? "primary"
+                      : "!border hover:!border-[#186566] hover:!text-[#186566]"
+                  }  h-12 `}
                 >
                   Cash
                 </Button>
@@ -483,7 +519,11 @@ export default function AllPos() {
                   type={paymentMethod === "card" ? "primary" : "default"}
                   icon={<FaCreditCard />}
                   onClick={() => setPaymentMethod("card")}
-                  className="h-12"
+                  className={`${
+                    paymentMethod === "card"
+                      ? "primary"
+                      : "!border hover:!border-[#186566] hover:!text-[#186566]"
+                  }  h-12 `}
                 >
                   Card
                 </Button>
@@ -491,7 +531,11 @@ export default function AllPos() {
                   type={paymentMethod === "online" ? "primary" : "default"}
                   icon={<FaQrcode />}
                   onClick={() => setPaymentMethod("online")}
-                  className="h-12"
+                  className={`${
+                    paymentMethod === "online"
+                      ? "primary"
+                      : "!border hover:!border-[#186566] hover:!text-[#186566]"
+                  }  h-12 `}
                 >
                   Online Pay
                 </Button>
@@ -541,6 +585,17 @@ export default function AllPos() {
             </div>
           </div>
         </div>
+
+        {/* Modal */}
+        <CustomModal
+          isOpen={isOpen}
+          setIsOpen={() => setIsOpen(false)}
+          title="Add Your Information"
+          description="Add a new category to organize and manage your items effectively."
+          width="560px"
+        >
+          <POSForm setPosAddress={setPosAddress} setIsOpen={setIsOpen} />
+        </CustomModal>
 
         {/* Invoice Modal */}
         <Modal

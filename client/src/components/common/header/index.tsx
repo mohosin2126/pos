@@ -1,18 +1,16 @@
 import { Link } from "react-router-dom";
-import bangladesh from "../../../assets/flag/bangladesh.webp";
-import usa from "../../../assets/flag/usa.png";
-import china from "../../../assets/flag/china.png";
-import saudi from "../../../assets/flag/saudi.png";
+import bangladesh from "@/assets/flag/bangladesh.webp";
+import usa from "@/assets/flag/usa.png";
+import china from "@/assets/flag/china.png";
+import saudi from "@/assets/flag/saudi.png";
 import dayjs from "dayjs";
 import type { MenuProps } from "antd";
-import {TNotifications} from "@/interface/common";
-import {TDemoUser, TLang} from "@/interface/menu-and-common";
-
+import { TNotifications } from "@/interface/common";
+import { TDemoUser, TLang } from "@/interface/menu-and-common";
 
 export const notificationItems = (
   emails?: TNotifications[]
 ): MenuProps["items"] => {
-
   const items: MenuProps["items"] =
     emails?.slice(0, 6).map((item, idx) => ({
       key: item.id || idx,

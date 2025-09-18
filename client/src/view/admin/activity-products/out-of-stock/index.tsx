@@ -90,7 +90,7 @@ export default function OutOfStock() {
       key: "tags",
       render: (_: any, record: any) =>
         record?.product?.tags ? (
-          record?.product?.tags?.split(",").map((tag) => (
+          record?.product?.tags?.split(",").map((tag: string) => (
             <Tag color="blue" className="capitalize" key={tag}>
               {tag.trim()}
             </Tag>

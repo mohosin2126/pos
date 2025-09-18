@@ -86,7 +86,9 @@ export default function AllInvoice() {
 
   const filteredInvoices = invoices.filter((invoice) => {
     const matchesSearch =
-      invoice.invoiceNo.toLowerCase().includes(searchText.toLowerCase()) ||
+      (invoice.invoiceNo || "")
+        .toLowerCase()
+        .includes(searchText.toLowerCase()) ||
       invoice.totalAmount.toLowerCase().includes(searchText.toLowerCase());
 
     const matchesStatus =
