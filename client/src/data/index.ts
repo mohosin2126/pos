@@ -85,7 +85,7 @@ export const adminMenuItems: TMenuBlock[] = [
     title: "Inventory",
     menu: [
       {
-        label: "Categorie",
+        label: "Category",
         icon: FiBarChart2,
         href: "/admin/category/all",
       },

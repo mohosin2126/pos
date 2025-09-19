@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
-import {TSaleProps} from "@/interface/common";
+import { TSaleProps } from "@/interface/common";
 import useApi from "@/hooks/use-api";
-
+import { message } from "antd";
 
 export function useSales() {
   const [sales, setSales] = useState<TSaleProps[]>([]);
@@ -47,4 +47,23 @@ export function useSale(id: string | undefined) {
   }, [fetchSale]);
 
   return { sale, loading, refetch: fetchSale };
+}
+
+export function useCreateSale() {
+  const [error, setError] = useState<string[]>([]);
+
+  const createSale = async (data: any) => {
+    try {
+      const { data: result } = await useApi.post("/v1/admin/sale/create", data);
+      return result;
+    } catch (error: any) {
+      setError([
+        error?.response?.data?.message || "An unexpected error occurred.",
+      ]);
+      message.error(error?.response?.data?.message || "something went wrong!");
+      console.error("Error creating sale:", error?.response?.data?.message);
+    }
+  };
+
+  return { createSale, error };
 }

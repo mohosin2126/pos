@@ -1,7 +1,11 @@
 import { Dropdown, Tooltip } from "antd";
 import { Link } from "react-router-dom";
-import {TMenuItem, TNavIconbarProps, TNavLinkIconDropdownProps, TNavLinkProps} from "@/interface/menu-and-common";
-
+import {
+  TMenuItem,
+  TNavIconbarProps,
+  TNavLinkIconDropdownProps,
+  TNavLinkProps,
+} from "@/interface/menu-and-common";
 
 /* NavLinkIconDropdown */
 function NavLinkIconDropdown({
@@ -30,7 +34,6 @@ function NavLinkIconDropdown({
     <Dropdown
       menu={{ items: menuItems }}
       trigger={["hover"]}
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       placement={"rightTop" as any}
       popupRender={(menu) => <div className="ml-6">{menu}</div>}
     >

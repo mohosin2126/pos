@@ -99,6 +99,17 @@ body {
 .btn {
   @apply !bg-[#005555] hover:!bg-[#186566] hover:!text-[#69feb0] !text-white !border-none;
 }
+
+:where(.css-dev-only-do-not-override-1s1tzdh).ant-btn-variant-solid {
+  background-color: #005555 !important;
+  color: white !important;
+}
+:where(.css-dev-only-do-not-override-1s1tzdh).ant-btn-variant-outlined:not(
+    :disabled
+  ):not(.ant-btn-disabled):hover {
+  border: 1px solid #005555;
+  color: #005555 !important;
+}
 .outlet-btn {
   @apply !bg-white !text-black !border !border-[#186566] hover:!text-[#186566];
 }

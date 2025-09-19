@@ -52,14 +52,14 @@ export default function SupplierForm() {
         console.log("update for value:", supplierCode);
         await updateSupplier(id, payload);
         message.success("Supplier updated successfully!");
-        navigate("/admin/suppliers");
+        navigate("/admin/supplier/all");
       } else {
         // Include supplierCode during create
         payload = values;
         await createSupplier(payload);
         message.success("Supplier added successfully!");
         form.resetFields();
-        navigate("/admin/suppliers");
+        navigate("/admin/supplier/all");
       }
     } catch (error: any) {
       console.error(error);
