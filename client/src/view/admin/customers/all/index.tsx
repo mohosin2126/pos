@@ -140,7 +140,7 @@ export default function AllCustomer() {
           <Link to="/admin/user/add">
             <Button
               type="primary"
-              className="btn"
+              className="btn hover:!text-[#69feb0]"
               icon={<FaUserPlus size={16} />}
             >
               Add User

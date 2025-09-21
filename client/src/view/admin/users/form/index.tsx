@@ -5,7 +5,13 @@ import dayjs from "dayjs";
 import { useNavigate, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useCreateUser, useUpdateUser, useUser } from "@/hooks/admin/user";
-import {CustomCheckbox, CustomDate, CustomInput, CustomSelect, CustomTextArea} from "@/components/form";
+import {
+  CustomCheckbox,
+  CustomDate,
+  CustomInput,
+  CustomSelect,
+  CustomTextArea,
+} from "@/components/form";
 
 export default function UserForm() {
   const [form] = Form.useForm();
@@ -47,12 +53,12 @@ export default function UserForm() {
       if (isUpdate) {
         await updateUser(id, formattedValues);
         message.success("User updated successfully!");
-        navigate("/admin/users");
+        navigate("/admin/user/all");
       } else {
         await createUser(formattedValues);
         message.success("User added successfully!");
         form.resetFields();
-        navigate("/admin/users"); // redirect after success
+        navigate("/admin/user/all");
       }
     } catch (error: any) {
       setLoading(false);
@@ -296,7 +302,7 @@ export default function UserForm() {
           icon={<FaSave />}
           loading={loading}
           htmlType="submit"
-          className="btn !mt-5 !px-6"
+          className="btn hover:!text-[#69feb0] !mt-5 !px-6"
         >
           {isUpdate ? "Update User" : "Add User"}
         </Button>

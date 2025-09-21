@@ -319,3 +319,15 @@ export interface TInvoiceResponse {
 export type LoaderProps = {
   loading: boolean | SpinProps;
 };
+
+export type CartItem = {
+  barcode: string;
+  category?: string;
+  discount: number;
+  id: number;
+  name: string;
+  price: number;
+  productId: number;
+  quantity: number;
+  tax: number;
+};

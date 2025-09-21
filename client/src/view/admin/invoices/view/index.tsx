@@ -54,7 +54,7 @@ export default function ViewInvoice() {
             </Button>
           </Link>
           <Button
-            className="btn"
+            className="btn hover:!text-[#69feb0]"
             icon={<PrinterOutlined />}
             onClick={handlePrint}
           >

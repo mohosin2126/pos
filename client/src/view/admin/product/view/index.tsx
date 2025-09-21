@@ -314,7 +314,7 @@ export default function ProductDetails() {
                   <Button
                     size="large"
                     icon={<ShoppingCartOutlined />}
-                    className="btn"
+                    className="btn hover:!text-[#69feb0]"
                     disabled={(product?.stockQuantity ?? 0) <= 0}
                   >
                     Add to Cart

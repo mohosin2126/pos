@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import { RiCloseLargeFill, RiMenu3Fill } from "react-icons/ri";
 import { BsDot } from "react-icons/bs";
 import type { TNavLinkItem } from "@/interface/menu-and-common";
@@ -7,15 +7,14 @@ import type { TNavLinkItem } from "@/interface/menu-and-common";
 export default function Navbar() {
   const [isScroll, setIsScroll] = useState<boolean>(false);
   const [menuOpen, setMenuOpen] = useState<boolean>(false);
-  const [activeMenu, setActiveMenu] = useState<string>("Home");
-
   const toggleMenu = () => setMenuOpen((prev) => !prev);
 
   const navLinks: TNavLinkItem[] = [
     { title: "Home", href: "/" },
-    { title: "Features", href: "#features" },
-    { title: "Pricing", href: "#pricing" },
-    { title: "Contact", href: "#contact" },
+    { title: "Features", href: "/features" },
+    { title: "Pricing", href: "/pricing" },
+    { title: "Contact", href: "/contact" },
+    // { title: "About Us", href: "/about" },
   ];
 
   useEffect(() => {
@@ -48,25 +47,26 @@ export default function Navbar() {
 
         <nav className="hidden lg:flex justify-center items-center space-x-7">
           {navLinks.map((link, index) => (
-            <Link
+            <NavLink
               to={link.href}
               key={index}
-              className={`${
-                activeMenu == link?.title && "text-[#51f0cb]"
-              } relative font-medium pb-2 group hover:text-[#51f0cb] [transition:0.5s] flex items-center gap-1`}
-              onClick={() => setActiveMenu(link.title)}
+              className={({ isActive }) =>
+                `${
+                  isActive ? "text-[#51f0cb]" : ""
+                } relative font-normal pb-2 group hover:text-[#51f0cb] transition duration-500 flex items-center gap-1`
+              }
             >
-              <BsDot
-                className={`${
-                  activeMenu == link?.title ? "opacity-100" : "opacity-0"
-                }`}
-              />
-              {link.title}
-            </Link>
+              {({ isActive }) => (
+                <>
+                  <BsDot className={isActive ? "opacity-100" : "opacity-0"} />
+                  {link.title}
+                </>
+              )}
+            </NavLink>
           ))}
         </nav>
 
-        <div className="hidden lg:flex justify-end items-center gap-4 items-center">
+        <div className="hidden lg:flex justify-end items-center gap-4 ">
           <Link to="/auth" className="button" aria-label="Go to demo login">
             Demo
           </Link>
@@ -107,13 +107,17 @@ export default function Navbar() {
           onClick={() => setMenuOpen(false)}
         >
           {navLinks.map((link, index) => (
-            <Link
+            <NavLink
               to={link.href}
               key={index}
-              className="relative text-white pb-2 group font-medium hover:text-[#51f0cb] [transition:0.5s]"
+              className={({ isActive }) =>
+                `${
+                  isActive ? "text-[#51f0cb]" : ""
+                } relative font-medium pb-2 group hover:text-[#51f0cb] transition duration-500 flex items-center gap-1`
+              }
             >
               {link.title}
-            </Link>
+            </NavLink>
           ))}
         </nav>
         <div className="mt-6 text-center flex flex-col gap-3">

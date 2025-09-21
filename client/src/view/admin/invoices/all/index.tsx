@@ -116,7 +116,7 @@ export default function AllInvoice() {
           <Link to="#">
             <Button
               type="primary"
-              className="btn"
+              className="btn hover:!text-[#69feb0]"
               icon={<FaFileInvoice size={16} />}
             >
               Add Invoice

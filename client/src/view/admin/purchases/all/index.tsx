@@ -136,7 +136,7 @@ export default function Purchases() {
             <Button
               type="primary"
               icon={<MdAddCircleOutline />}
-              className="btn"
+              className="btn hover:!text-[#69feb0]"
             >
               Add Purchase
             </Button>

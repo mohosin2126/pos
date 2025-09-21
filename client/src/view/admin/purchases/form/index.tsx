@@ -9,7 +9,12 @@ import {
 import { useNavigate, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useProducts, useSuppliers } from "@/hooks/common";
-import {CustomDate, CustomInput, CustomSelect, CustomTextArea} from "@/components/form";
+import {
+  CustomDate,
+  CustomInput,
+  CustomSelect,
+  CustomTextArea,
+} from "@/components/form";
 
 export default function PurchaseForm() {
   const [form] = Form.useForm();
@@ -340,7 +345,7 @@ export default function PurchaseForm() {
           icon={<FaSave />}
           loading={loading}
           htmlType="submit"
-          className="btn !mt-5 !px-6"
+          className="btn hover:!text-[#69feb0] !mt-5 !px-6"
         >
           {isUpdate ? "Update Purchase" : "Add Purchase"}
         </Button>

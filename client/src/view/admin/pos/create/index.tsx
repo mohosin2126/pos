@@ -113,7 +113,7 @@ export default function POSForm({ setPosAddress, setIsOpen }: any) {
           icon={<FaSave />}
           loading={loading}
           htmlType="submit"
-          className="btn !mt-5 !px-6"
+          className="btn hover:!text-[#69feb0] !mt-5 !px-6"
         >
           Save POS
         </Button>

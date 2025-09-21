@@ -1,12 +1,7 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { DashboardTitle } from "@/components/re-useable/dashboard-titile";
-import ToolbarButton from "@/components/re-useable/toolbar-button";
-import { Button, Card, Divider, Form, Input, message, Modal } from "antd";
-import { MdAddCircleOutline, MdStore } from "react-icons/md";
+import { Button, Card, Divider, Input, message, Modal } from "antd";
 import { useEffect, useRef, useState } from "react";
-import type { TPOSOrderPayload } from "@/interface/common";
-import { demoPOSOrders } from "@/data";
-import { useCategories } from "@/hooks/admin/categories";
 import {
   FaBarcode,
   FaCalculator,
@@ -22,12 +17,11 @@ import {
   FaTrash,
   FaUser,
 } from "react-icons/fa";
-import { useProducts } from "@/hooks/admin/products";
 import { useCreateSale, useSales } from "@/hooks/admin/sales";
 import CustomModal from "@/components/modal";
 import POSForm from "../create";
-import { CustomInput } from "@/components/form";
 import { generateReferenceNo } from "@/utils/generate-ref";
+import { CartItem } from "@/interface/common";
 
 const { Search } = Input;
 
@@ -99,30 +93,7 @@ const mockProducts = [
   },
 ];
 
-export type CartItem = {
-  barcode: string;
-  category?: string;
-  discount: number;
-  id: number;
-  name: string;
-  price: number;
-  productId: number;
-  quantity: number;
-  tax: number;
-};
-
-export type PayloadItem = {
-  productId: number;
-  quantity: number;
-  unitPrice: number;
-  discountType: "none" | "percentage" | "fixed";
-  discountAmount: number;
-  taxPercent: number;
-};
-
 export default function AllPos() {
-  const [data, setData] = useState<TPOSOrderPayload[]>(demoPOSOrders);
-  const { categories } = useCategories();
   const [loading, setLoading] = useState<boolean>(false);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [customerName, setCustomerName] = useState<string>("");

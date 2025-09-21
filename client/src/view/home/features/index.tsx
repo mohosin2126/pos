@@ -1,3 +1,4 @@
+import Title from "@/components/title";
 import {
   HiShoppingCart,
   HiChartBar,
@@ -73,13 +74,10 @@ const Features = () => {
 
       <div className="relative z-10">
         {/* Heading */}
-        <div className="text-center mb-14">
-          <h2 className="text-4xl lg:text-5xl font-bold text-white mb-3">
-            Unleash limitless potential & versatile features
-          </h2>
-          <p className="text-[#a0aec0]">for every need</p>
-          <div className="mx-auto mt-6 w-16 h-[2px] bg-[#4fe7c4]"></div>
-        </div>
+        <Title
+          title="Unleash limitless potential & versatile features"
+          description="for every need"
+        />
 
         {/* Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-7">
