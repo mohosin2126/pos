@@ -5,7 +5,7 @@ import { IoArrowRedo } from "react-icons/io5";
 
 const Footer = () => {
   return (
-    <footer className="mt-16 border-t border-[#223041]">
+    <footer className="container mx-auto mt-16 border-t border-[#223041]">
       <div className="py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10 md:gap-8 text-[#c9d2df]">
           {/* Links */}
@@ -13,19 +13,28 @@ const Footer = () => {
             <h3 className="text-2xl font-semibold text-white">Links</h3>
             <ul className="mt-6 space-y-3">
               <li>
-                <Link to={"/"} className="text-[#46d4b5] hover:underline flex items-center gap-2">
+                <Link
+                  to={"/"}
+                  className="text-[#46d4b5] hover:underline flex items-center gap-2"
+                >
                   <IoArrowRedo size={20} />
                   Features
                 </Link>
               </li>
               <li>
-                <Link to={"/"} className="text-[#46d4b5] hover:underline flex items-center gap-2">
+                <Link
+                  to={"/"}
+                  className="text-[#46d4b5] hover:underline flex items-center gap-2"
+                >
                   <IoArrowRedo size={20} />
                   Pricing
                 </Link>
               </li>
               <li>
-                <Link to={"/"} className="text-[#46d4b5] hover:underline flex items-center gap-2">
+                <Link
+                  to={"/"}
+                  className="text-[#46d4b5] hover:underline flex items-center gap-2"
+                >
                   <IoArrowRedo size={20} />
                   Contact
                 </Link>
@@ -74,9 +83,7 @@ const Footer = () => {
               Questions? We've got answers. Try us.
             </p>
             <div className="mt-6">
-              <button className="button">
-                EMAIL US
-              </button>
+              <button className="button">EMAIL US</button>
             </div>
           </div>
         </div>
@@ -84,7 +91,10 @@ const Footer = () => {
         {/* Bottom copyright bar */}
         <div className="border-t border-[#223041] mt-10 pt-6 text-[#93a3b5]">
           <p className="text-center text-sm">
-            Copyright 2025 © — <Link to="#" className="text-[#46d4b5]">Gen-Z Dev</Link>
+            Copyright 2025 © —{" "}
+            <Link to="#" className="text-[#46d4b5]">
+              Gen-Z Dev
+            </Link>
           </p>
         </div>
       </div>

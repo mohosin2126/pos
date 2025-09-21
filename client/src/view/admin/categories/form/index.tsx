@@ -1,4 +1,3 @@
-
 import { Button, Form, message } from "antd";
 import { CustomInput, CustomTextArea } from "@/components/form";
 import { FaSave } from "react-icons/fa";
@@ -68,7 +67,7 @@ export default function CategoryForm({
         icon={<FaSave />}
         loading={loading}
         htmlType="submit"
-        className="btn !mt-5 !px-6"
+        className="btn hover:!text-[#69feb0] !mt-5 !px-6"
       >
         {updateValue ? "Update Category" : "Add Category"}
       </Button>

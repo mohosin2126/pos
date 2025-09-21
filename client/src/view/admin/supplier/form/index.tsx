@@ -8,7 +8,7 @@ import {
 import { useNavigate, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import type { TSupplierPayload } from "@/interface/common";
-import {CustomInput, CustomSelect, CustomTextArea} from "@/components/form";
+import { CustomInput, CustomSelect, CustomTextArea } from "@/components/form";
 
 export default function SupplierForm() {
   const [form] = Form.useForm();
@@ -198,7 +198,7 @@ export default function SupplierForm() {
           icon={<FaSave />}
           loading={loading}
           htmlType="submit"
-          className="btn !mt-5 !px-6"
+          className="btn hover:!text-[#69feb0] !mt-5 !px-6"
         >
           {isUpdate ? "Update Supplier" : "Add Supplier"}
         </Button>

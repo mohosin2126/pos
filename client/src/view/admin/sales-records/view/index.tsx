@@ -43,7 +43,7 @@ export default function SalesDetails() {
   const { id } = useParams();
   const { sale } = useSale(id);
 
-  console.log("sales data :", sale);
+  // console.log("sales data :", sale);
 
   const detailsData = sale?.invoice;
   const customerData = sale?.customer;
@@ -126,7 +126,7 @@ export default function SalesDetails() {
           <Button
             type="primary"
             icon={<DownloadOutlined />}
-            className="btn"
+            className="btn hover:!text-[#69feb0]"
             onClick={handleDownloadPDF}
           >
             Download PDF
@@ -815,7 +815,7 @@ export default function SalesDetails() {
                   type="primary"
                   block
                   icon={<DownloadOutlined />}
-                  className="btn"
+                  className="btn hover:!text-[#69feb0]"
                   onClick={handleDownloadPDF}
                 >
                   Download Invoice

@@ -9,6 +9,7 @@ import {
 } from "react-icons/fi";
 import { Link, useParams } from "react-router-dom";
 import { useUser } from "@/hooks/admin/user";
+import { ArrowLeftOutlined } from "@ant-design/icons";
 
 export default function ViewUser() {
   const { id } = useParams();
@@ -59,13 +60,15 @@ export default function ViewUser() {
           </div>
           <div className="flex flex-col md:flex-row gap-2">
             <Link to={`/admin/user/update/${user?.id}`}>
-              <Button className="btn" icon={<FiEdit />}>
+              <Button className="btn hover:!text-[#69feb0]" icon={<FiEdit />}>
                 Edit
               </Button>
             </Link>
-            <Button icon={<FiTrash2 />} type="primary" danger>
-              Delete
-            </Button>
+            <Link to="/admin/invoice/all">
+              <Button className="outlet-btn" icon={<ArrowLeftOutlined />}>
+                Back
+              </Button>
+            </Link>
           </div>
         </div>
       </Card>

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import effetImg from "./effect.png";
 import { MdDateRange } from "react-icons/md";
 import screenImg from "./screen.png";

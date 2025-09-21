@@ -333,7 +333,7 @@ export default function POSDetails() {
           <Button
             type="primary"
             icon={<DownloadOutlined />}
-            className="btn"
+            className="btn hover:!text-[#69feb0]"
             onClick={handleDownloadPDF}
           >
             Download Receipt
@@ -793,7 +793,7 @@ export default function POSDetails() {
                   block
                   size="large"
                   icon={<DownloadOutlined />}
-                  className="btn h-12 font-semibold"
+                  className="btn hover:!text-[#69feb0] h-12 font-semibold"
                   onClick={handleDownloadPDF}
                 >
                   Download Receipt

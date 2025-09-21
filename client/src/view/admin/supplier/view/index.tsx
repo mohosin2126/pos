@@ -10,6 +10,7 @@ import {
 } from "react-icons/fa";
 
 import { useSupplier } from "@/hooks/admin/supplier";
+import { ArrowLeftOutlined } from "@ant-design/icons";
 
 export default function SupplierDetails() {
   const { id } = useParams();
@@ -51,13 +52,15 @@ export default function SupplierDetails() {
           </div>
           <div className="flex flex-col md:flex-row gap-2">
             <Link to={`/admin/supplier/update/${supplier?.id}`}>
-              <Button icon={<FiEdit />} className="btn">
+              <Button icon={<FiEdit />} className="btn hover:!text-[#69feb0]">
                 Edit
               </Button>
             </Link>
-            <Button icon={<FiTrash2 />} type="primary" danger>
-              Delete
-            </Button>
+            <Link to="/admin/supplier/all">
+              <Button className="outlet-btn" icon={<ArrowLeftOutlined />}>
+                Back
+              </Button>
+            </Link>
           </div>
         </div>
       </Card>

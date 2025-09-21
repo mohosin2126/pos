@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Form, Card, Button, message } from "antd";
 import { FaSave } from "react-icons/fa";
@@ -9,7 +8,12 @@ import {
   useUpdateProduct,
 } from "@/hooks/admin/products";
 import { useCategories } from "@/hooks/common";
-import {CustomInput, CustomSelect, CustomTextArea, FileUpload} from "@/components/form";
+import {
+  CustomInput,
+  CustomSelect,
+  CustomTextArea,
+  FileUpload,
+} from "@/components/form";
 
 export default function ProductForm() {
   const [form] = Form.useForm();
@@ -167,7 +171,7 @@ export default function ProductForm() {
           icon={<FaSave />}
           loading={loading}
           htmlType="submit"
-          className="btn !mt-5 !px-6"
+          className="btn hover:!text-[#69feb0] !mt-5 !px-6"
         >
           {isUpdate ? "Update Product" : "Add Product"}
         </Button>
