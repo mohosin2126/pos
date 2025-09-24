@@ -180,7 +180,7 @@ export const adminMenuItems: TMenuBlock[] = [
       {
         label: "POS (Point of Sale)",
         icon: MdOutlineLaptopChromebook,
-        href: "/admin/pos/all",
+        href: "/admin/pos/create",
       },
     ],
   },

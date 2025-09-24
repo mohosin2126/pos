@@ -52,7 +52,7 @@ export default function ProductForm() {
         form.resetFields();
       }
 
-      navigate("/admin/products");
+      navigate("/admin/product/all");
     } catch (error: any) {
       console.error(error);
       message.error(
@@ -93,19 +93,19 @@ export default function ProductForm() {
             mode="single"
             options={categoriesOption}
           />
-          <FileUpload
-            label="Upload Product "
-            name="imageUrl2"
-            rules={[{ required: true, message: "File Upload is required" }]}
-          />
+          {/*<FileUpload*/}
+          {/*  label="Upload Product "*/}
+          {/*  name="imageUrl2"*/}
+          {/*  rules={[{ required: true, message: "File Upload is required" }]}*/}
+          {/*/>*/}
 
-          <CustomTextArea
-            label="Description"
-            name="description"
-            placeholder="Enter product description"
-            rows={4}
-            rules={[{ required: true, message: "Description is required" }]}
-          />
+            <CustomInput
+                label="Upload Product "
+                name="imageUrl2"
+                placeholder="Enter image URL"
+                rules={[{ required: true, message: "Image URL is required" }]}
+            />
+
 
           <CustomInput
             label="SKU"
@@ -165,6 +165,13 @@ export default function ProductForm() {
             placeholder="Enter tags separated by comma"
             rules={[{ required: true, message: "Tags is required" }]}
           />
+            <CustomTextArea
+                label="Description"
+                name="description"
+                placeholder="Enter product description"
+                rows={4}
+                rules={[{ required: true, message: "Description is required" }]}
+            />
         </div>
 
         <Button
