@@ -113,8 +113,7 @@ const adminRoutes = [
           {
             path: "pos",
             children: [
-              { path: "all", element: <AllPos /> },
-              { path: "create", element: <POSForm /> },
+              { path: "create", element: <AllPos /> },
               { path: "view/:id", element: <POSDetails /> },
             ],
           },
