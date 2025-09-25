@@ -6,12 +6,13 @@ import React, {
   type ReactNode,
 } from "react";
 import Cookies from "js-cookie";
+import { TUserPayload } from "@/interface/common";
 
-export type User = Record<string, unknown>;
+// export type User = Record<string, unknown>;
 
 type UserContextValue = {
-  user: User | null;
-  setUser: React.Dispatch<React.SetStateAction<User | null>>;
+  user: TUserPayload | null;
+  setUser: React.Dispatch<React.SetStateAction<TUserPayload | null>>;
 };
 
 export const UserContext = createContext<UserContextValue | undefined>(
@@ -23,17 +24,17 @@ type UserProviderProps = {
 };
 
 export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
-  const initialUser = (): User | null => {
+  const initialUser = (): TUserPayload | null => {
     try {
       const userCookie = Cookies.get("user");
-      return userCookie ? (JSON.parse(userCookie) as User) : null;
+      return userCookie ? (JSON.parse(userCookie) as TUserPayload) : null;
     } catch (error) {
       console.error("Error parsing user cookie:", error);
       return null;
     }
   };
 
-  const [user, setUser] = useState<User | null>(initialUser);
+  const [user, setUser] = useState<TUserPayload | null>(initialUser);
 
   useEffect(() => {
     try {

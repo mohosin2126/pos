@@ -32,6 +32,7 @@ import AllInvoice from "@/view/admin/invoices/all/";
 import Unauthorized from "@/components/unauthorized";
 import AdminGuard from "@/routes/private";
 import ViewInvoice from "@/view/admin/invoices/view";
+import ViewProfile from "@/view/admin/settings/view-profile";
 
 const adminRoutes = [
   { path: "/unauthorized", element: <Unauthorized /> },
@@ -47,7 +48,7 @@ const adminRoutes = [
           {
             path: "settings",
             children: [
-              { path: "view-profile", element: <div>Profile Page</div> },
+              { path: "view-profile", element: <ViewProfile /> },
               {
                 path: "update-profile",
                 element: <div>Update Profile Page</div>,

@@ -74,7 +74,7 @@ export const dropDownItems = (user?: TDemoUser): MenuProps["items"] => [
     key: "1",
   },
   {
-    label: <Link to="/admin/settings/update-profile">Settings</Link>,
+    label: <Link to="#">Settings</Link>,
     key: "2",
   },
   {
