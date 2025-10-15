@@ -296,46 +296,46 @@ export default function ProductDetails() {
             )}
 
             {/* Action Buttons */}
-            <Row gutter={[16, 16]} align="middle" className="!pt-1">
-              <Col xs={24} sm={8}>
-                <div className="flex items-center space-x-2 ">
-                  <Text strong>Quantity:</Text>
-                  <InputNumber
-                    min={1}
-                    max={product?.stockQuantity}
-                    value={quantity}
-                    onChange={(value) => setQuantity(value || 1)}
-                    className="w-20"
-                  />
-                </div>
-              </Col>
-              <Col xs={24} sm={16}>
-                <Space wrap className="w-full items-center md:justify-end">
-                  <Button
-                    size="large"
-                    icon={<ShoppingCartOutlined />}
-                    className="btn hover:!text-[#69feb0]"
-                    disabled={(product?.stockQuantity ?? 0) <= 0}
-                  >
-                    Add to Cart
-                  </Button>
-                  <Button
-                    size="large"
-                    icon={<HeartOutlined />}
-                    className="hover:!text-[#005555] hover:!border-[#005555]"
-                  >
-                    Wishlist
-                  </Button>
-                  <Button
-                    size="large"
-                    icon={<ShareAltOutlined />}
-                    className="hover:!text-[#005555] hover:!border-[#005555]"
-                  >
-                    Share
-                  </Button>
-                </Space>
-              </Col>
-            </Row>
+            {/*<Row gutter={[16, 16]} align="middle" className="!pt-1">*/}
+            {/*  <Col xs={24} sm={8}>*/}
+            {/*    <div className="flex items-center space-x-2 ">*/}
+            {/*      <Text strong>Quantity:</Text>*/}
+            {/*      <InputNumber*/}
+            {/*        min={1}*/}
+            {/*        max={product?.stockQuantity}*/}
+            {/*        value={quantity}*/}
+            {/*        onChange={(value) => setQuantity(value || 1)}*/}
+            {/*        className="w-20"*/}
+            {/*      />*/}
+            {/*    </div>*/}
+            {/*  </Col>*/}
+            {/*  <Col xs={24} sm={16}>*/}
+            {/*    <Space wrap className="w-full items-center md:justify-end">*/}
+            {/*      <Button*/}
+            {/*        size="large"*/}
+            {/*        icon={<ShoppingCartOutlined />}*/}
+            {/*        className="btn hover:!text-[#69feb0]"*/}
+            {/*        disabled={(product?.stockQuantity ?? 0) <= 0}*/}
+            {/*      >*/}
+            {/*        Add to Cart*/}
+            {/*      </Button>*/}
+            {/*      <Button*/}
+            {/*        size="large"*/}
+            {/*        icon={<HeartOutlined />}*/}
+            {/*        className="hover:!text-[#005555] hover:!border-[#005555]"*/}
+            {/*      >*/}
+            {/*        Wishlist*/}
+            {/*      </Button>*/}
+            {/*      <Button*/}
+            {/*        size="large"*/}
+            {/*        icon={<ShareAltOutlined />}*/}
+            {/*        className="hover:!text-[#005555] hover:!border-[#005555]"*/}
+            {/*      >*/}
+            {/*        Share*/}
+            {/*      </Button>*/}
+            {/*    </Space>*/}
+            {/*  </Col>*/}
+            {/*</Row>*/}
           </Card>
         </Col>
       </Row>

@@ -1,7 +1,48 @@
+import React, { useState } from "react";
+import emailjs, { type EmailJSResponseStatus } from "@emailjs/browser";
 import { HiMail, HiPhone, HiLocationMarker, HiHome } from "react-icons/hi";
 
-const Contact = () => {
-    const info = [
+
+interface FormState {
+    name: string;
+    email: string;
+    phone: string;
+    message: string;
+}
+
+interface StatusState {
+    type: "" | "success" | "error";
+    msg: string;
+}
+
+interface InfoItem {
+    icon: React.ReactNode;
+    title: string;
+    lines: string[];
+}
+
+interface TemplateParams {
+    from_name: string;
+    from_email: string;
+    phone?: string;
+    message: string;
+}
+
+const Contact: React.FC = () => {
+    const SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID as string | undefined;
+    const TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID as string | undefined;
+    const PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY as string | undefined;
+
+    const [form, setForm] = useState<FormState>({
+        name: "",
+        email: "",
+        phone: "",
+        message: "",
+    });
+    const [status, setStatus] = useState<StatusState>({ type: "", msg: "" });
+    const [sending, setSending] = useState<boolean>(false);
+
+    const info: InfoItem[] = [
         {
             icon: <HiMail className="text-2xl text-[#4fe7c4]" />,
             title: "Mail ID",
@@ -24,9 +65,71 @@ const Contact = () => {
         },
     ];
 
+    const handleChange = (
+        e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    ) => {
+        const { name, value } = e.target;
+        setForm((f) => ({ ...f, [name]: value } as FormState));
+    };
+
+    const validate = (): string => {
+        if (!form.name.trim()) return "Please enter your name.";
+        if (!form.email.trim()) return "Please enter your email.";
+        const emailOk = /[^\s@]+@[^\s@]+\.[^\s@]+/.test(form.email);
+        if (!emailOk) return "Please enter a valid email address.";
+        if (!form.message.trim()) return "Please write a message.";
+        if (!SERVICE_ID || !TEMPLATE_ID || !PUBLIC_KEY)
+            return "Email service is not configured. Check your environment variables.";
+        return "";
+    };
+
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        setStatus({ type: "", msg: "" });
+
+        const err = validate();
+        if (err) {
+            setStatus({ type: "error", msg: err });
+            return;
+        }
+
+        setSending(true);
+
+        try {
+            const templateParams: TemplateParams = {
+                from_name: form.name,
+                from_email: form.email,
+                phone: form.phone || undefined,
+                message: form.message,
+            };
+
+            const res: EmailJSResponseStatus = await emailjs.send(
+                SERVICE_ID!,
+                TEMPLATE_ID!,
+                templateParams,
+                { publicKey: PUBLIC_KEY }
+            );
+
+            if (res.status >= 200 && res.status < 300) {
+                setStatus({ type: "success", msg: "Message sent successfully!" });
+                setForm({ name: "", email: "", phone: "", message: "" });
+            } else {
+                setStatus({ type: "error", msg: `Send failed (code ${res.status}).` });
+            }
+        } catch (err: unknown) {
+            const msg =
+                (err as { text?: string; message?: string })?.text ||
+                (err as { message?: string })?.message ||
+                "Failed to send. Please try again or contact via email/phone.";
+            setStatus({ type: "error", msg });
+        } finally {
+            setSending(false);
+        }
+    };
+
     return (
         <section className="p-4 lg:p-12 bg-[#0b111a] rounded-md">
-            <div  id="contact">
+            <div id="contact">
                 {/* top contact info */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-10">
                     {info.map((item, idx) => (
@@ -34,9 +137,7 @@ const Contact = () => {
                             <div className="mx-auto w-14 h-14 rounded-full bg-[#0e1b1a] border border-[#1f524b] flex items-center justify-center text-2xl text-[#69fec1] shadow-[0_0_20px_rgba(105,254,193,0.08)]">
                                 <span>{item.icon}</span>
                             </div>
-                            <div className="mt-3 text-[#69fec1] font-semibold">
-                                {item.title}
-                            </div>
+                            <div className="mt-3 text-[#69fec1] font-semibold">{item.title}</div>
                             <div className="mt-1 text-[#c9d2df] text-sm leading-relaxed">
                                 {item.lines.map((l, i) => (
                                     <div key={i}>
@@ -62,53 +163,80 @@ const Contact = () => {
                 <div className="rounded-md border border-[#223041] bg-gradient-to-b from-[#0f1620] via-[#0e141d] to-[#0c1219] p-6 md:p-8">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
                         {/* left form */}
-                        <form className="space-y-5">
+                        <form className="space-y-5" onSubmit={handleSubmit}>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                 <div>
-                                    <label className="block text-sm text-[#c9d2df] mb-2">
-                                        Name
-                                    </label>
+                                    <label className="block text-sm text-[#c9d2df] mb-2">Name</label>
                                     <input
+                                        name="name"
+                                        value={form.name}
+                                        onChange={handleChange}
                                         className="w-full bg-[#101820] border border-[#263344] rounded-md px-4 py-3 text-white placeholder:text-[#7f8a99] focus:outline-none focus:border-[#69fec1]"
                                         placeholder="Write your name..."
+                                        required
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm text-[#c9d2df] mb-2">
-                                        E-mail
-                                    </label>
+                                    <label className="block text-sm text-[#c9d2df] mb-2">E-mail</label>
                                     <input
+                                        name="email"
                                         type="email"
+                                        value={form.email}
+                                        onChange={handleChange}
                                         className="w-full bg-[#101820] border border-[#263344] rounded-md px-4 py-3 text-white placeholder:text-[#7f8a99] focus:outline-none focus:border-[#69fec1]"
                                         placeholder="Write your e-mail..."
+                                        required
                                     />
                                 </div>
                             </div>
 
                             <div>
-                                <label className="block text-sm text-[#c9d2df] mb-2">
-                                    Phone number
-                                </label>
+                                <label className="block text-sm text-[#c9d2df] mb-2">Phone number</label>
                                 <input
+                                    name="phone"
+                                    value={form.phone}
+                                    onChange={handleChange}
                                     className="w-full bg-[#101820] border border-[#263344] rounded-md px-4 py-3 text-white placeholder:text-[#7f8a99] focus:outline-none focus:border-[#69fec1]"
                                     placeholder="Write your phone number..."
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-sm text-[#c9d2df] mb-2">
-                                    Additional Message
-                                </label>
+                                <label className="block text-sm text-[#c9d2df] mb-2">Additional Message</label>
                                 <textarea
+                                    name="message"
                                     rows={5}
+                                    value={form.message}
+                                    onChange={handleChange}
                                     className="w-full bg-[#101820] border border-[#263344] rounded-md px-4 py-3 text-white placeholder:text-[#7f8a99] focus:outline-none focus:border-[#69fec1] resize-none"
                                     placeholder="Write your message..."
+                                    required
                                 />
                             </div>
 
-                            <button type="button" className="button">
-                                Send message
+                            <button
+                                type="submit"
+                                disabled={sending}
+                                className={`button ${sending ? "opacity-60 cursor-not-allowed" : ""}`}
+                            >
+                                {sending ? "Sending..." : "Send message"}
                             </button>
+
+                            {status.msg && (
+                                <p
+                                    className={`text-sm mt-2 ${
+                                        status.type === "success" ? "text-emerald-400" : "text-rose-400"
+                                    }`}
+                                >
+                                    {status.msg}
+                                </p>
+                            )}
+
+                            {(!SERVICE_ID || !TEMPLATE_ID || !PUBLIC_KEY) && (
+                                <p className="text-xs text-amber-300/80 mt-1">
+                                    Tip: set VITE_EMAILJS_SERVICE_ID, VITE_EMAILJS_TEMPLATE_ID, and VITE_EMAILJS_PUBLIC_KEY in your .env.local
+                                </p>
+                            )}
                         </form>
 
                         {/* right map */}

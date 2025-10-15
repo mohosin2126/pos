@@ -80,16 +80,21 @@ export default function AllProducts() {
     { title: "Stock", dataIndex: "stockQuantity", key: "stockQuantity" },
     { title: "Re-Order", dataIndex: "reorderLevel", key: "reorderLevel" },
 
-    {
-      title: "Status",
-      dataIndex: "status",
-      key: "status",
-      render: (status: string) => {
-        const color = status === "active" ? "green" : "red";
-        return <Tag color={color}>{status}</Tag>;
+      {
+          title: "Status",
+          dataIndex: "status",
+          key: "status",
+          render: (status: string) => {
+              const color = status === "active" ? "green" : "red";
+              const label =
+                  status && status.length > 0
+                      ? status.charAt(0).toUpperCase() + status.slice(1).toLowerCase()
+                      : "";
+              return <Tag color={color}>{label}</Tag>;
+          },
       },
-    },
-    {
+
+      {
       title: "Track Stock",
       dataIndex: "isTrackStock",
       key: "isTrackStock",

@@ -1,115 +1,104 @@
 import { useCallback, useEffect, useState } from "react";
-import {TSupplierPayload, TSuppliersApiResponse} from "@/interface/common";
+import type { TSupplierPayload, TSuppliersApiResponse } from "@/interface/common";
 import useApi from "@/hooks/use-api";
-import {useDelete} from "@/hooks/common";
 
 
 export function useSuppliers() {
-  const [suppliers, setSuppliers] = useState<TSupplierPayload[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
+    const [suppliers, setSuppliers] = useState<TSupplierPayload[]>([]);
+    const [loading, setLoading] = useState<boolean>(false);
 
-  const fetchSuppliers = useCallback(async () => {
-    setLoading(true);
-    try {
-      const { data } = await useApi.get<TSuppliersApiResponse>(
-        "/v1/admin/supplier/all"
-      );
-      setSuppliers(data?.data || []);
-    } catch (error) {
-      console.error("Error fetching suppliers:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    const fetchSuppliers = useCallback(async () => {
+        setLoading(true);
+        try {
+            const { data } = await useApi.get<TSuppliersApiResponse>("/v1/admin/supplier/all");
+            setSuppliers(data?.data || []);
+        } catch (error) {
+            console.error("Error fetching suppliers:", error);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
 
-  useEffect(() => {
-    fetchSuppliers();
-  }, [fetchSuppliers]);
+    useEffect(() => {
+        fetchSuppliers();
+    }, [fetchSuppliers]);
 
-  return { suppliers, loading, refetch: fetchSuppliers };
+    return { suppliers, loading, refetch: fetchSuppliers };
 }
 
+
 export function useSupplier(id: string | undefined) {
-  const [supplier, setSupplier] = useState<TSupplierPayload | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
+    const [supplier, setSupplier] = useState<TSupplierPayload | null>(null);
+    const [loading, setLoading] = useState<boolean>(false);
 
-  const fetchSupplier = useCallback(async () => {
-    setLoading(true);
-    try {
-      const { data } = await useApi.get(`/v1/admin/supplier/${id}`);
-      setSupplier(data?.data || null);
-    } catch (error) {
-      console.error("Error fetching supplier:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
+    const fetchSupplier = useCallback(async () => {
+        if (!id) return;
+        setLoading(true);
+        try {
+            const { data } = await useApi.get(`/v1/admin/supplier/${id}`);
+            setSupplier(data?.data || null);
+        } catch (error) {
+            console.error("Error fetching supplier:", error);
+        } finally {
+            setLoading(false);
+        }
+    }, [id]);
 
-  useEffect(() => {
-    fetchSupplier();
-  }, [fetchSupplier]);
+    useEffect(() => {
+        fetchSupplier();
+    }, [fetchSupplier]);
 
-  return { supplier, loading, refetch: fetchSupplier };
+    return { supplier, loading, refetch: fetchSupplier };
 }
 
 export function useCreateSupplier() {
-  const [error, setError] = useState<string[]>([]);
+    const [error, setError] = useState<string[]>([]);
 
-  const createSupplier = async (data: TSupplierPayload) => {
-    try {
-      const { data: result } = await useApi.post(
-        "/v1/admin/supplier/create",
-        data
-      );
-      return result;
-    } catch (error: any) {
-      setError([
-        error?.response?.data?.message || "An unexpected error occurred.",
-      ]);
-      console.error("Error creating supplier:", error?.response?.data?.message);
-    }
-  };
+    const createSupplier = async (payload: TSupplierPayload) => {
+        try {
+            const { data: result } = await useApi.post("/v1/admin/supplier/create", payload);
+            return result;
+        } catch (error: any) {
+            setError([error?.response?.data?.message || "An unexpected error occurred."]);
+            console.error("Error creating supplier:", error?.response?.data?.message || error);
+            throw error;
+        }
+    };
 
-  return { createSupplier, error };
+    return { createSupplier, error };
 }
+
 
 export function useUpdateSupplier() {
-  const [error, setError] = useState<string[]>([]);
+    const [error, setError] = useState<string[]>([]);
 
-  const updateSupplier = async (
-    id: string | undefined,
-    data: Partial<TSupplierPayload>
-  ) => {
-    try {
-      const { data: result } = await useApi.put(
-        `/v1/admin/supplier/update/${id}`,
-        data
-      );
-      return result;
-    } catch (error: any) {
-      setError([
-        error?.response?.data?.message || "An unexpected error occurred.",
-      ]);
-      console.error("Error updating supplier:", error);
-    }
-  };
+    const updateSupplier = async (id: string | undefined, partial: Partial<TSupplierPayload>) => {
+        try {
+            const { data: result } = await useApi.put(`/v1/admin/supplier/update/${id}`, partial);
+            return result;
+        } catch (error: any) {
+            setError([error?.response?.data?.message || "An unexpected error occurred."]);
+            console.error("Error updating supplier:", error?.response?.data?.message || error);
+            throw error;
+        }
+    };
 
-  return { updateSupplier, error };
+    return { updateSupplier, error };
 }
 
-// export function useDeleteSupplier() {
-//   const deleteSupplier = async (id: string) => {
-//     try {
-//       const { data } = await useApi.delete(`/v1/admin/supplier/delete/${id}`);
-//       return data;
-//     } catch (error) {
-//       console.error("Error deleting supplier:", error);
-//     }
-//   };
-
-//   return { deleteSupplier };
-// }
 
 export function useDeleteSupplier() {
-  return useDelete("/v1/admin/supplier/delete");
+    const [loading, setLoading] = useState(false);
+
+    const deleteSupplier = async (id: string) => {
+        setLoading(true);
+        try {
+            const { data } = await useApi.delete(`/v1/admin/supplier/delete/${id}`);
+            return data;
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return { deleteSupplier, loading };
 }
