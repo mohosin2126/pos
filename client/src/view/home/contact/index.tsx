@@ -1,7 +1,12 @@
+
 import React, { useState } from "react";
 import emailjs, { type EmailJSResponseStatus } from "@emailjs/browser";
 import { HiMail, HiPhone, HiLocationMarker, HiHome } from "react-icons/hi";
 
+const ENV = import.meta.env as unknown as Record<string, string | undefined>;
+const SERVICE_ID = ENV.VITE_EMAILJS_SERVICE_ID;
+const TEMPLATE_ID = ENV.VITE_EMAILJS_TEMPLATE_ID;
+const PUBLIC_KEY = ENV.VITE_EMAILJS_PUBLIC_KEY;
 
 interface FormState {
     name: string;
@@ -21,18 +26,8 @@ interface InfoItem {
     lines: string[];
 }
 
-interface TemplateParams {
-    from_name: string;
-    from_email: string;
-    phone?: string;
-    message: string;
-}
 
 const Contact: React.FC = () => {
-    const SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID as string | undefined;
-    const TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID as string | undefined;
-    const PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY as string | undefined;
-
     const [form, setForm] = useState<FormState>({
         name: "",
         email: "",
@@ -65,9 +60,7 @@ const Contact: React.FC = () => {
         },
     ];
 
-    const handleChange = (
-        e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-    ) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         setForm((f) => ({ ...f, [name]: value } as FormState));
     };
@@ -96,7 +89,7 @@ const Contact: React.FC = () => {
         setSending(true);
 
         try {
-            const templateParams: TemplateParams = {
+            const templateParams = {
                 from_name: form.name,
                 from_email: form.email,
                 phone: form.phone || undefined,
@@ -106,7 +99,7 @@ const Contact: React.FC = () => {
             const res: EmailJSResponseStatus = await emailjs.send(
                 SERVICE_ID!,
                 TEMPLATE_ID!,
-                templateParams,
+                templateParams as Record<string, unknown>, // ← no custom/global types needed
                 { publicKey: PUBLIC_KEY }
             );
 
@@ -234,7 +227,8 @@ const Contact: React.FC = () => {
 
                             {(!SERVICE_ID || !TEMPLATE_ID || !PUBLIC_KEY) && (
                                 <p className="text-xs text-amber-300/80 mt-1">
-                                    Tip: set VITE_EMAILJS_SERVICE_ID, VITE_EMAILJS_TEMPLATE_ID, and VITE_EMAILJS_PUBLIC_KEY in your .env.local
+                                    Tip: set VITE_EMAILJS_SERVICE_ID, VITE_EMAILJS_TEMPLATE_ID, and
+                                    VITE_EMAILJS_PUBLIC_KEY in your .env.local
                                 </p>
                             )}
                         </form>
