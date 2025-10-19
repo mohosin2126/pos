@@ -10,7 +10,7 @@ import PurchaseDetails from "@/view/admin/purchases/view";
 import AllSupplier from "@/view/admin/supplier/all";
 import SupplierForm from "@/view/admin/supplier/form";
 import CategoriesAll from "@/view/admin/categories/all";
-import AllProducts from "@/view/admin/product/all/intex";
+import AllProducts from "@/view/admin/product/all";
 import ProductForm from "@/view/admin/product/form";
 import ProductDetails from "@/view/admin/product/view";
 import AllPos from "@/view/admin/pos/all";

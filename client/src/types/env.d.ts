@@ -1,4 +1,5 @@
 interface ImportMetaEnv {
+  VITE_EMAILJS_SERVICE_ID: string | undefined;
   readonly VITE_API_URL: string;
   // add more env vars here as needed
 }

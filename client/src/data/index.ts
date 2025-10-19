@@ -24,181 +24,186 @@ import type { TPOSOrderPayload, TNotifications } from "@/interface/common";
 import { IoIosInformationCircleOutline } from "react-icons/io";
 
 export const adminMenuItems: TMenuBlock[] = [
-  {
-    title: "Main",
-    menu: [
-      {
-        label: "Dashboard",
-        icon: FiHome,
-        href: "/admin/dashboard",
-      },
-      {
-        label: "User Managment",
-        icon: FiUsers,
-        href: "/admin/user/all",
-      },
-      {
-        label: "Roles",
-        icon: FiUserCheck,
-        href: "/admin/access/roles",
-      },
-    ],
-  },
-  // {
-  //   title: "security",
-  //   menu: [
-  //     {
-  //       label: "Access",
-  //       icon: FiBox,
-  //       submenu: [
-  //         {
-  //           label: "Roles",
-  //           icon: FiUserCheck,
-  //           href: "/admin/access/roles",
-  //         },
-  //         {
-  //           label: "Roles & Permissions",
-  //           icon: FiUserCheck,
-  //           href: "/admin/access/roles-and-permissions",
-  //         },
-  //       ],
-  //     },
-  //     {
-  //       label: "Stock",
-  //       icon: FiActivity,
-  //       submenu: [
-  //         {
-  //           label: "Low Stock",
-  //           icon: FiUsers,
-  //           href: "/admin/low-stock",
-  //         },
-  //         {
-  //           label: "Out of Stock",
-  //           icon: MdOutlineDirectionsOff,
-  //           href: "/admin/out-of-stock",
-  //         },
-  //       ],
-  //     },
-  //   ],
-  // },
-  {
-    title: "Inventory",
-    menu: [
-      {
-        label: "Category",
-        icon: FiBarChart2,
-        href: "/admin/category/all",
-      },
-      {
-        label: "Supplier",
-        icon: FiTruck,
-        submenu: [
-          {
-            label: "All Supplier",
-            icon: FiUsers,
-            href: "/admin/supplier/all",
-          },
-          {
-            label: "Create Supplier",
-            icon: FiEdit,
-            href: "/admin/supplier/create",
-          },
+    {
+        title: "Main",
+        menu: [
+            {
+                label: "Home",
+                icon: FiHome,
+                href: "/",
+            },
+            {
+                label: "Dashboard",
+                icon: FiHome,
+                href: "/admin/dashboard",
+            },
+            {
+                label: "User Managment",
+                icon: FiUsers,
+                href: "/admin/user/all",
+            },
+            {
+                label: "Roles",
+                icon: FiUserCheck,
+                href: "/admin/access/roles",
+            },
         ],
-      },
-      {
-        label: "Product",
-        icon: FiBox,
-        submenu: [
-          {
-            label: "All Products",
-            icon: FiFileText,
-            href: "/admin/product/all",
-          },
-          {
-            label: "Add Product",
-            icon: FiEdit,
-            href: "/admin/product/create",
-          },
+    },
+    // {
+    //   title: "security",
+    //   menu: [
+    //     {
+    //       label: "Access",
+    //       icon: FiBox,
+    //       submenu: [
+    //         {
+    //           label: "Roles",
+    //           icon: FiUserCheck,
+    //           href: "/admin/access/roles",
+    //         },
+    //         {
+    //           label: "Roles & Permissions",
+    //           icon: FiUserCheck,
+    //           href: "/admin/access/roles-and-permissions",
+    //         },
+    //       ],
+    //     },
+    //     {
+    //       label: "Stock",
+    //       icon: FiActivity,
+    //       submenu: [
+    //         {
+    //           label: "Low Stock",
+    //           icon: FiUsers,
+    //           href: "/admin/low-stock",
+    //         },
+    //         {
+    //           label: "Out of Stock",
+    //           icon: MdOutlineDirectionsOff,
+    //           href: "/admin/out-of-stock",
+    //         },
+    //       ],
+    //     },
+    //   ],
+    // },
+    {
+        title: "Inventory",
+        menu: [
+            {
+                label: "Category",
+                icon: FiBarChart2,
+                href: "/admin/category/all",
+            },
+            {
+                label: "Supplier",
+                icon: FiTruck,
+                submenu: [
+                    {
+                        label: "All Supplier",
+                        icon: FiUsers,
+                        href: "/admin/supplier/all",
+                    },
+                    {
+                        label: "Create Supplier",
+                        icon: FiEdit,
+                        href: "/admin/supplier/create",
+                    },
+                ],
+            },
+            {
+                label: "Product",
+                icon: FiBox,
+                submenu: [
+                    {
+                        label: "All Products",
+                        icon: FiFileText,
+                        href: "/admin/product/all",
+                    },
+                    {
+                        label: "Add Product",
+                        icon: FiEdit,
+                        href: "/admin/product/create",
+                    },
+                ],
+            },
+            {
+                label: "Stock",
+                icon: FiActivity,
+                submenu: [
+                    {
+                        label: "Low Stock",
+                        icon: FiUsers,
+                        href: "/admin/activity-products/low-stock",
+                    },
+                    {
+                        label: "Out of Stock",
+                        icon: MdOutlineDirectionsOff,
+                        href: "/admin/activity-products/out-of-stock",
+                    },
+                ],
+            },
+            {
+                label: "Expired Products",
+                icon: IoIosInformationCircleOutline,
+                href: "/admin/activity-products/expired-products",
+            },
+            {
+                label: "Sellable Products",
+                icon: AiOutlineProduct,
+                href: "/admin/activity-products/sellable-products",
+            },
         ],
-      },
-      {
-        label: "Stock",
-        icon: FiActivity,
-        submenu: [
-          {
-            label: "Low Stock",
-            icon: FiUsers,
-            href: "/admin/activity-products/low-stock",
-          },
-          {
-            label: "Out of Stock",
-            icon: MdOutlineDirectionsOff,
-            href: "/admin/activity-products/out-of-stock",
-          },
+    },
+    {
+        title: "Purchase",
+        menu: [
+            {
+                label: "purchase",
+                icon: FiShoppingCart,
+                href: "/admin/purchase/all",
+            },
+            {
+                label: "Purchase Order",
+                icon: FiClipboard,
+                href: "/admin/purchase-order",
+            },
+            {
+                label: "Purchase Return",
+                icon: FiRotateCcw,
+                href: "/admin/purchase-return",
+            },
         ],
-      },
-      {
-        label: "Expired Products",
-        icon: IoIosInformationCircleOutline,
-        href: "/admin/activity-products/expired-products",
-      },
-      {
-        label: "Sellable Products",
-        icon: AiOutlineProduct,
-        href: "/admin/activity-products/sellable-products",
-      },
-    ],
-  },
-  {
-    title: "Purchase",
-    menu: [
-      {
-        label: "purchase",
-        icon: FiShoppingCart,
-        href: "/admin/purchase/all",
-      },
-      {
-        label: "Purchase Order",
-        icon: FiClipboard,
-        href: "/admin/purchase-order",
-      },
-      {
-        label: "Purchase Return",
-        icon: FiRotateCcw,
-        href: "/admin/purchase-return",
-      },
-    ],
-  },
-  {
-    title: "Sales",
-    menu: [
-      {
-        label: "Sales Records",
-        icon: FaDolly,
-        href: "/admin/sales/all",
-      },
-      {
-        label: "POS (Point of Sale)",
-        icon: MdOutlineLaptopChromebook,
-        href: "/admin/pos/create",
-      },
-    ],
-  },
-  {
-    title: "User & Access",
-    menu: [
-      {
-        label: "Customers",
-        icon: FiUsers,
-        href: "/admin/customer/all",
-      },
-      {
-        label: "Invoice",
-        icon: MdLineAxis,
-        href: "/admin/invoice/all",
-      },
-    ],
-  },
+    },
+    {
+        title: "Sales",
+        menu: [
+            {
+                label: "Sales Records",
+                icon: FaDolly,
+                href: "/admin/sales/all",
+            },
+            {
+                label: "POS (Point of Sale)",
+                icon: MdOutlineLaptopChromebook,
+                href: "/admin/pos/create",
+            },
+        ],
+    },
+    {
+        title: "User & Access",
+        menu: [
+            {
+                label: "Customers",
+                icon: FiUsers,
+                href: "/admin/customer/all",
+            },
+            {
+                label: "Invoice",
+                icon: MdLineAxis,
+                href: "/admin/invoice/all",
+            },
+        ],
+    },
 ];
 
 export const demoPOSOrders: TPOSOrderPayload[] = [

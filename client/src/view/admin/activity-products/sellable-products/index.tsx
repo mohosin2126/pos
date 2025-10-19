@@ -76,16 +76,21 @@ export default function SellableProducts() {
       ),
     },
     { title: "Unexpired Qty", dataIndex: "unexpiredQty", key: "unexpiredQty" },
-    {
-      title: "Status",
-      dataIndex: "status",
-      key: "status",
-      render: (_: any, record: any) => {
-        const color = record?.product?.status === "active" ? "green" : "red";
-        return <Tag color={color}>{record?.product?.status}</Tag>;
+      {
+          title: "Status",
+          dataIndex: "status",
+          key: "status",
+          render: (_: any, record: any) => {
+              const raw = record?.product?.status ?? "";
+              const norm = raw.toString().toLowerCase();
+              const color = norm === "active" ? "green" : "red";
+              const label =
+                  raw ? raw.charAt(0).toUpperCase() + raw.slice(1).toLowerCase() : "";
+              return <Tag color={color}>{label}</Tag>;
+          },
       },
-    },
-    {
+
+      {
       title: "Tags",
       dataIndex: "tags",
       key: "tags",

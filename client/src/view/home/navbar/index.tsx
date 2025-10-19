@@ -4,13 +4,6 @@ import { RiCloseLargeFill, RiMenu3Fill } from "react-icons/ri";
 import { BsDot } from "react-icons/bs";
 import type { TNavLinkItem } from "@/interface/menu-and-common";
 
-/**
- * Responsive Navbar (matches Banner's responsive rhythm)
- * - Mobile-first with sm/md/lg paddings (px-4 sm:px-6 lg:px-8)
- * - Max width aligns with Banner (max-w-7xl)
- * - Sticky header with smooth shrink-on-scroll
- * - Drawer: scroll-locked body, ESC to close, safe-area padding
- */
 export default function Navbar() {
     const [isScroll, setIsScroll] = useState<boolean>(false);
     const [menuOpen, setMenuOpen] = useState<boolean>(false);
@@ -23,7 +16,6 @@ export default function Navbar() {
         { title: "Features", href: "/features" },
         { title: "Pricing", href: "/pricing" },
         { title: "Contact", href: "/contact" },
-        // { title: "About Us", href: "/about" },
     ];
 
     // Scroll state for header styling
@@ -69,7 +61,9 @@ export default function Navbar() {
                                 to={link.href}
                                 key={index}
                                 className={({ isActive }) =>
-                                    `${isActive ? "text-[#51f0cb]" : ""} relative font-normal pb-2 group hover:text-[#51f0cb] transition-colors duration-300 flex items-center gap-1`
+                                    `${
+                                        isActive ? "text-[#51f0cb]" : ""
+                                    } relative font-normal pb-2 group hover:text-[#51f0cb] transition-colors duration-300 flex items-center gap-1`
                                 }
                             >
                                 {({ isActive }) => (
@@ -84,10 +78,10 @@ export default function Navbar() {
 
                     {/* Right: Desktop actions */}
                     <div className="hidden lg:flex items-center gap-3 xl:gap-4">
-                        <Link to="/auth" className="button" aria-label="Go to demo login">
-                            Demo
+                        {/* Replaced Demo & Book A Call with Dashboard */}
+                        <Link to="/admin/dashboard" className="button" aria-label="Go to dashboard">
+                            Dashboard
                         </Link>
-                        <button className="button">Book A Call</button>
                     </div>
 
                     {/* Right: Mobile hamburger */}
@@ -141,7 +135,9 @@ export default function Navbar() {
                             to={link.href}
                             key={index}
                             className={({ isActive }) =>
-                                `${isActive ? "text-[#51f0cb]" : ""} relative font-medium pb-2 hover:text-[#51f0cb] transition-colors duration-300`
+                                `${
+                                    isActive ? "text-[#51f0cb]" : ""
+                                } relative font-medium pb-2 hover:text-[#51f0cb] transition-colors duration-300`
                             }
                         >
                             {link.title}
@@ -150,15 +146,15 @@ export default function Navbar() {
                 </nav>
 
                 <div className="mt-6 flex flex-col gap-3">
+                    {/* Replaced Demo & Book A Call with Dashboard */}
                     <Link
-                        to="/auth"
+                        to="/admin/dashboard"
                         className="button w-full text-center"
                         onClick={() => setMenuOpen(false)}
-                        aria-label="Go to demo login"
+                        aria-label="Go to dashboard"
                     >
-                        Demo
+                        Dashboard
                     </Link>
-                    <button className="button w-full">Book A Call</button>
                 </div>
 
                 {/* Safe area bottom spacer */}
