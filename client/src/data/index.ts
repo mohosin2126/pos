@@ -11,6 +11,7 @@ import {
   FiClipboard,
   FiRotateCcw,
   FiActivity,
+    FiGrid
 } from "react-icons/fi";
 import { FaDolly } from "react-icons/fa";
 import {
@@ -34,7 +35,7 @@ export const adminMenuItems: TMenuBlock[] = [
             },
             {
                 label: "Dashboard",
-                icon: FiHome,
+                icon: FiGrid,
                 href: "/admin/dashboard",
             },
             {
