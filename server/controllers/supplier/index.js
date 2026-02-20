@@ -3,8 +3,6 @@
 const { Supplier } = require("../../database/models");
 const {badRequest, conflict, created, serverError, parsePagination, paginated, notFound, success, noContent} = require("../../utils/api-response");
 
-
-// CREATE
 const create = async (req, res) => {
     try {
         const value = req.body || {};
@@ -30,7 +28,6 @@ const create = async (req, res) => {
     }
 };
 
-// GET ALL
 const getAll = async (req, res) => {
     try {
         const { page, limit, offset } = parsePagination(req.query, {
@@ -73,7 +70,6 @@ const getAll = async (req, res) => {
     }
 };
 
-// GET ONE
 const getOne = async (req, res) => {
     try {
         const id = Number(req.params.id);
@@ -88,7 +84,6 @@ const getOne = async (req, res) => {
     }
 };
 
-// UPDATE
 const update = async (req, res) => {
     try {
         const id = Number(req.params.id);
@@ -112,7 +107,6 @@ const update = async (req, res) => {
     }
 };
 
-// DESTROY
 const destroy = async (req, res) => {
     try {
         const id = Number(req.params.id);

@@ -16,7 +16,7 @@ export default function Purchases() {
   const { purchases, refetch, loading } = usePurchases();
   const [searchText, setSearchText] = useState<string>("");
   const [filterStatus, setFilterStatus] = useState<
-    "all" | "pending" | "approved" | "rejected"
+    "all" | "draft" | "po" | "ordered" | "purchase" | "received" | "partial" | "partial_return" | "full_return" | "cancelled"
   >("all");
   const { deletePurchase } = useDeletePurchase();
 
@@ -106,8 +106,8 @@ export default function Purchases() {
       key: "actions",
       render: (_: any, record: any) => (
         <ActionButton
-          viewUrl={`/admin/purchase/view/${record?.supplierId}`}
-          editUrl={`/admin/purchase/update/${record?.supplierId}`}
+          viewUrl={`/admin/purchase/view/${record?.id}`}
+          editUrl={`/admin/purchase/update/${record?.id}`}
           onDelete={() => handleDelete(record)}
         />
       ),
@@ -160,9 +160,14 @@ export default function Purchases() {
               className="md:!w-40 w-full "
             >
               <Option value="all">All Status</Option>
+              <Option value="draft">Draft</Option>
+              <Option value="po">Purchase Order</Option>
               <Option value="ordered">Ordered</Option>
+              <Option value="purchase">Purchase</Option>
               <Option value="received">Received</Option>
-              <Option value="pending">Pending</Option>
+              <Option value="partial">Partial</Option>
+              <Option value="partial_return">Partial Return</Option>
+              <Option value="full_return">Full Return</Option>
               <Option value="cancelled">Cancelled</Option>
             </Select>
           </div>

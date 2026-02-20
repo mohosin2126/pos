@@ -47,7 +47,7 @@ module.exports = {
                 isActive: true,
                 allowLogin: true,
                 username: 'jane.manager',
-                password: hash,               // 12345678 (hashed)
+                password: hash,
                 role: 'manager',
 
                 dateOfBirth: '1990-07-22',

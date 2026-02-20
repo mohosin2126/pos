@@ -23,6 +23,7 @@ import POSForm from "../create";
 import { generateReferenceNo } from "@/utils/generate-ref";
 import { CartItem } from "@/interface/common";
 import {useSellableProducts} from "@/hooks/admin/sellable";
+import { calculatePOSTotals, POSSettings } from "@/utils/pos-calculations";
 
 const { Search } = Input;
 
@@ -56,45 +57,59 @@ export default function AllPos() {
         }
     }, []);
 
-    // ————— Helpers —————
+
+    const normalizeProduct = (p: any) => p?.product ?? p;
+
     const productUnitPrice = (p: any) =>
         Number(p?.unitPrice ?? p?.price ?? 0);
 
     const productStock = (p: any) =>
         Number(p?.stockQuantity ?? p?.stock ?? 0);
 
+    const productAvailableQty = (p: any) =>
+        Number(p?.unexpiredQty ?? productStock(normalizeProduct(p)));
+
     const productCategoryName = (p: any) =>
         p?.category?.name ?? p?.category ?? "";
 
-    // Normalize a sellable product → CartItem
-    const toCartItem = (p: any): CartItem => ({
-        id: p?.id,
-        productId: p?.id,
-        name: p?.name,
-        price: productUnitPrice(p),
-        quantity: 1,
-        barcode: p?.barcode ?? "",
-        category: productCategoryName(p),
-        discount: Number(p?.discountAmount ?? 0),
-        tax: Number(p?.taxPercent ?? 0),
-    });
 
-    // Add product to cart (from sellableProducts)
+    const toCartItem = (p: any): CartItem => {
+        const baseProduct = normalizeProduct(p);
+
+        return {
+            id: baseProduct?.id,
+            productId: baseProduct?.id,
+            name: baseProduct?.name,
+            price: productUnitPrice(baseProduct),
+            quantity: 1,
+            barcode: baseProduct?.barcode ?? "",
+            category: productCategoryName(baseProduct),
+            discount: Number(baseProduct?.discountAmount ?? 0),
+            tax: Number(baseProduct?.taxPercent ?? 0),
+        };
+    };
+
+
     const addProductToCart = (product: any) => {
-        if (!product) return;
+        const baseProduct = normalizeProduct(product);
+        if (!baseProduct) return;
 
-        const existingItem = cartItems.find((c) => c.productId === product.id);
-        const stock = productStock(product);
+        const existingItem = cartItems.find(
+            (c) => c.productId === baseProduct.id
+        );
+        const stock = productAvailableQty(product);
 
         if (existingItem) {
-            // optional: prevent exceeding stock
+        
             if (existingItem.quantity + 1 > stock && stock > 0) {
                 message.warning("Not enough stock for this item");
                 return;
             }
             setCartItems((prev) =>
                 prev.map((c) =>
-                    c.productId === product.id ? { ...c, quantity: c.quantity + 1 } : c
+                    c.productId === baseProduct.id
+                        ? { ...c, quantity: c.quantity + 1 }
+                        : c
                 )
             );
         } else {
@@ -102,23 +117,22 @@ export default function AllPos() {
                 message.warning("This product is out of stock");
                 return;
             }
-            setCartItems((prev) => [...prev, toCartItem(product)]);
+            setCartItems((prev) => [...prev, toCartItem(baseProduct)]);
         }
     };
-
-    // Handle barcode scanning over sellable products only
     const handleBarcodeScan = (barcode: string) => {
-        const product = sellableProducts.find((p: any) => p?.barcode === barcode);
+        const product = sellableProducts.find(
+            (p: any) => normalizeProduct(p)?.barcode === barcode
+        );
         if (product) {
+            const baseProduct = normalizeProduct(product);
             addProductToCart(product);
             setBarcodeInput("");
-            message.success(`${product?.name} added to cart`);
+            message.success(`${baseProduct?.name} added to cart`);
         } else {
             message.error("Product not found");
         }
     };
-
-    // Update cart item quantity
     const updateQuantity = (id: number, quantity: number) => {
         if (quantity <= 0) {
             setCartItems((prev) => prev.filter((item) => item.id !== id));
@@ -129,29 +143,32 @@ export default function AllPos() {
         }
     };
 
-    // Remove item from cart
     const removeFromCart = (id: number) => {
         setCartItems((prev) => prev.filter((item) => item.id !== id));
     };
 
-    // Calculate totals
     const calculateTotals = () => {
-        const subtotal = cartItems.reduce(
-            (sum, item) => sum + item.price * item.quantity,
-            0
-        );
-        const totalDiscount = cartItems.reduce((sum, item) => sum + item.discount, 0);
-        const totalTax = cartItems.reduce(
-            (sum, item) =>
-                sum + ((item.price * item.quantity - item.discount) * item.tax) / 100,
-            0
-        );
-        const total = subtotal - totalDiscount + totalTax;
+        if (!posAddress) {
+            const defaultSettings: POSSettings = {
+                discountType: "none",
+                discountAmount: 0,
+                orderTaxPercent: 0,
+                shippingCharge: 0,
+            };
+            return calculatePOSTotals(cartItems, defaultSettings);
+        }
 
-        return { subtotal, totalDiscount, totalTax, total };
+        const settings: POSSettings = {
+            discountType: posAddress.discountType || "none",
+            discountAmount: posAddress.discountAmount || 0,
+            orderTaxPercent: posAddress.orderTaxPercent || 0,
+            shippingCharge: posAddress.shippingCharge || 0,
+        };
+
+        return calculatePOSTotals(cartItems, settings);
     };
 
-    // Place order
+
     const handlePlaceOrder = async () => {
         if (cartItems.length === 0) {
             message.error("Please add items to cart");
@@ -178,9 +195,9 @@ export default function AllPos() {
                 discountType: posAddress?.discountType || "none",
                 discountAmount: posAddress?.discountAmount || 0,
                 orderTaxPercent: posAddress?.orderTaxPercent || 0,
-                orderTaxAmount: posAddress?.orderTaxAmount || 0,
+                orderTaxAmount: 0,
                 shippingCharge: posAddress?.shippingCharge || 0,
-                amountPaid: totals?.total || 0,
+                amountPaid: totals.total,
                 notes: posAddress?.notes || "Walk-in customer",
                 customer: {
                     name: customerName,
@@ -188,15 +205,15 @@ export default function AllPos() {
                     email: posAddress?.email || "N/A",
                     address: posAddress?.address || "N/A",
                     status: "active",
-                    notes: "First time buyer",
+                    notes: "POS customer",
                 },
                 items: cartItems.map((item: CartItem) => ({
                     productId: item.productId,
                     quantity: item.quantity,
                     unitPrice: item.price,
                     discountType: "none",
-                    discountAmount: item.discount,
-                    taxPercent: item.tax,
+                    discountAmount: item.discount || 0,
+                    taxPercent: item.tax || 0,
                 })),
             };
 
@@ -213,18 +230,17 @@ export default function AllPos() {
         }
     };
 
-    // Print invoice
     const handlePrintInvoice = () => {
         window.print();
     };
 
-    // Filter sellable products by search term
     const filteredProducts = useMemo(() => {
         const term = searchTerm.trim().toLowerCase();
         if (!term) return sellableProducts ?? [];
         return (sellableProducts ?? []).filter((p: any) => {
-            const name = p?.name?.toLowerCase() ?? "";
-            const barcode = p?.barcode ?? "";
+            const baseProduct = normalizeProduct(p);
+            const name = baseProduct?.name?.toLowerCase() ?? "";
+            const barcode = baseProduct?.barcode ?? "";
             return name.includes(term) || barcode.includes(term);
         });
     }, [sellableProducts, searchTerm]);
@@ -239,7 +255,7 @@ export default function AllPos() {
             />
             <Card bodyStyle={{ padding: "0px 14px 14px" }}>
                 <div className="flex-1 flex overflow-hidden">
-                    {/* Left Column: Scanner + Product list (sellable only) */}
+                
                     <div className="w-1/3 bg-white border-r border-gray-200 flex flex-col">
                         <div className="p-4 border-b border-gray-200">
                             <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
@@ -276,9 +292,13 @@ export default function AllPos() {
 
                         <div className="flex-1 p-4 overflow-y-auto">
                             <div className="space-y-2">
-                                {(filteredProducts ?? []).map((product: any) => (
+                                {(filteredProducts ?? []).map((product: any) => {
+                                    const baseProduct = normalizeProduct(product);
+                                    const availableQty = productAvailableQty(product);
+
+                                    return (
                                     <Card
-                                        key={product?.id}
+                                        key={baseProduct?.id}
                                         size="small"
                                         className="cursor-pointer hover:shadow-md transition-shadow !mb-3"
                                         onClick={() => addProductToCart(product)}
@@ -287,31 +307,32 @@ export default function AllPos() {
                                             <div>
                                                 <Link
                                                     className="!w-max"
-                                                    to={`/admin/sales/view/${product?.id}`}
+                                                    to={`/admin/product/view/${baseProduct?.id}`}
                                                 >
                                                     <div className="font-medium text-sm !w-max">
-                                                        {product?.name}
+                                                        {baseProduct?.name}
                                                     </div>
                                                 </Link>
 
                                                 <div className="text-xs text-gray-500">
-                                                    {productCategoryName(product)}
+                                                    {productCategoryName(baseProduct)}
                                                 </div>
                                                 <div className="text-xs text-gray-400">
-                                                    Stock: {productStock(product)}
+                                                    Stock: {availableQty}
                                                 </div>
                                             </div>
                                             <div className="text-right">
                                                 <div className="font-bold text-green-600">
-                                                    ৳{productUnitPrice(product)}
+                                                    ৳{productUnitPrice(baseProduct)}
                                                 </div>
                                                 <div className="text-xs text-gray-400">
-                                                    {product?.barcode}
+                                                    {baseProduct?.barcode}
                                                 </div>
                                             </div>
                                         </div>
                                     </Card>
-                                ))}
+                                    );
+                                })}
                                 {!productsLoading && filteredProducts?.length === 0 && (
                                     <div className="text-center text-gray-500 text-sm py-6">
                                         No sellable products found.
@@ -478,22 +499,50 @@ export default function AllPos() {
                                 Order Summary
                             </h3>
 
-                            <div className="space-y-2 mb-4">
-                                <div className="flex justify-between text-sm">
-                                    <span>Subtotal:</span>
-                                    <span>৳{totals.subtotal.toFixed(2)}</span>
+                            <div className="space-y-2 mb-4 text-sm">
+                                <div className="flex justify-between">
+                                    <span className="text-gray-600">Subtotal:</span>
+                                    <span className="font-medium">৳{totals.subtotal.toFixed(2)}</span>
                                 </div>
-                                <div className="flex justify-between text-sm">
-                                    <span>Discount:</span>
-                                    <span>-৳{totals.totalDiscount.toFixed(2)}</span>
-                                </div>
-                                <div className="flex justify-between text-sm">
-                                    <span>Tax:</span>
-                                    <span>৳{totals.totalTax.toFixed(2)}</span>
-                                </div>
+                                
+                                {totals.itemDiscounts > 0 && (
+                                    <div className="flex justify-between text-red-600">
+                                        <span>Item Discounts:</span>
+                                        <span>-৳{totals.itemDiscounts.toFixed(2)}</span>
+                                    </div>
+                                )}
+                                
+                                {totals.orderDiscount > 0 && (
+                                    <div className="flex justify-between text-red-600">
+                                        <span>Order Discount ({posAddress?.discountType === "percent" ? "%":"৳"}):</span>
+                                        <span>-৳{totals.orderDiscount.toFixed(2)}</span>
+                                    </div>
+                                )}
+                                
+                                {totals.itemTaxes > 0 && (
+                                    <div className="flex justify-between text-blue-600">
+                                        <span>Item Taxes:</span>
+                                        <span>+৳{totals.itemTaxes.toFixed(2)}</span>
+                                    </div>
+                                )}
+                                
+                                {totals.orderTax > 0 && (
+                                    <div className="flex justify-between text-blue-600">
+                                        <span>Order Tax ({posAddress?.orderTaxPercent || 0}%):</span>
+                                        <span>+৳{totals.orderTax.toFixed(2)}</span>
+                                    </div>
+                                )}
+                                
+                                {totals.shipping > 0 && (
+                                    <div className="flex justify-between text-orange-600">
+                                        <span>Shipping Charge:</span>
+                                        <span>+৳{totals.shipping.toFixed(2)}</span>
+                                    </div>
+                                )}
+                                
                                 <Divider className="my-2" />
-                                <div className="flex justify-between font-bold text-lg">
-                                    <span>Total:</span>
+                                <div className="flex justify-between font-bold text-lg text-green-700 bg-green-50 p-2 rounded">
+                                    <span>Total Amount:</span>
                                     <span>৳{totals.total.toFixed(2)}</span>
                                 </div>
                             </div>
@@ -590,14 +639,36 @@ export default function AllPos() {
                                 <span>Subtotal:</span>
                                 <span>৳{totals.subtotal.toFixed(2)}</span>
                             </div>
-                            <div className="flex justify-between">
-                                <span>Discount:</span>
-                                <span>-৳{totals.totalDiscount.toFixed(2)}</span>
-                            </div>
-                            <div className="flex justify-between">
-                                <span>Tax:</span>
-                                <span>৳{totals.totalTax.toFixed(2)}</span>
-                            </div>
+                            {totals.itemDiscounts > 0 && (
+                                <div className="flex justify-between">
+                                    <span>Item Discounts:</span>
+                                    <span>-৳{totals.itemDiscounts.toFixed(2)}</span>
+                                </div>
+                            )}
+                            {totals.orderDiscount > 0 && (
+                                <div className="flex justify-between">
+                                    <span>Order Discount:</span>
+                                    <span>-৳{totals.orderDiscount.toFixed(2)}</span>
+                                </div>
+                            )}
+                            {totals.itemTaxes > 0 && (
+                                <div className="flex justify-between">
+                                    <span>Item Taxes:</span>
+                                    <span>+৳{totals.itemTaxes.toFixed(2)}</span>
+                                </div>
+                            )}
+                            {totals.orderTax > 0 && (
+                                <div className="flex justify-between">
+                                    <span>Order Tax:</span>
+                                    <span>+৳{totals.orderTax.toFixed(2)}</span>
+                                </div>
+                            )}
+                            {totals.shipping > 0 && (
+                                <div className="flex justify-between">
+                                    <span>Shipping:</span>
+                                    <span>+৳{totals.shipping.toFixed(2)}</span>
+                                </div>
+                            )}
                             <Divider />
                             <div className="flex justify-between font-bold text-lg">
                                 <span>Total:</span>

@@ -3,8 +3,6 @@
 const { Customer } = require("../../database/models");
 const {parsePagination, paginated, serverError, notFound, success} = require("../../utils/api-response");
 
-
-// GET ALL
 const getAll = async (req, res) => {
     try {
         const { page, limit, offset } = parsePagination(req.query, {
@@ -25,7 +23,6 @@ const getAll = async (req, res) => {
     }
 };
 
-// GET ONE
 const getOne = async (req, res) => {
     try {
         const customer = await Customer.findByPk(req.params.id);

@@ -109,11 +109,11 @@ export default function AllProducts() {
       dataIndex: "tags",
       key: "tags",
       render: (tags: string) =>
-        tags.split(",").map((tag) => (
+        tags ? tags.split(",").map((tag) => (
           <Tag color="blue" className="capitalize" key={tag}>
             {tag.trim()}
           </Tag>
-        )),
+        )) : null,
     },
     {
       title: "Actions",

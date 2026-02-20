@@ -88,6 +88,7 @@ export interface TProductPayload {
   category?: Category;
   sku?: string;
   barcode?: string;
+  price?: number;
   stockQuantity?: number;
   reorderLevel?: number;
   isTrackStock?: boolean;
@@ -107,36 +108,74 @@ export interface TAdditionalExpense {
   amount: number;
 }
 
-export interface TPurchasePayload {
-  supplierId: number;
-  supplierAddress: string;
-  referenceNo: string;
-  purchaseDate: string; // ISO string
-  status: "ordered" | "received" | "pending" | "cancelled";
+export interface TLineItem {
+  id?: number;
   productId: number;
-  payTermValue: number;
-  payTermUnit: "days" | "weeks" | "months";
-  discountType: "percent" | "fixed";
-  discountAmount: number;
-  orderTaxPercent: number;
-  orderTaxAmount: number;
-  shippingCharge: number;
-  additionalExpenses: TAdditionalExpense[];
-  totalItems: number;
-  netTotalAmount: number;
-  totalAmount: number;
-  amountPaid: number;
+  quantity: number;
+  unitPrice: number;
+  lineTotal: number;
+  expiryDate?: string;
+  batchNo?: string;
+  product?: TProductPayload;
+}
+
+export interface TPurchasePayload {
+  id?: number;
+  supplierId: number;
+  supplierAddress?: string;
+  referenceNo?: string;
+  purchaseDate: string;
+  status?: "draft" | "po" | "ordered" | "purchase" | "received" | "partial" | "partial_return" | "full_return" | "cancelled";
+  productId?: number | null;
+  items?: TLineItem[];
+  payTermValue?: number;
+  payTermUnit?: "days" | "months";
+  discountType?: "percent" | "fixed" | "none";
+  discountAmount?: number;
+  orderTaxPercent?: number;
+  orderTaxAmount?: number;
+  shippingCharge?: number;
+  additionalExpenses?: TAdditionalExpense[];
+  totalItems?: number;
+  netTotalAmount?: number;
+  totalAmount?: number;
+  amountPaid?: number;
   notes?: string;
   warrantyValue?: number;
   warrantyUnit?: string;
   expiryDate?: string;
   shippingDetails?: string;
+  supplier?: TSupplierPayload;
+  product?: TProductPayload;
+  returns?: TPurchaseReturn[];
+}
+
+export interface TPurchaseReturnItem {
+  productId: number;
+  quantity: number;
+  lineTotal: number;
+}
+
+export interface TPurchaseReturn {
+  id?: number;
+  purchaseId: number;
+  referenceNo?: string;
+  returnDate: string; 
+  returnReason: "defective" | "overstock" | "expired" | "quality_issue" | "wrong_item" | "other";
+  returnItems: TPurchaseReturnItem[];
+  totalReturnAmount: number;
+  refundAmount?: number;
+  refundStatus?: "pending" | "approved" | "refunded" | "rejected";
+  restockingDisposition?: "restock" | "scrap" | "donate" | "pending";
+  notes?: string;
+  purchase?: TPurchasePayload;
 }
 
 export interface TPOSItem {
   productId: number;
   quantity: number;
   unitPrice: number;
+  discountType?: "none" | "percent" | "fixed";
   discountAmount: number;
   taxPercent: number;
 }
@@ -157,8 +196,8 @@ export interface TPOSOrderPayload {
   shippingCharge: number;
   payments: TPOSPayment[];
   notes?: string;
-  createdAt: string; // ISO date
-  updatedAt: string; // ISO date
+  createdAt: string; 
+  updatedAt: string; 
 }
 
 export type TInvoiceStatus = "issued" | "paid" | "void";
@@ -250,7 +289,9 @@ export interface TSaleProps {
 
 export interface TActivityProduct {
   product: TProductPayload;
-  unexpiredQty: string;
+  quantityOnHand?: string;
+  unexpiredQty?: string;
+  expiredQty?: string;
 }
 
 export interface TNotifications {
@@ -273,7 +314,7 @@ export interface TPagination {
   hasPrev: boolean;
   hasNext: boolean;
 }
-// customer
+
 
 export interface TCustomer {
   id: number;
@@ -286,7 +327,7 @@ export interface TCustomer {
   createdAt?: string;
   updatedAt?: string;
 }
-// api response
+
 
 export interface TUsersApiResponse {
   success?: boolean;
@@ -323,7 +364,8 @@ export type LoaderProps = {
 export type CartItem = {
   barcode: string;
   category?: string;
-  discount: number;
+  discountAmount: number;
+  discountType: "none" | "percent" | "fixed";
   id: number;
   name: string;
   price: number;
@@ -331,3 +373,4 @@ export type CartItem = {
   quantity: number;
   tax: number;
 };
+

@@ -20,7 +20,7 @@ module.exports = (sequelize, DataTypes) => {
             orderTaxPercent: { type: DataTypes.DECIMAL(5, 2), allowNull: false, defaultValue: 0 },
             orderTaxAmount: { type: DataTypes.DECIMAL(18, 2), allowNull: false, defaultValue: 0 },
             shippingCharge: { type: DataTypes.DECIMAL(18, 2), allowNull: false, defaultValue: 0 },
-            totalItems: { type: DataTypes.DECIMAL(18, 2), allowNull: false, defaultValue: 0 },
+            totalItems: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
             netTotalAmount: { type: DataTypes.DECIMAL(18, 2), allowNull: false, defaultValue: 0 },
             totalAmount: { type: DataTypes.DECIMAL(18, 2), allowNull: false, defaultValue: 0 },
             amountPaid: { type: DataTypes.DECIMAL(18, 2), allowNull: false, defaultValue: 0 },
@@ -28,7 +28,21 @@ module.exports = (sequelize, DataTypes) => {
             meta: { type: DataTypes.JSON, allowNull: true },
             customerId: { type: DataTypes.INTEGER, allowNull: true },
         },
-        { sequelize, modelName: "Sale", tableName: "sales" }
+        { 
+            sequelize, 
+            modelName: "Sale", 
+            tableName: "sales",
+            validate: {
+                amountsNonNegative() {
+                    if (this.discountAmount < 0) throw new Error("Discount amount cannot be negative");
+                    if (this.orderTaxAmount < 0) throw new Error("Order tax amount cannot be negative");
+                    if (this.shippingCharge < 0) throw new Error("Shipping charge cannot be negative");
+                    if (this.netTotalAmount < 0) throw new Error("Net total amount cannot be negative");
+                    if (this.totalAmount < 0) throw new Error("Total amount cannot be negative");
+                    if (this.amountPaid < 0) throw new Error("Amount paid cannot be negative");
+                },
+            },
+        }
     );
 
     return Sale;

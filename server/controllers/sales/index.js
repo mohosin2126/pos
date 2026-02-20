@@ -1,12 +1,16 @@
 "use strict";
 
 const { sequelize, Sale, SaleItem, Customer, Invoice } = require("../../database/models");
+const { recomputeForProducts } = require("../../utils/inventory-recompute");
 const {
     success, created, badRequest, notFound, serverError, parsePagination, paginated,
 } = require("../../utils/api-response");
-
-// ===================== inline inventory helpers =====================
-const LOW_STOCK_THRESHOLD = 5;
+const {
+    validateLineTotal,
+    calculateItemTotal,
+    calculateOrderTotal,
+    calculateTotalItems,
+} = require("../../utils/price-calculator");
 
 async function getRemainingLots(productId, t) {
     const [pRows] = await sequelize.query(
@@ -61,115 +65,8 @@ async function getRemainingLots(productId, t) {
     return { unexpiredLots, allLots: lots };
 }
 
-async function recomputeForProducts(productIds, t) {
-    if (!Array.isArray(productIds) || !productIds.length) return;
 
-    const [pLots] = await sequelize.query(
-        `SELECT productId, expiryDate, COALESCE(SUM(totalItems),0) AS purchasedQty
-         FROM purchases
-         WHERE productId IN (${productIds.map(() => "?").join(",")})
-         GROUP BY productId, expiryDate`,
-        { replacements: productIds, transaction: t }
-    );
 
-    const [sAllocRows] = await sequelize.query(
-        `SELECT si.productId, si.allocations
-         FROM sale_items si
-                  JOIN sales s ON s.id = si.saleId
-         WHERE si.productId IN (${productIds.map(() => "?").join(",")})
-           AND s.status='completed'`,
-        { replacements: productIds, transaction: t }
-    );
-
-    const today = new Date(new Date().toDateString());
-    const soldByProdLot = new Map();
-
-    for (const r of sAllocRows) {
-        const allocs = Array.isArray(r.allocations) ? r.allocations : (r.allocations ? JSON.parse(r.allocations) : []);
-        for (const a of allocs) {
-            const lotKey = a.expiryDate ? new Date(a.expiryDate).toISOString().slice(0,10) : "NULL";
-            const key = `${r.productId}__${lotKey}`;
-            soldByProdLot.set(key, (soldByProdLot.get(key) || 0) + Number(a.qty || 0));
-        }
-    }
-
-    const byProd = new Map();
-    for (const row of pLots) {
-        const pid = Number(row.productId);
-        const lotKey = row.expiryDate ? new Date(row.expiryDate).toISOString().slice(0,10) : "NULL";
-        const purchased = Number(row.purchasedQty || 0);
-        const sold = Number(soldByProdLot.get(`${pid}__${lotKey}`) || 0);
-        const remaining = Math.max(0, purchased - sold);
-        const exp = row.expiryDate ? new Date(row.expiryDate) : null;
-        const isExpired = exp && exp < today;
-
-        const prev = byProd.get(pid) || { unexp: 0, expd: 0 };
-        if (isExpired) prev.expd += remaining; else prev.unexp += remaining;
-        byProd.set(pid, prev);
-    }
-
-    const now = new Date();
-    const upserts = [];
-    const inStock = [], lowStock = [], expired = [], sellable = [], oos = [];
-
-    for (const pid of productIds) {
-        const agg = byProd.get(pid) || { unexp: 0, expd: 0 };
-        const qoh = Number(agg.unexp + agg.expd);
-        upserts.push([pid, qoh, agg.unexp, agg.expd, LOW_STOCK_THRESHOLD, now]);
-
-        if (agg.expd > 0) expired.push([pid, agg.expd]);
-        if (qoh > 0) {
-            inStock.push([pid, qoh]);
-            if (qoh < LOW_STOCK_THRESHOLD) lowStock.push([pid, qoh]);
-            if (agg.unexp > 0) sellable.push([pid, agg.unexp]);
-        } else {
-            oos.push([pid, qoh]);
-        }
-    }
-
-    if (upserts.length) {
-        const ph = upserts.map(() => "(?,?,?,?,?,?)").join(",");
-        await sequelize.query(
-            `INSERT INTO stock_summaries
-             (productId, quantityOnHand, unexpiredQty, expiredQty, reorderPoint, lastComputedAt)
-             VALUES ${ph}
-                 ON DUPLICATE KEY UPDATE
-                                      quantityOnHand=VALUES(quantityOnHand),
-                                      unexpiredQty=VALUES(unexpiredQty),
-                                      expiredQty=VALUES(expiredQty),
-                                      reorderPoint=VALUES(reorderPoint),
-                                      lastComputedAt=VALUES(lastComputedAt)`,
-            { replacements: upserts.flat(), transaction: t }
-        );
-    }
-
-    const inClause = productIds.map(() => "?").join(",");
-    await Promise.all([
-        sequelize.query(`DELETE FROM list_in_stock_products WHERE productId IN (${inClause})`, { replacements: productIds, transaction: t }),
-        sequelize.query(`DELETE FROM list_low_stock_products WHERE productId IN (${inClause})`, { replacements: productIds, transaction: t }),
-        sequelize.query(`DELETE FROM list_expired_products WHERE productId IN (${inClause})`, { replacements: productIds, transaction: t }),
-        sequelize.query(`DELETE FROM list_sellable_products WHERE productId IN (${inClause})`, { replacements: productIds, transaction: t }),
-        sequelize.query(`DELETE FROM list_out_of_stock_products WHERE productId IN (${inClause})`, { replacements: productIds, transaction: t }),
-    ]);
-
-    async function insert(table, cols, rows) {
-        if (!rows.length) return;
-        const rowPh = rows.map(() => `(${cols.map(() => "?").join(",")})`).join(",");
-        await sequelize.query(
-            `INSERT INTO ${table} (${cols.join(",")}) VALUES ${rowPh}`,
-            { replacements: rows.flat(), transaction: t }
-        );
-    }
-
-    await insert("list_expired_products", ["productId", "expiredQty"], expired);
-    await insert("list_in_stock_products", ["productId", "quantityOnHand"], inStock);
-    await insert("list_low_stock_products", ["productId", "quantityOnHand"], lowStock);
-    await insert("list_sellable_products", ["productId", "unexpiredQty"], sellable);
-    await insert("list_out_of_stock_products", ["productId", "quantityOnHand"], oos);
-}
-// ===================== end inventory helpers =====================
-
-// ---- customer + invoice helpers ----
 async function resolveCustomerIdFromPayload(payload, t) {
     if (!payload) return null;
 
@@ -228,7 +125,6 @@ async function generateInvoiceNo(t) {
     return `${prefix}${seq.toString().padStart(4, "0")}`;
 }
 
-// ---- CONTROLLER ACTIONS ----
 const create = async (req, res) => {
     try {
         const { items } = req.body;
@@ -295,24 +191,28 @@ const create = async (req, res) => {
                 }
                 if (remaining > 0) throw { _badRequest: `Insufficient stock for product ${pid}. Need ${qty}.` };
 
-                const base = Number(item.unitPrice) * qty;
-                const disc = item.discountType === "percent"
-                    ? (base * Number(item.discountAmount || 0)) / 100
-                    : (item.discountType === "fixed" ? Number(item.discountAmount || 0) : 0);
-                const taxable = Math.max(0, base - disc);
-                const tax = (taxable * Number(item.taxPercent || 0)) / 100;
-                const lineTotal = taxable + tax;
-
-                await SaleItem.create({
-                    saleId: sale.id,
-                    productId: pid,
+                const itemCalc = calculateItemTotal({
                     quantity: qty,
                     unitPrice: item.unitPrice,
                     discountType: item.discountType || "none",
                     discountAmount: item.discountAmount || 0,
                     taxPercent: item.taxPercent || 0,
-                    taxAmount: tax,
-                    lineTotal,
+                });
+
+                if (!itemCalc.isValid) {
+                    throw { _badRequest: `Item calculation error for product ${pid}: ${itemCalc.error}` };
+                }
+
+                await SaleItem.create({
+                    saleId: sale.id,
+                    productId: pid,
+                    quantity: itemCalc.quantity,
+                    unitPrice: itemCalc.unitPrice,
+                    discountType: item.discountType || "none",
+                    discountAmount: itemCalc.discount,
+                    taxPercent: item.taxPercent || 0,
+                    taxAmount: itemCalc.tax,
+                    lineTotal: itemCalc.lineTotal,
                     allocations,
                 }, { transaction: t });
 
@@ -330,11 +230,26 @@ const create = async (req, res) => {
             );
             const tr = Array.isArray(tot) ? tot[0] : tot;
 
+            const saleItems = await SaleItem.findAll({ where: { saleId: sale.id }, transaction: t });
+
+            const orderCalc = calculateOrderTotal(
+                saleItems,
+                { type: sale.discountType || "none", amount: sale.discountAmount || 0 },
+                sale.orderTaxPercent || 0,
+                sale.shippingCharge || 0
+            );
+
+            if (!orderCalc.isValid) {
+                throw { _badRequest: `Order calculation error: ${orderCalc.error}` };
+            }
+
+            const totalItemsCount = calculateTotalItems(saleItems);
+
             await sale.update({
-                totalItems: Number(tr.totalItems || 0),
-                netTotalAmount: Number(tr.netTotalAmount || 0),
-                totalAmount: Number(tr.totalAmount || 0),
-                orderTaxAmount: Number(tr.totalTax || 0),
+                totalItems: totalItemsCount,
+                netTotalAmount: orderCalc.subtotal,
+                totalAmount: orderCalc.total,
+                orderTaxAmount: orderCalc.orderTax,
             }, { transaction: t });
 
             await recomputeForProducts([...affected], t);
@@ -342,11 +257,24 @@ const create = async (req, res) => {
             if (sale.status === "completed") {
                 const invoiceNo = await generateInvoiceNo(t);
 
-                const subTotal = Number(tr.netTotalAmount || 0);
-                const discountAmount = Number(sale.discountAmount || 0);
-                const orderTaxAmount = Number(tr.totalTax || 0);
+               
+                const itemSubtotal = Number(tr.netTotalAmount || 0);
+                const itemTaxes = Number(tr.totalTax || 0);
+                
+                let orderDiscount = 0;
+                if (sale.discountType === "percent") {
+                    orderDiscount = (itemSubtotal * sale.discountAmount) / 100;
+                } else if (sale.discountType === "fixed") {
+                    orderDiscount = sale.discountAmount;
+                }
+                
+            
+                const subtotalAfterOrderDiscount = Math.max(0, itemSubtotal - orderDiscount);
+                const orderTax = (subtotalAfterOrderDiscount * (sale.orderTaxPercent || 0)) / 100;
+                
                 const shippingCharge = Number(sale.shippingCharge || 0);
-                const totalAmount = Number(sale.totalAmount || 0);
+                const totalAmount = itemSubtotal - orderDiscount + itemTaxes + orderTax + shippingCharge;
+                
                 const amountPaid = Number(sale.amountPaid || 0);
                 const balanceDue = Math.max(0, totalAmount - amountPaid);
                 const status = balanceDue <= 0 ? "paid" : "issued";
@@ -357,9 +285,9 @@ const create = async (req, res) => {
                     invoiceNo,
                     invoiceDate: req.body.invoiceDate || new Date(),
                     dueDate: req.body.dueDate || null,
-                    subTotal,
-                    discountAmount,
-                    orderTaxAmount,
+                    subTotal: itemSubtotal,
+                    discountAmount: orderDiscount,
+                    orderTaxAmount: orderTax,
                     shippingCharge,
                     totalAmount,
                     amountPaid,
@@ -372,7 +300,7 @@ const create = async (req, res) => {
             return sale;
         });
 
-        // include full product under each item
+    
         const fullSale = await Sale.findByPk(sale.id, {
             include: [
                 { model: SaleItem, as: "items", include: [{ model: sequelize.models.Product, as: "product" }] },

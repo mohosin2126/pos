@@ -37,101 +37,7 @@ export default function POSDetails() {
   const { id } = useParams();
   const { sale: posData } = useSale(id);
 
-  // const posData = {
-  //   id: 1,
-  //   referenceNo: "S-2025-001",
-  //   saleDate: "2025-09-04T12:30:00.000Z",
-  //   status: "completed",
-  //   discountType: "none",
-  //   discountAmount: "0.00",
-  //   orderTaxPercent: "0.00",
-  //   orderTaxAmount: "40.00",
-  //   shippingCharge: "0.00",
-  //   totalItems: "8.00",
-  //   netTotalAmount: "800.00",
-  //   totalAmount: "840.00",
-  //   amountPaid: "0.00",
-  //   notes: "Walk-in customer",
-  //   meta: {
-  //     cashier: "MD",
-  //     channel: "POS",
-  //   },
-  //   customerId: 1,
-  //   createdAt: "2025-09-04T05:06:33.000Z",
-  //   updatedAt: "2025-09-04T05:06:33.000Z",
-  //   items: [
-  //     {
-  //       id: 1,
-  //       saleId: 1,
-  //       productId: 1,
-  //       quantity: "8.00",
-  //       unitPrice: "100.00",
-  //       discountType: "none",
-  //       discountAmount: "0.00",
-  //       taxPercent: "5.00",
-  //       taxAmount: "40.00",
-  //       lineTotal: "840.00",
-  //       allocations: [
-  //         {
-  //           qty: 8,
-  //           expiryDate: "2027-10-29",
-  //         },
-  //       ],
-  //       createdAt: "2025-09-04T05:06:33.000Z",
-  //       updatedAt: "2025-09-04T05:06:33.000Z",
-  //       product: {
-  //         id: 1,
-  //         name: "Sample Product",
-  //         description: "Product description",
-  //         categoryId: 1,
-  //         sku: "SKU12adfasadsfasddgfhdf345",
-  //         barcode: "1234567890",
-  //         stockQuantity: 50,
-  //         reorderLevel: 10,
-  //         isTrackStock: true,
-  //         imageUrl: "https://example.com/image.png",
-  //         status: "active",
-  //         tags: "tag1,tag2",
-  //         createdBy: 1,
-  //         updatedBy: null,
-  //         createdAt: "2025-09-04T05:04:17.000Z",
-  //         updatedAt: "2025-09-04T05:04:17.000Z",
-  //       },
-  //     },
-  //   ],
-  //   customer: {
-  //     id: 1,
-  //     name: "Rahim Uddin",
-  //     phone: "01700000000",
-  //     email: "rahim@example.com",
-  //     address: "Dhaka",
-  //     status: "active",
-  //     notes: "First time buyer",
-  //     createdAt: "2025-09-04T05:06:33.000Z",
-  //     updatedAt: "2025-09-04T05:06:33.000Z",
-  //   },
-  //   invoice: {
-  //     id: 1,
-  //     saleId: 1,
-  //     customerId: 1,
-  //     invoiceNo: "INV-20250904-0001",
-  //     invoiceDate: "2025-09-04T05:06:33.000Z",
-  //     dueDate: null,
-  //     subTotal: "800.00",
-  //     discountAmount: "0.00",
-  //     orderTaxAmount: "40.00",
-  //     shippingCharge: "0.00",
-  //     totalAmount: "840.00",
-  //     amountPaid: "0.00",
-  //     balanceDue: "840.00",
-  //     status: "issued",
-  //     notes: null,
-  //     createdAt: "2025-09-04T05:06:33.000Z",
-  //     updatedAt: "2025-09-04T05:06:33.000Z",
-  //   },
-  // };
 
-  // Mock product data - in real app, fetch this based on productId
   const productNames = {
     101: "Premium Widget",
     102: "Deluxe Gadget",
@@ -203,7 +109,7 @@ export default function POSDetails() {
     }
   };
 
-  // PDF Download functionality
+  // PDF 
   const handleDownloadPDF = async () => {
     try {
       message.loading("Generating POS Receipt PDF...", 0);
@@ -237,7 +143,7 @@ export default function POSDetails() {
     }
   };
 
-  // Table columns for items
+
   const itemColumns = [
     {
       title: "Product Details",

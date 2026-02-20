@@ -136,6 +136,19 @@ export default function ProductForm() {
             rules={[{ required: true, message: "Reorder Level is required" }]}
           />
 
+          <CustomInput
+            label="Selling Price"
+            name="price"
+            type="number"
+            step="0.01"
+            placeholder="Enter selling price"
+            rules={[
+              { required: true, message: "Selling price is required" },
+              { pattern: /^[0-9]*\.?[0-9]*$/, message: "Invalid price format" },
+              { min: 0, message: "Price cannot be negative" }
+            ]}
+          />
+
           <CustomSelect
             label="Track Stock"
             name="isTrackStock"

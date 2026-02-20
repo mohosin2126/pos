@@ -1,6 +1,5 @@
 "use strict";
 
-/** @type {import('sequelize-cli').Migration} */
 module.exports = {
     async up(queryInterface, Sequelize) {
         const tableOpts = { engine: "InnoDB", charset: "utf8mb4", collate: "utf8mb4_unicode_ci" };
@@ -87,7 +86,6 @@ module.exports = {
         await queryInterface.addIndex("sale_items", ["saleId"]);
         await queryInterface.addIndex("sale_items", ["productId"]);
 
-        // STOCK SUMMARY (canonical)
         await queryInterface.createTable(
             "stock_summaries",
             {
@@ -107,7 +105,6 @@ module.exports = {
             tableOpts
         );
 
-        // LIST TABLES
         await queryInterface.createTable(
             "list_in_stock_products",
             { productId: { type: Sequelize.INTEGER, primaryKey: true }, quantityOnHand: { type: Sequelize.DECIMAL(18,2), allowNull: false } },

@@ -6,6 +6,8 @@ module.exports = (sequelize, DataTypes) => {
         static associate(models) {
             Purchase.belongsTo(models.Supplier, { foreignKey: "supplierId", as: "supplier" });
             Purchase.belongsTo(models.Product,  { foreignKey: "productId",  as: "product"  });
+            Purchase.hasMany(models.PurchaseItem, { foreignKey: "purchaseId", as: "items" });
+            Purchase.hasMany(models.PurchaseReturn, { foreignKey: "purchaseId", as: "returns" });
         }
     }
 
@@ -16,9 +18,23 @@ module.exports = (sequelize, DataTypes) => {
 
             referenceNo: { type: DataTypes.STRING(64), allowNull: true, unique: true },
             purchaseDate: { type: DataTypes.DATE, allowNull: false },
-            status: { type: DataTypes.ENUM("draft", "ordered", "received", "partial", "cancelled"), allowNull: false, defaultValue: "ordered" },
+            status: {
+                type: DataTypes.ENUM(
+                    "draft",
+                    "po",
+                    "ordered",
+                    "purchase",
+                    "received",
+                    "partial",
+                    "partial_return",
+                    "full_return",
+                    "cancelled"
+                ),
+                allowNull: false,
+                defaultValue: "draft",
+            },
 
-            productId: { type: DataTypes.INTEGER, allowNull: false },
+            productId: { type: DataTypes.INTEGER, allowNull: true },
 
             payTermValue: { type: DataTypes.INTEGER, allowNull: true },
             payTermUnit: { type: DataTypes.ENUM("days", "months"), allowNull: true },
@@ -30,7 +46,7 @@ module.exports = (sequelize, DataTypes) => {
             shippingCharge: { type: DataTypes.DECIMAL(18, 2), defaultValue: 0 },
             additionalExpenses: { type: DataTypes.JSON, allowNull: true },
 
-            totalItems: { type: DataTypes.DECIMAL(18, 2), defaultValue: 0 },
+            totalItems: { type: DataTypes.INTEGER, defaultValue: 0 },
             netTotalAmount: { type: DataTypes.DECIMAL(18, 2), defaultValue: 0 },
             totalAmount: { type: DataTypes.DECIMAL(18, 2), defaultValue: 0 },
             amountPaid: { type: DataTypes.DECIMAL(18, 2), defaultValue: 0 },
@@ -51,6 +67,14 @@ module.exports = (sequelize, DataTypes) => {
                     if (this.warrantyValue != null && this.warrantyValue < 0) {
                         throw new Error("warrantyValue cannot be negative");
                     }
+                },
+                amountsNonNegative() {
+                    if (this.discountAmount < 0) throw new Error("Discount amount cannot be negative");
+                    if (this.orderTaxAmount < 0) throw new Error("Order tax amount cannot be negative");
+                    if (this.shippingCharge < 0) throw new Error("Shipping charge cannot be negative");
+                    if (this.netTotalAmount < 0) throw new Error("Net total amount cannot be negative");
+                    if (this.totalAmount < 0) throw new Error("Total amount cannot be negative");
+                    if (this.amountPaid < 0) throw new Error("Amount paid cannot be negative");
                 },
             },
         }
