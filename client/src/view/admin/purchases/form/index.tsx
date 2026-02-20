@@ -124,35 +124,6 @@ export default function PurchaseForm() {
                     />
 
                     <CustomInput
-                        label="Unit Price"
-                        name="unitPrice"
-                        type="number"
-                        placeholder="Enter purchase price per unit"
-                        rules={[{ required: true, message: "Unit price is required" }]}
-                    />
-
-                    <CustomInput
-                        label="Selling Price"
-                        name="sellingPrice"
-                        type="number"
-                        placeholder="Enter selling price per unit"
-                        rules={[
-                            { required: true, message: "Selling price is required" },
-                            ({ getFieldValue }) => ({
-                                validator(_, value) {
-                                    const unitPrice = getFieldValue("unitPrice");
-                                    if (!value || !unitPrice || Number(value) >= Number(unitPrice)) {
-                                        return Promise.resolve();
-                                    }
-                                    return Promise.reject(
-                                        new Error("Selling price must not be less than unit price!")
-                                    );
-                                },
-                            }),
-                        ]}
-                    />
-
-                    <CustomInput
                         label="Reference No"
                         name="referenceNo"
                         placeholder="Enter reference number"

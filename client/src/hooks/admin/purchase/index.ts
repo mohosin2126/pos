@@ -15,8 +15,10 @@ export function usePurchases() {
         "/v1/admin/purchase/all"
       );
       setPurchases(data?.data || []);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching purchases:", error);
+      console.error("API response:", error?.response?.data);
+      setPurchases([]);
     } finally {
       setLoading(false);
     }
@@ -41,16 +43,20 @@ export function usePurchase(id: string | undefined) {
         `/v1/admin/purchase/${id}`
       );
       setPurchase(data?.data || null);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching purchase:", error);
+      console.error("API response:", error?.response?.data);
+      setPurchase(null);
     } finally {
       setLoading(false);
     }
   }, [id]);
 
   useEffect(() => {
-    fetchPurchase();
-  }, [fetchPurchase]);
+    if (id) {
+      fetchPurchase();
+    }
+  }, [fetchPurchase, id]);
 
   return { purchase, loading, refetch: fetchPurchase };
 }
@@ -59,18 +65,22 @@ export function usePurchase(id: string | undefined) {
 export function useCreatePurchase() {
   const [error, setError] = useState<string[]>([]);
 
-  const createPurchase = async (data: TPurchasePayload) => {
+  const createPurchase = async (data: Partial<TPurchasePayload>) => {
     try {
+      console.log("Creating purchase with data:", data);
       const { data: result } = await useApi.post<{ data: TPurchasePayload }>(
         "/v1/admin/purchase/create",
         data
       );
+      console.log("Purchase created successfully:", result.data);
       return result.data;
     } catch (error: any) {
-      setError([
-        error?.response?.data?.message || "An unexpected error occurred.",
-      ]);
-      console.error("Error creating purchase:", error?.response?.data?.message);
+      const errorMsg =
+        error?.response?.data?.message || "An unexpected error occurred.";
+      setError([errorMsg]);
+      console.error("Error creating purchase:", errorMsg);
+      console.error("Full error response:", error?.response?.data);
+      throw error;
     }
   };
 

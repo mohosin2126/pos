@@ -112,11 +112,11 @@ export interface TPurchasePayload {
   supplierAddress: string;
   referenceNo: string;
   purchaseDate: string; // ISO string
-  status: "ordered" | "received" | "pending" | "cancelled";
+  status: "draft" | "ordered" | "received" | "partial" | "cancelled";
   productId: number;
   payTermValue: number;
   payTermUnit: "days" | "weeks" | "months";
-  discountType: "percent" | "fixed";
+  discountType: "percent" | "fixed" | "none";
   discountAmount: number;
   orderTaxPercent: number;
   orderTaxAmount: number;
@@ -131,6 +131,8 @@ export interface TPurchasePayload {
   warrantyUnit?: string;
   expiryDate?: string;
   shippingDetails?: string;
+  unitPrice?: number;
+  sellingPrice?: number;
 }
 
 export interface TPOSItem {
