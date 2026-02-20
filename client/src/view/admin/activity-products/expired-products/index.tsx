@@ -73,7 +73,12 @@ export default function ExpiredProducts() {
         <span>{record?.product?.reorderLevel}</span>
       ),
     },
-    { title: "Unexpired Qty", dataIndex: "unexpiredQty", key: "unexpiredQty" },
+    {
+      title: "Expired Qty",
+      dataIndex: "expiredQty",
+      key: "expiredQty",
+      render: (_: any, record: any) => <span>{record?.expiredQty}</span>,
+    },
     {
       title: "Status",
       dataIndex: "status",
@@ -182,7 +187,7 @@ export default function ExpiredProducts() {
           dataSource={filteredData}
           columns={columns}
           loading={Loader({ loading })}
-          rowKey="id"
+          rowKey={(record: any) => record?.product?.id ?? record?.id}
           pagination={
             filteredData.length > 10
               ? {

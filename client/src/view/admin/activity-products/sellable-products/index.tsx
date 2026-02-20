@@ -3,7 +3,7 @@ import { DashboardTitle } from "@/components/re-useable/dashboard-titile";
 import ToolbarButton from "@/components/re-useable/toolbar-button";
 import { Avatar, Button, Card, Input, Select, Space, Table, Tag } from "antd";
 import { MdAddCircleOutline, MdOutlineSearch } from "react-icons/md";
-import { useSellableProducts } from "@/hooks/admin/inventory";
+import { useSellableProducts } from "@/hooks/admin/sellable";
 import { useState } from "react";
 import { ActionButton } from "@/components/re-useable/action-button";
 import dayjs from "dayjs";
@@ -18,7 +18,7 @@ export default function SellableProducts() {
   >("all");
 
   const { products, refetch, loading } = useSellableProducts();
-  // console.log("products :", products);
+
 
   const rowSelection = {
     onChange: (selectedRowKeys: React.Key[], selectedRows: any[]) => {
@@ -26,7 +26,6 @@ export default function SellableProducts() {
       console.log("Selected Rows: ", selectedRows);
     },
   };
-  // Table columns
   const columns = [
     {
       title: "Product",
@@ -75,7 +74,12 @@ export default function SellableProducts() {
         <span>{record?.product?.reorderLevel}</span>
       ),
     },
-    { title: "Unexpired Qty", dataIndex: "unexpiredQty", key: "unexpiredQty" },
+    {
+      title: "Unexpired Qty",
+      dataIndex: "unexpiredQty",
+      key: "unexpiredQty",
+      render: (_: any, record: any) => <span>{record?.unexpiredQty}</span>,
+    },
       {
           title: "Status",
           dataIndex: "status",
@@ -121,7 +125,6 @@ export default function SellableProducts() {
     },
   ];
 
-  // Filtered data
   const filteredData = products?.filter((item) => {
     const matchesSearch =
       (item?.product?.name ?? "")
@@ -189,7 +192,7 @@ export default function SellableProducts() {
           dataSource={filteredData}
           columns={columns}
           loading={Loader({ loading })}
-          rowKey="id"
+          rowKey={(record: any) => record?.product?.id ?? record?.id}
           pagination={
             filteredData.length > 10
               ? {

@@ -97,31 +97,6 @@ export function useExpiredProducts() {
   return { products, loading, refetch: fetchExpiredProducts };
 }
 
-export function useSellableProducts() {
-  const [products, setProducts] = useState<TActivityProduct[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
-
-  const fetchSellableProducts = useCallback(async () => {
-    setLoading(true);
-    try {
-      const { data } = await useApi.get(
-        "/v1/admin/inventory/sellable-products"
-      );
-      setProducts(data?.data || []);
-    } catch (error) {
-      console.error("Error fetching sellable products:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchSellableProducts();
-  }, [fetchSellableProducts]);
-
-  return { products, loading, refetch: fetchSellableProducts };
-}
-
 export function useOutOfStockProducts() {
   const [products, setProducts] = useState<TActivityProduct[]>([]);
   const [loading, setLoading] = useState<boolean>(false);

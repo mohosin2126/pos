@@ -287,7 +287,9 @@ export interface TSaleProps {
 
 export interface TActivityProduct {
   product: TProductPayload;
-  unexpiredQty: string;
+  quantityOnHand?: string;
+  unexpiredQty?: string;
+  expiredQty?: string;
 }
 
 export interface TNotifications {

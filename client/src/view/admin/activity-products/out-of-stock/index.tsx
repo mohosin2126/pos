@@ -25,7 +25,6 @@ export default function OutOfStock() {
       console.log("Selected Rows: ", selectedRows);
     },
   };
-  // Table columns
   const columns = [
     {
       title: "Product",
@@ -74,7 +73,12 @@ export default function OutOfStock() {
         <span>{record?.product?.reorderLevel}</span>
       ),
     },
-    { title: "Unexpired Qty", dataIndex: "unexpiredQty", key: "unexpiredQty" },
+    {
+      title: "Qty On Hand",
+      dataIndex: "quantityOnHand",
+      key: "quantityOnHand",
+      render: (_: any, record: any) => <span>{record?.quantityOnHand}</span>,
+    },
     {
       title: "Status",
       dataIndex: "status",
@@ -115,7 +119,6 @@ export default function OutOfStock() {
     },
   ];
 
-  // Filtered data
   const filteredData = products?.filter((item) => {
     const matchesSearch =
       (item?.product?.name ?? "")
@@ -182,7 +185,7 @@ export default function OutOfStock() {
           dataSource={filteredData}
           columns={columns}
           loading={Loader({ loading })}
-          rowKey="id"
+          rowKey={(record: any) => record?.product?.id ?? record?.id}
           pagination={
             filteredData.length > 10
               ? {

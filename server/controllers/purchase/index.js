@@ -1,6 +1,7 @@
 "use strict";
 
 const { Purchase, Supplier, Product, PurchaseItem, PurchaseReturn, sequelize } = require("../../database/models");
+const { recomputeForProducts } = require("../../utils/inventory-recompute");
 const {
     success, created, badRequest, notFound, serverError, parsePagination, paginated,
 } = require("../../utils/api-response");
@@ -10,118 +11,7 @@ const {
     createPurchaseReturnValidation,
 } = require("./validation");
 
-// ===================== inline inventory recompute (no service file) =====================
-const LOW_STOCK_THRESHOLD = 5;
 
-async function recomputeForProducts(productIds, t) {
-    if (!Array.isArray(productIds) || !productIds.length) return;
-
-    // Get purchased quantities from both purchase (old single-product) and purchase_items (new multi-product)
-    const [pLots] = await sequelize.query(
-        `SELECT COALESCE(pi.productId, p.productId) AS productId, COALESCE(pi.expiryDate, p.expiryDate) as expiryDate, COALESCE(SUM(COALESCE(pi.quantity, p.totalItems)),0) AS purchasedQty
-         FROM purchases p
-         LEFT JOIN purchase_items pi ON p.id = pi.purchaseId
-         WHERE (p.status='purchase' OR p.status='received' OR p.status='partial')
-           AND (COALESCE(pi.productId, p.productId) IN (${productIds.map(() => "?").join(",")}))
-         GROUP BY COALESCE(pi.productId, p.productId), COALESCE(pi.expiryDate, p.expiryDate)`,
-        { replacements: productIds, transaction: t }
-    );
-
-    const [sAllocRows] = await sequelize.query(
-        `SELECT si.productId, si.allocations
-         FROM sale_items si
-                  JOIN sales s ON s.id = si.saleId
-         WHERE si.productId IN (${productIds.map(() => "?").join(",")})
-           AND s.status='completed'`,
-        { replacements: productIds, transaction: t }
-    );
-
-    const today = new Date(new Date().toDateString());
-    const soldByProdLot = new Map();
-
-    for (const r of sAllocRows) {
-        const allocs = Array.isArray(r.allocations) ? r.allocations : (r.allocations ? JSON.parse(r.allocations) : []);
-        for (const a of allocs) {
-            const lotKey = a.expiryDate ? new Date(a.expiryDate).toISOString().slice(0,10) : "NULL";
-            const key = `${r.productId}__${lotKey}`;
-            soldByProdLot.set(key, (soldByProdLot.get(key) || 0) + Number(a.qty || 0));
-        }
-    }
-
-    const byProd = new Map(); // productId -> { unexp, expd }
-    for (const row of pLots) {
-        const pid = Number(row.productId);
-        const lotKey = row.expiryDate ? new Date(row.expiryDate).toISOString().slice(0,10) : "NULL";
-        const purchased = Number(row.purchasedQty || 0);
-        const sold = Number(soldByProdLot.get(`${pid}__${lotKey}`) || 0);
-        const remaining = Math.max(0, purchased - sold);
-        const exp = row.expiryDate ? new Date(row.expiryDate) : null;
-        const isExpired = exp && exp < today;
-
-        const prev = byProd.get(pid) || { unexp: 0, expd: 0 };
-        if (isExpired) prev.expd += remaining; else prev.unexp += remaining;
-        byProd.set(pid, prev);
-    }
-
-    const now = new Date();
-    const upserts = [];
-    const inStock = [], lowStock = [], expired = [], sellable = [], oos = [];
-
-    for (const pid of productIds) {
-        const agg = byProd.get(pid) || { unexp: 0, expd: 0 };
-        const qoh = Number(agg.unexp + agg.expd);
-        upserts.push([pid, qoh, agg.unexp, agg.expd, LOW_STOCK_THRESHOLD, now]);
-
-        if (agg.expd > 0) expired.push([pid, agg.expd]);
-        if (qoh > 0) {
-            inStock.push([pid, qoh]);
-            if (qoh < LOW_STOCK_THRESHOLD) lowStock.push([pid, qoh]);
-            if (agg.unexp > 0) sellable.push([pid, agg.unexp]);
-        } else {
-            oos.push([pid, qoh]);
-        }
-    }
-
-    if (upserts.length) {
-        const ph = upserts.map(() => "(?,?,?,?,?,?)").join(",");
-        await sequelize.query(
-            `INSERT INTO stock_summaries
-             (productId, quantityOnHand, unexpiredQty, expiredQty, reorderPoint, lastComputedAt)
-             VALUES ${ph}
-                 ON DUPLICATE KEY UPDATE
-                                      quantityOnHand=VALUES(quantityOnHand),
-                                      unexpiredQty=VALUES(unexpiredQty),
-                                      expiredQty=VALUES(expiredQty),
-                                      reorderPoint=VALUES(reorderPoint),
-                                      lastComputedAt=VALUES(lastComputedAt)`,
-            { replacements: upserts.flat(), transaction: t }
-        );
-    }
-
-    const inClause = productIds.map(() => "?").join(",");
-    await Promise.all([
-        sequelize.query(`DELETE FROM list_in_stock_products WHERE productId IN (${inClause})`, { replacements: productIds, transaction: t }),
-        sequelize.query(`DELETE FROM list_low_stock_products WHERE productId IN (${inClause})`, { replacements: productIds, transaction: t }),
-        sequelize.query(`DELETE FROM list_expired_products WHERE productId IN (${inClause})`, { replacements: productIds, transaction: t }),
-        sequelize.query(`DELETE FROM list_sellable_products WHERE productId IN (${inClause})`, { replacements: productIds, transaction: t }),
-        sequelize.query(`DELETE FROM list_out_of_stock_products WHERE productId IN (${inClause})`, { replacements: productIds, transaction: t }),
-    ]);
-
-    async function insert(table, cols, rows) {
-        if (!rows.length) return;
-        const rowPh = rows.map(() => `(${cols.map(() => "?").join(",")})`).join(",");
-        await sequelize.query(
-            `INSERT INTO ${table} (${cols.join(",")}) VALUES ${rowPh}`,
-            { replacements: rows.flat(), transaction: t }
-        );
-    }
-
-    await insert("list_expired_products", ["productId", "expiredQty"], expired);
-    await insert("list_in_stock_products", ["productId", "quantityOnHand"], inStock);
-    await insert("list_low_stock_products", ["productId", "quantityOnHand"], lowStock);
-    await insert("list_sellable_products", ["productId", "unexpiredQty"], sellable);
-    await insert("list_out_of_stock_products", ["productId", "quantityOnHand"], oos);
-}
 // ===================== end recompute =====================
 
 // Create Purchase Order (with items)
@@ -354,7 +244,7 @@ const destroy = async (req, res) => {
         const purchase = await Purchase.findByPk(id, { include: { model: PurchaseItem, as: "items" } });
         if (!purchase) return notFound(res, "Purchase not found");
 
-        // Only allow deletion of draft or po status
+    
         if (purchase.status !== "draft" && purchase.status !== "po") {
             return badRequest(res, "Can only delete purchases in draft or po status");
         }
@@ -369,10 +259,10 @@ const destroy = async (req, res) => {
                 productIds.add(purchase.productId);
             }
 
-            // Delete purchase (cascades to items due to FK)
+           
             await purchase.destroy({ transaction: t });
 
-            // Recompute inventory
+        
             if (productIds.size > 0) {
                 await recomputeForProducts([...productIds], t);
             }
@@ -384,7 +274,6 @@ const destroy = async (req, res) => {
     }
 };
 
-// APPROVE PURCHASE ORDER(convert PO to purchase)
 const approvePO = async (req, res) => {
     try {
         const { id } = req.params;
@@ -397,11 +286,10 @@ const approvePO = async (req, res) => {
             return badRequest(res, "Only purchase orders (po status) can be approved");
         }
 
-        // Approve and trigger inventory recompute
+        
         const updated = await sequelize.transaction(async (t) => {
             await purchase.update({ status: "purchase" }, { transaction: t });
 
-            // Recompute inventory for all items
             const productIds = purchase.items.map(item => item.productId).filter(Boolean);
             if (productIds.length > 0) {
                 await recomputeForProducts(productIds, t);
@@ -425,23 +313,22 @@ const approvePO = async (req, res) => {
 // CREATE PURCHASE RETURN
 const createReturn = async (req, res) => {
     try {
-        // Validate request
+    
         const { error, value } = createPurchaseReturnValidation.validate(req.body);
         if (error) return badRequest(res, error.details[0].message);
 
         const { purchaseId } = value;
 
-        // Verify purchase exists
+       
         const purchase = await Purchase.findByPk(purchaseId);
         if (!purchase) return notFound(res, "Purchase not found");
 
-        // Verify purchase has items (either in purchase_items or old productId)
+    
         const items = await PurchaseItem.findAll({ where: { purchaseId } });
         if (items.length === 0 && !purchase.productId) {
             return badRequest(res, "Cannot return items from a purchase with no items");
         }
 
-        // Create purchase return
         const purchaseReturn = await sequelize.transaction(async (t) => {
             const pr = await PurchaseReturn.create(
                 {
@@ -459,19 +346,19 @@ const createReturn = async (req, res) => {
                 { transaction: t }
             );
 
-            // Update purchase status based on return
+           
             const totalReturnAmount = parseFloat(value.totalReturnAmount);
             const purchaseTotal = parseFloat(purchase.totalAmount);
 
             if (Math.abs(totalReturnAmount - purchaseTotal) < 0.01) {
-                // Full return
+              
                 await purchase.update({ status: "full_return" }, { transaction: t });
             } else {
-                // Partial return
+            
                 await purchase.update({ status: "partial_return" }, { transaction: t });
             }
 
-            // Recompute inventory for returned products
+           
             const returnedProductIds = value.returnItems.map(item => item.productId);
             if (returnedProductIds.length > 0) {
                 await recomputeForProducts(returnedProductIds, t);
@@ -486,7 +373,7 @@ const createReturn = async (req, res) => {
     }
 };
 
-// GET RETURNS FOR A PURCHASE
+// GET RETURNS
 const getReturns = async (req, res) => {
     try {
         const { purchaseId } = req.params;
