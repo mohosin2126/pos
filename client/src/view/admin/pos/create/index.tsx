@@ -12,6 +12,8 @@ import type { TPOSOrderPayload } from "@/interface/common";
 export default function POSForm({ setPosAddress, setIsOpen }: any) {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState<boolean>(false);
+  const [discountType, setDiscountType] = useState<"none" | "percent" | "fixed">("none");
+
 
   const handleFinish = async (values: TPOSOrderPayload) => {
     setLoading(true);
@@ -55,58 +57,65 @@ export default function POSForm({ setPosAddress, setIsOpen }: any) {
             label="Discount Type"
             name="discountType"
             size="middle"
-            placeholder="Select Discount"
+            placeholder="Select Discount Type"
             rules={[{ required: true, message: "Discount Type is required" }]}
             mode="single"
             options={[
-              { label: "None", value: "none" },
-              { label: "Percent", value: "percent" },
-              { label: "Fixed", value: "fixed" },
+              { label: "None - No Discount", value: "none" },
+              { label: "Percent (%) - Percentage of Subtotal", value: "percent" },
+              { label: "Fixed Amount - Fixed Taka Amount", value: "fixed" },
             ]}
+            onChange={(value) => {
+              setDiscountType(value as "none" | "percent" | "fixed");
+              if (value === "none") {
+                form.setFieldValue("discountAmount", 0);
+              }
+            }}
           />
+          
+          {discountType !== "none" && (
+            <CustomNumberInput
+              label={`Discount Amount ${discountType === "percent" ? "(%)" : "(৳)"}`}
+              name="discountAmount"
+              size="middle"
+              placeholder={`Enter discount ${discountType === "percent" ? "percentage" : "amount"}`}
+              min={0}
+              step={discountType === "percent" ? 0.01 : 1}
+              rules={[{ required: true, message: "Discount amount is required" }]}
+            />
+          )}
+          
+          <Form.Item name="discountAmount" hidden>
+            <InputNumber />
+          </Form.Item>
+
           <CustomNumberInput
-            label="Discount Amount"
-            name="discountAmount"
-            size="middle"
-            placeholder="Enter discount amount"
-            min={0}
-            max={100}
-            rules={[{ required: true, message: "Amount is required" }]}
-          />
-          <CustomNumberInput
-            label="Order Tax (%)"
+            label="Order Tax Percent (%)"
             name="orderTaxPercent"
             size="middle"
-            placeholder="Enter order tax (%)"
+            placeholder="Enter tax percentage (e.g., 15 for 15%)"
             min={0}
             max={100}
+            step={0.01}
             rules={[{ required: true, message: "Order Tax is required" }]}
           />
+
           <CustomNumberInput
-            label="Order Tax Amount"
-            name="orderTaxAmount"
-            size="middle"
-            placeholder="Enter order tax amount"
-            min={0}
-            max={100}
-            rules={[{ required: true, message: "Amount is required" }]}
-          />
-          <CustomNumberInput
-            label="Shipping Charge"
+            label="Shipping Charge (৳)"
             name="shippingCharge"
             size="middle"
-            placeholder="Enter Shipping Charge"
+            placeholder="Enter shipping charge amount (e.g., 50)"
             min={0}
+            step={1}
             rules={[{ required: true, message: "Shipping Charge is required" }]}
           />
         </div>
 
         <CustomTextArea
-          label="Notes"
+          label="Notes (Optional)"
           name="notes"
           rows={3}
-          placeholder="Enter notes"
-          rules={[{ required: true, message: "Notes are required" }]}
+          placeholder="Enter additional notes or customer information"
         />
         {/* Submit */}
         <Button

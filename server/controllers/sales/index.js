@@ -222,11 +222,26 @@ const create = async (req, res) => {
             );
             const tr = Array.isArray(tot) ? tot[0] : tot;
 
+            // Calculate proper total with order-level discount and tax
+            const itemSubtotal = Number(tr.netTotalAmount || 0);
+            const itemTaxes = Number(tr.totalTax || 0);
+            
+            let orderDiscount = 0;
+            if (sale.discountType === "percent") {
+                orderDiscount = (itemSubtotal * sale.discountAmount) / 100;
+            } else if (sale.discountType === "fixed") {
+                orderDiscount = sale.discountAmount;
+            }
+            
+            const subtotalAfterOrderDiscount = Math.max(0, itemSubtotal - orderDiscount);
+            const orderTax = (subtotalAfterOrderDiscount * (sale.orderTaxPercent || 0)) / 100;
+            const finalTotal = itemSubtotal - orderDiscount + itemTaxes + orderTax + (sale.shippingCharge || 0);
+
             await sale.update({
                 totalItems: Number(tr.totalItems || 0),
-                netTotalAmount: Number(tr.netTotalAmount || 0),
-                totalAmount: Number(tr.totalAmount || 0),
-                orderTaxAmount: Number(tr.totalTax || 0),
+                netTotalAmount: itemSubtotal,
+                totalAmount: finalTotal,
+                orderTaxAmount: orderTax,
             }, { transaction: t });
 
             await recomputeForProducts([...affected], t);
@@ -234,11 +249,24 @@ const create = async (req, res) => {
             if (sale.status === "completed") {
                 const invoiceNo = await generateInvoiceNo(t);
 
-                const subTotal = Number(tr.netTotalAmount || 0);
-                const discountAmount = Number(sale.discountAmount || 0);
-                const orderTaxAmount = Number(tr.totalTax || 0);
+               
+                const itemSubtotal = Number(tr.netTotalAmount || 0);
+                const itemTaxes = Number(tr.totalTax || 0);
+                
+                let orderDiscount = 0;
+                if (sale.discountType === "percent") {
+                    orderDiscount = (itemSubtotal * sale.discountAmount) / 100;
+                } else if (sale.discountType === "fixed") {
+                    orderDiscount = sale.discountAmount;
+                }
+                
+            
+                const subtotalAfterOrderDiscount = Math.max(0, itemSubtotal - orderDiscount);
+                const orderTax = (subtotalAfterOrderDiscount * (sale.orderTaxPercent || 0)) / 100;
+                
                 const shippingCharge = Number(sale.shippingCharge || 0);
-                const totalAmount = Number(sale.totalAmount || 0);
+                const totalAmount = itemSubtotal - orderDiscount + itemTaxes + orderTax + shippingCharge;
+                
                 const amountPaid = Number(sale.amountPaid || 0);
                 const balanceDue = Math.max(0, totalAmount - amountPaid);
                 const status = balanceDue <= 0 ? "paid" : "issued";
@@ -249,9 +277,9 @@ const create = async (req, res) => {
                     invoiceNo,
                     invoiceDate: req.body.invoiceDate || new Date(),
                     dueDate: req.body.dueDate || null,
-                    subTotal,
-                    discountAmount,
-                    orderTaxAmount,
+                    subTotal: itemSubtotal,
+                    discountAmount: orderDiscount,
+                    orderTaxAmount: orderTax,
                     shippingCharge,
                     totalAmount,
                     amountPaid,

@@ -23,6 +23,7 @@ import POSForm from "../create";
 import { generateReferenceNo } from "@/utils/generate-ref";
 import { CartItem } from "@/interface/common";
 import {useSellableProducts} from "@/hooks/admin/sellable";
+import { calculatePOSTotals, POSSettings } from "@/utils/pos-calculations";
 
 const { Search } = Input;
 
@@ -145,20 +146,26 @@ export default function AllPos() {
     const removeFromCart = (id: number) => {
         setCartItems((prev) => prev.filter((item) => item.id !== id));
     };
-    const calculateTotals = () => {
-        const subtotal = cartItems.reduce(
-            (sum, item) => sum + item.price * item.quantity,
-            0
-        );
-        const totalDiscount = cartItems.reduce((sum, item) => sum + item.discount, 0);
-        const totalTax = cartItems.reduce(
-            (sum, item) =>
-                sum + ((item.price * item.quantity - item.discount) * item.tax) / 100,
-            0
-        );
-        const total = subtotal - totalDiscount + totalTax;
 
-        return { subtotal, totalDiscount, totalTax, total };
+    const calculateTotals = () => {
+        if (!posAddress) {
+            const defaultSettings: POSSettings = {
+                discountType: "none",
+                discountAmount: 0,
+                orderTaxPercent: 0,
+                shippingCharge: 0,
+            };
+            return calculatePOSTotals(cartItems, defaultSettings);
+        }
+
+        const settings: POSSettings = {
+            discountType: posAddress.discountType || "none",
+            discountAmount: posAddress.discountAmount || 0,
+            orderTaxPercent: posAddress.orderTaxPercent || 0,
+            shippingCharge: posAddress.shippingCharge || 0,
+        };
+
+        return calculatePOSTotals(cartItems, settings);
     };
 
 
@@ -188,9 +195,9 @@ export default function AllPos() {
                 discountType: posAddress?.discountType || "none",
                 discountAmount: posAddress?.discountAmount || 0,
                 orderTaxPercent: posAddress?.orderTaxPercent || 0,
-                orderTaxAmount: posAddress?.orderTaxAmount || 0,
+                orderTaxAmount: 0,
                 shippingCharge: posAddress?.shippingCharge || 0,
-                amountPaid: totals?.total || 0,
+                amountPaid: totals.total,
                 notes: posAddress?.notes || "Walk-in customer",
                 customer: {
                     name: customerName,
@@ -198,15 +205,15 @@ export default function AllPos() {
                     email: posAddress?.email || "N/A",
                     address: posAddress?.address || "N/A",
                     status: "active",
-                    notes: "First time buyer",
+                    notes: "POS customer",
                 },
                 items: cartItems.map((item: CartItem) => ({
                     productId: item.productId,
                     quantity: item.quantity,
                     unitPrice: item.price,
                     discountType: "none",
-                    discountAmount: item.discount,
-                    taxPercent: item.tax,
+                    discountAmount: item.discount || 0,
+                    taxPercent: item.tax || 0,
                 })),
             };
 
@@ -492,22 +499,50 @@ export default function AllPos() {
                                 Order Summary
                             </h3>
 
-                            <div className="space-y-2 mb-4">
-                                <div className="flex justify-between text-sm">
-                                    <span>Subtotal:</span>
-                                    <span>৳{totals.subtotal.toFixed(2)}</span>
+                            <div className="space-y-2 mb-4 text-sm">
+                                <div className="flex justify-between">
+                                    <span className="text-gray-600">Subtotal:</span>
+                                    <span className="font-medium">৳{totals.subtotal.toFixed(2)}</span>
                                 </div>
-                                <div className="flex justify-between text-sm">
-                                    <span>Discount:</span>
-                                    <span>-৳{totals.totalDiscount.toFixed(2)}</span>
-                                </div>
-                                <div className="flex justify-between text-sm">
-                                    <span>Tax:</span>
-                                    <span>৳{totals.totalTax.toFixed(2)}</span>
-                                </div>
+                                
+                                {totals.itemDiscounts > 0 && (
+                                    <div className="flex justify-between text-red-600">
+                                        <span>Item Discounts:</span>
+                                        <span>-৳{totals.itemDiscounts.toFixed(2)}</span>
+                                    </div>
+                                )}
+                                
+                                {totals.orderDiscount > 0 && (
+                                    <div className="flex justify-between text-red-600">
+                                        <span>Order Discount ({posAddress?.discountType === "percent" ? "%":"৳"}):</span>
+                                        <span>-৳{totals.orderDiscount.toFixed(2)}</span>
+                                    </div>
+                                )}
+                                
+                                {totals.itemTaxes > 0 && (
+                                    <div className="flex justify-between text-blue-600">
+                                        <span>Item Taxes:</span>
+                                        <span>+৳{totals.itemTaxes.toFixed(2)}</span>
+                                    </div>
+                                )}
+                                
+                                {totals.orderTax > 0 && (
+                                    <div className="flex justify-between text-blue-600">
+                                        <span>Order Tax ({posAddress?.orderTaxPercent || 0}%):</span>
+                                        <span>+৳{totals.orderTax.toFixed(2)}</span>
+                                    </div>
+                                )}
+                                
+                                {totals.shipping > 0 && (
+                                    <div className="flex justify-between text-orange-600">
+                                        <span>Shipping Charge:</span>
+                                        <span>+৳{totals.shipping.toFixed(2)}</span>
+                                    </div>
+                                )}
+                                
                                 <Divider className="my-2" />
-                                <div className="flex justify-between font-bold text-lg">
-                                    <span>Total:</span>
+                                <div className="flex justify-between font-bold text-lg text-green-700 bg-green-50 p-2 rounded">
+                                    <span>Total Amount:</span>
                                     <span>৳{totals.total.toFixed(2)}</span>
                                 </div>
                             </div>
@@ -604,14 +639,36 @@ export default function AllPos() {
                                 <span>Subtotal:</span>
                                 <span>৳{totals.subtotal.toFixed(2)}</span>
                             </div>
-                            <div className="flex justify-between">
-                                <span>Discount:</span>
-                                <span>-৳{totals.totalDiscount.toFixed(2)}</span>
-                            </div>
-                            <div className="flex justify-between">
-                                <span>Tax:</span>
-                                <span>৳{totals.totalTax.toFixed(2)}</span>
-                            </div>
+                            {totals.itemDiscounts > 0 && (
+                                <div className="flex justify-between">
+                                    <span>Item Discounts:</span>
+                                    <span>-৳{totals.itemDiscounts.toFixed(2)}</span>
+                                </div>
+                            )}
+                            {totals.orderDiscount > 0 && (
+                                <div className="flex justify-between">
+                                    <span>Order Discount:</span>
+                                    <span>-৳{totals.orderDiscount.toFixed(2)}</span>
+                                </div>
+                            )}
+                            {totals.itemTaxes > 0 && (
+                                <div className="flex justify-between">
+                                    <span>Item Taxes:</span>
+                                    <span>+৳{totals.itemTaxes.toFixed(2)}</span>
+                                </div>
+                            )}
+                            {totals.orderTax > 0 && (
+                                <div className="flex justify-between">
+                                    <span>Order Tax:</span>
+                                    <span>+৳{totals.orderTax.toFixed(2)}</span>
+                                </div>
+                            )}
+                            {totals.shipping > 0 && (
+                                <div className="flex justify-between">
+                                    <span>Shipping:</span>
+                                    <span>+৳{totals.shipping.toFixed(2)}</span>
+                                </div>
+                            )}
                             <Divider />
                             <div className="flex justify-between font-bold text-lg">
                                 <span>Total:</span>
