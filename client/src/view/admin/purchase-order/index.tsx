@@ -1,49 +1,209 @@
-import { Alert } from "antd";
-import { MdConstruction } from "react-icons/md";
+import { Link } from "react-router-dom";
 import { DashboardTitle } from "@/components/re-useable/dashboard-titile";
 import ToolbarButton from "@/components/re-useable/toolbar-button";
+import { Button, Card, Input, message, Select, Table, Tag } from "antd";
+import { MdOutlineSearch } from "react-icons/md";
+import { useState } from "react";
+import { showConfirmDelete } from "@/components/re-useable/delete-modal";
+import type { TableProps } from "antd";
+import { ActionButton } from "@/components/re-useable/action-button";
+const { Option } = Select;
+import { MdAddCircleOutline } from "react-icons/md";
+import { useDeletePurchase, usePurchases, useApprovePO } from "@/hooks/admin/purchase";
+import Loader from "@/components/re-useable/loader";
+import { TPurchasePayload } from "@/interface/common";
 
 export default function PurchaseOrder() {
-    return (
-        <div className="space-y-6">
-            <div className="flex md:items-center justify-between flex-col md:flex-row gap-6">
-                <DashboardTitle
-                    title="Purchase Orders"
-                    description="Create and manage purchase orders with vendors, items, and approvals"
-                />
-                <div className="flex items-center gap-x-3">
-                    <ToolbarButton
-                        onPdfClick={() => console.log("POs: PDF Export")}
-                        onExcelClick={() => console.log("POs: Excel Export")}
-                        onRefreshClick={() => console.log("POs: Data Refreshed")}
-                    />
-                </div>
-            </div>
+  const { purchases, refetch, loading } = usePurchases();
+  const { deletePurchase } = useDeletePurchase();
+  const { approvePO } = useApprovePO();
+  const [searchText, setSearchText] = useState<string>("");
+  const [filterStatus, setFilterStatus] = useState<"po" | "purchase" | "all">("po");
 
-            {/* Work-in-progress notice */}
-            <Alert
-                showIcon
-                type="info"
-                message={<span className="font-medium">Work in progress — stay tuned</span>}
-                description={
-                    <span className="text-gray-600">
-            We’re still building this section. Coming soon: PO list/table, create/edit PO modal,
-            vendor selection, line items, taxes/discounts, and approval workflow.
-          </span>
-                }
-                className="rounded-xl"
-            />
 
-            {/* Friendly placeholder block */}
-            <div className="rounded-2xl border border-dashed p-10 text-center bg-white mt-10">
-                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border">
-                    <MdConstruction className="h-6 w-6" />
-                </div>
-                <h3 className="mt-4 text-xl font-semibold">This page is under construction</h3>
-                <p className="mt-2 text-gray-500">
-                    While we wire up APIs and UI, here’s a placeholder. You can still use the toolbar above to export or refresh.
-                </p>
-            </div>
+  const purchaseOrders = purchases?.filter((p) =>
+    filterStatus === "all" ? p.status === "po" || p.status === "purchase" : p.status === filterStatus
+  ) || [];
+
+  const handleDelete = (record: TPurchasePayload) => {
+    showConfirmDelete({
+      title: "Delete Purchase Order",
+      content: `Are you sure you want to delete "${record.referenceNo}"? This action cannot be undone.`,
+      onConfirm: async () => {
+        await deletePurchase(String(record?.id));
+        refetch();
+        message.success("Purchase order deleted successfully");
+      },
+    });
+  };
+
+  const handleApprovePO = async (record: TPurchasePayload) => {
+    if (!record.id) return;
+    const result = await approvePO(String(record.id));
+    if (result) {
+      message.success("Purchase order approved and converted to purchase");
+      refetch();
+    }
+  };
+
+  const rowSelection: TableProps<any>["rowSelection"] = {
+    onChange: (selectedRowKeys, selectedRows) => {
+      console.log("Selected Row Keys: ", selectedRowKeys);
+      console.log("Selected Rows: ", selectedRows);
+    },
+  };
+
+  const columns = [
+    {
+      title: "Reference No",
+      dataIndex: "referenceNo",
+      key: "referenceNo",
+    },
+    {
+      title: "Supplier",
+      dataIndex: ["supplier", "name"],
+      key: "supplier",
+    },
+    {
+      title: "Date",
+      dataIndex: "purchaseDate",
+      key: "purchaseDate",
+      render: (date: string) => new Date(date).toLocaleDateString(),
+    },
+    {
+      title: "Status",
+      dataIndex: "status",
+      key: "status",
+      render: (status: string) => {
+        let color = "blue";
+        if (status === "po") color = "cyan";
+        if (status === "purchase") color = "orange";
+        if (status === "cancelled") color = "red";
+        return <Tag color={color}>{status?.toUpperCase()}</Tag>;
+      },
+    },
+    {
+      title: "Items",
+      dataIndex: "items",
+      key: "items",
+      render: (items: any[]) => items?.length || 0,
+    },
+    {
+      title: "Net Total",
+      dataIndex: "netTotalAmount",
+      key: "netTotalAmount",
+      render: (amount: any) => {
+        const num = Number(amount);
+        return !isNaN(num) ? `$${num.toFixed(2)}` : "----";
+      },
+    },
+    {
+      title: "Grand Total",
+      dataIndex: "totalAmount",
+      key: "totalAmount",
+      render: (amount: any) => {
+        const num = Number(amount);
+        return !isNaN(num) ? `$${num.toFixed(2)}` : "----";
+      },
+    },
+    {
+      title: "Actions",
+      key: "actions",
+      render: (_: any, record: TPurchasePayload) => (
+        <div className="flex gap-2">
+          {record.status === "po" && (
+            <Button
+              type="primary"
+              size="small"
+              onClick={() => handleApprovePO(record)}
+            >
+              Approve
+            </Button>
+          )}
+          <ActionButton
+            viewUrl={`/admin/purchase/view/${record?.id}`}
+            editUrl={
+              record.status === "po" || record.status === "draft"
+                ? `/admin/purchase/update/${record?.id}`
+                : undefined
+            }
+            onDelete={() => handleDelete(record)}
+          />
         </div>
-    );
+      ),
+    },
+  ];
+
+  const filteredData = purchaseOrders?.filter((item) => {
+    const matchesSearch =
+      (item.referenceNo?.toLowerCase() || "").includes(searchText.toLowerCase()) ||
+      (item.supplier?.name?.toLowerCase() || "").includes(searchText.toLowerCase());
+    return matchesSearch;
+  });
+
+  return (
+    <div className="space-y-6">
+      <div className="flex md:items-center justify-between flex-col md:flex-row gap-6">
+        <DashboardTitle
+          title="Purchase Orders"
+          description="Create and manage purchase orders with vendors and line items"
+        />
+        <div className="flex items-center gap-x-3">
+          <ToolbarButton onRefreshClick={() => refetch()} />
+          <Link to="/admin/purchase/add">
+            <Button
+              type="primary"
+              icon={<MdAddCircleOutline />}
+              className="btn hover:!text-[#69feb0]"
+            >
+              New PO
+            </Button>
+          </Link>
+        </div>
+      </div>
+      <Card
+        title={
+          <div className="flex md:items-center flex-col md:flex-row gap-4 w-full my-6">
+            <Input
+              placeholder="Search by reference no or supplier..."
+              prefix={<MdOutlineSearch color="gray" size={16} />}
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              className="md:!w-72 !font-normal"
+              allowClear
+            />
+            <Select
+              value={filterStatus}
+              onChange={setFilterStatus}
+              className="md:!w-40 w-full"
+            >
+              <Option value="po">Draft POs</Option>
+              <Option value="purchase">Confirmed</Option>
+              <Option value="all">All</Option>
+            </Select>
+          </div>
+        }
+      >
+        <Table
+          rowSelection={rowSelection}
+          dataSource={filteredData}
+          columns={columns}
+          loading={Loader({ loading })}
+          rowKey="id"
+          pagination={
+            filteredData.length > 10
+              ? {
+                  pageSize: 10,
+                  showSizeChanger: true,
+                  showQuickJumper: true,
+                  showTotal: (total, range) =>
+                    `${range[0]}-${range[1]} of ${total} purchase orders`,
+                }
+              : false
+          }
+          scroll={{ x: "max-content" }}
+        />
+      </Card>
+    </div>
+  );
 }

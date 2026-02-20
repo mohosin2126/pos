@@ -143,10 +143,14 @@ export default function PurchaseForm() {
                         rules={[{ required: true, message: "Status is required" }]}
                         mode="single"
                         options={[
+                            { label: "Draft", value: "draft" },
+                            { label: "Purchase Order", value: "po" },
                             { label: "Ordered", value: "ordered" },
+                            { label: "Purchase", value: "purchase" },
                             { label: "Received", value: "received" },
                             { label: "Partial", value: "partial" },
-                            { label: "Draft", value: "draft" },
+                            { label: "Partial Return", value: "partial_return" },
+                            { label: "Full Return", value: "full_return" },
                             { label: "Cancelled", value: "cancelled" },
                         ]}
                     />

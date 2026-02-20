@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import {TPurchasePayload} from "@/interface/common";
+import {TPurchasePayload, TPurchaseReturn} from "@/interface/common";
 import useApi from "@/hooks/use-api";
 
 
@@ -126,4 +126,88 @@ export function useDeletePurchase() {
   };
 
   return { deletePurchase };
+}
+
+// Approve purchase order (convert PO to purchase)
+export function useApprovePO() {
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string>("");
+
+  const approvePO = async (id: string): Promise<TPurchasePayload | null> => {
+    setLoading(true);
+    setError("");
+    try {
+      const { data } = await useApi.post<{ data: TPurchasePayload }>(
+        `/v1/admin/purchase/${id}/approve-po`,
+        {}
+      );
+      return data?.data || null;
+    } catch (error: any) {
+      const errorMsg =
+        error?.response?.data?.message || "An error occurred while approving PO";
+      setError(errorMsg);
+      console.error("Error approving PO:", error);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { approvePO, loading, error };
+}
+
+// Create purchase return
+export function useCreateReturn() {
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string>("");
+
+  const createReturn = async (data: Partial<TPurchaseReturn>): Promise<TPurchaseReturn | null> => {
+    setLoading(true);
+    setError("");
+    try {
+      const { data: result } = await useApi.post<{ data: TPurchaseReturn }>(
+        `/v1/admin/purchase/${data.purchaseId}/return`,
+        data
+      );
+      return result?.data || null;
+    } catch (error: any) {
+      const errorMsg =
+        error?.response?.data?.message || "An error occurred while creating return";
+      setError(errorMsg);
+      console.error("Error creating return:", error);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { createReturn, loading, error };
+}
+
+// Get returns for a purchase
+export function useGetReturns(purchaseId: string | undefined) {
+  const [returns, setReturns] = useState<TPurchaseReturn[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+
+  const fetchReturns = useCallback(async () => {
+    if (!purchaseId) return;
+    setLoading(true);
+    try {
+      const { data } = await useApi.get<{ data: TPurchaseReturn[] }>(
+        `/v1/admin/purchase/${purchaseId}/returns`
+      );
+      setReturns(data?.data || []);
+    } catch (error: any) {
+      console.error("Error fetching returns:", error);
+      setReturns([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [purchaseId]);
+
+  useEffect(() => {
+    fetchReturns();
+  }, [fetchReturns]);
+
+  return { returns, loading, refetch: fetchReturns };
 }

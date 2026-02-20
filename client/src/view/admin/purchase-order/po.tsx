@@ -9,27 +9,39 @@ import type { TableProps } from "antd";
 import { ActionButton } from "@/components/re-useable/action-button";
 const { Option } = Select;
 import { MdAddCircleOutline } from "react-icons/md";
-import { useDeletePurchase, usePurchases } from "@/hooks/admin/purchase";
+import { useDeletePurchase, usePurchases, useApprovePO } from "@/hooks/admin/purchase";
 import Loader from "@/components/re-useable/loader";
+import { TPurchasePayload } from "@/interface/common";
 
-export default function Purchases() {
+export default function PurchaseOrder() {
   const { purchases, refetch, loading } = usePurchases();
-  const [searchText, setSearchText] = useState<string>("");
-  const [filterStatus, setFilterStatus] = useState<
-    "all" | "draft" | "po" | "ordered" | "purchase" | "received" | "partial" | "partial_return" | "full_return" | "cancelled"
-  >("all");
   const { deletePurchase } = useDeletePurchase();
+  const { approvePO } = useApprovePO();
+  const [searchText, setSearchText] = useState<string>("");
+  const [filterStatus, setFilterStatus] = useState<"po" | "purchase" | "all">("po");
+  const purchaseOrders = purchases?.filter((p) =>
+    filterStatus === "all" ? p.status === "po" || p.status === "purchase" : p.status === filterStatus
+  ) || [];
 
-  const handleDelete = (record: any) => {
+  const handleDelete = (record: TPurchasePayload) => {
     showConfirmDelete({
       title: "Delete Purchase Order",
       content: `Are you sure you want to delete "${record.referenceNo}"? This action cannot be undone.`,
       onConfirm: async () => {
-        await deletePurchase(record?.id);
+        await deletePurchase(String(record?.id));
         refetch();
         message.success("Purchase order deleted successfully");
       },
     });
+  };
+
+  const handleApprovePO = async (record: TPurchasePayload) => {
+    if (!record.id) return;
+    const result = await approvePO(String(record.id));
+    if (result) {
+      message.success("Purchase order approved and converted to purchase");
+      refetch();
+    }
   };
 
   const rowSelection: TableProps<any>["rowSelection"] = {
@@ -47,8 +59,8 @@ export default function Purchases() {
     },
     {
       title: "Supplier",
-      dataIndex: "supplierAddress",
-      key: "supplierAddress",
+      dataIndex: ["supplier", "name"],
+      key: "supplier",
     },
     {
       title: "Date",
@@ -62,17 +74,17 @@ export default function Purchases() {
       key: "status",
       render: (status: string) => {
         let color = "blue";
-        if (status === "ordered") color = "orange";
-        if (status === "received") color = "green";
+        if (status === "po") color = "cyan";
+        if (status === "purchase") color = "orange";
         if (status === "cancelled") color = "red";
-        if (status === "pending") color = "gold";
         return <Tag color={color}>{status?.toUpperCase()}</Tag>;
       },
     },
     {
       title: "Items",
-      dataIndex: "totalItems",
-      key: "totalItems",
+      dataIndex: "items",
+      key: "items",
+      render: (items: any[]) => items?.length || 0,
     },
     {
       title: "Net Total",
@@ -93,42 +105,46 @@ export default function Purchases() {
       },
     },
     {
-      title: "Paid",
-      dataIndex: "amountPaid",
-      key: "amountPaid",
-      render: (amount: any) => {
-        const num = Number(amount);
-        return !isNaN(num) ? `$${num.toFixed(2)}` : "----";
-      },
-    },
-    {
       title: "Actions",
       key: "actions",
-      render: (_: any, record: any) => (
-        <ActionButton
-          viewUrl={`/admin/purchase/view/${record?.id}`}
-          editUrl={`/admin/purchase/update/${record?.id}`}
-          onDelete={() => handleDelete(record)}
-        />
+      render: (_: any, record: TPurchasePayload) => (
+        <div className="flex gap-2">
+          {record.status === "po" && (
+            <Button
+              type="primary"
+              size="small"
+              onClick={() => handleApprovePO(record)}
+            >
+              Approve
+            </Button>
+          )}
+          <ActionButton
+            viewUrl={`/admin/purchase/view/${record?.id}`}
+            editUrl={
+              record.status === "po" || record.status === "draft"
+                ? `/admin/purchase/update/${record?.id}`
+                : undefined
+            }
+            onDelete={() => handleDelete(record)}
+          />
+        </div>
       ),
     },
   ];
 
-  const filteredData = purchases?.filter((item) => {
+  const filteredData = purchaseOrders?.filter((item) => {
     const matchesSearch =
-      item.referenceNo.toLowerCase().includes(searchText.toLowerCase()) ||
-      item.supplierAddress.toLowerCase().includes(searchText.toLowerCase());
-    const matchesStatus =
-      filterStatus === "all" ? true : item.status === filterStatus;
-    return matchesSearch && matchesStatus;
+      (item.referenceNo?.toLowerCase() || "").includes(searchText.toLowerCase()) ||
+      (item.supplier?.name?.toLowerCase() || "").includes(searchText.toLowerCase());
+    return matchesSearch;
   });
 
   return (
     <div className="space-y-6">
       <div className="flex md:items-center justify-between flex-col md:flex-row gap-6">
         <DashboardTitle
-          title="Purchases"
-          description="Manage and track all purchase orders in one place"
+          title="Purchase Orders"
+          description="Create and manage purchase orders with vendors and line items"
         />
         <div className="flex items-center gap-x-3">
           <ToolbarButton onRefreshClick={() => refetch()} />
@@ -138,7 +154,7 @@ export default function Purchases() {
               icon={<MdAddCircleOutline />}
               className="btn hover:!text-[#69feb0]"
             >
-              Add Purchase
+              New PO
             </Button>
           </Link>
         </div>
@@ -157,18 +173,11 @@ export default function Purchases() {
             <Select
               value={filterStatus}
               onChange={setFilterStatus}
-              className="md:!w-40 w-full "
+              className="md:!w-40 w-full"
             >
-              <Option value="all">All Status</Option>
-              <Option value="draft">Draft</Option>
-              <Option value="po">Purchase Order</Option>
-              <Option value="ordered">Ordered</Option>
-              <Option value="purchase">Purchase</Option>
-              <Option value="received">Received</Option>
-              <Option value="partial">Partial</Option>
-              <Option value="partial_return">Partial Return</Option>
-              <Option value="full_return">Full Return</Option>
-              <Option value="cancelled">Cancelled</Option>
+              <Option value="po">Draft POs</Option>
+              <Option value="purchase">Confirmed</Option>
+              <Option value="all">All</Option>
             </Select>
           </div>
         }
@@ -186,7 +195,7 @@ export default function Purchases() {
                   showSizeChanger: true,
                   showQuickJumper: true,
                   showTotal: (total, range) =>
-                    `${range[0]}-${range[1]} of ${total} purchases`,
+                    `${range[0]}-${range[1]} of ${total} purchase orders`,
                 }
               : false
           }

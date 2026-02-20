@@ -144,7 +144,113 @@ export default function PurchaseDetails() {
             rowKey={(record) => record?.name}
           />
         </Card>
+
+        {purchase?.items && purchase?.items?.length > 0 && (
+          <Card title="📋 Line Items" className="lg:col-span-2">
+            <Table
+              columns={[
+                {
+                  title: "Product",
+                  dataIndex: ["product", "name"],
+                  key: "product",
+                },
+                {
+                  title: "Quantity",
+                  dataIndex: "quantity",
+                  key: "quantity",
+                },
+                {
+                  title: "Unit Price",
+                  dataIndex: "unitPrice",
+                  key: "unitPrice",
+                  render: (price: any) => {
+                    const num = Number(price);
+                    return !isNaN(num) ? `$${num.toFixed(2)}` : "----";
+                  },
+                },
+                {
+                  title: "Line Total",
+                  dataIndex: "lineTotal",
+                  key: "lineTotal",
+                  render: (total: any) => {
+                    const num = Number(total);
+                    return !isNaN(num) ? `$${num.toFixed(2)}` : "----";
+                  },
+                },
+                {
+                  title: "Expiry Date",
+                  dataIndex: "expiryDate",
+                  key: "expiryDate",
+                  render: (date: string) =>
+                    date ? dayjs(date).format("DD MMM YYYY") : "-",
+                },
+                {
+                  title: "Batch No",
+                  dataIndex: "batchNo",
+                  key: "batchNo",
+                },
+              ]}
+              dataSource={purchase?.items}
+              pagination={false}
+              rowKey={(record) => record?.id || Math.random()}
+            />
+          </Card>
+        )}
+
+        {purchase?.returns && purchase?.returns?.length > 0 && (
+          <Card title="↩️ Returns" className="lg:col-span-2">
+            <Table
+              columns={[
+                {
+                  title: "Return ID",
+                  dataIndex: "referenceNo",
+                  key: "referenceNo",
+                },
+                {
+                  title: "Return Date",
+                  dataIndex: "returnDate",
+                  key: "returnDate",
+                  render: (date: string) => dayjs(date).format("DD MMM YYYY"),
+                },
+                {
+                  title: "Reason",
+                  dataIndex: "returnReason",
+                  key: "returnReason",
+                  render: (reason: string) => (
+                    <Tag color="orange">{reason?.toUpperCase()}</Tag>
+                  ),
+                },
+                {
+                  title: "Total Return",
+                  dataIndex: "totalReturnAmount",
+                  key: "totalReturnAmount",
+                  render: (amount: any) => {
+                    const num = Number(amount);
+                    return !isNaN(num) ? `$${num.toFixed(2)}` : "----";
+                  },
+                },
+                {
+                  title: "Refund Status",
+                  dataIndex: "refundStatus",
+                  key: "refundStatus",
+                  render: (status: string) => {
+                    const colors: any = {
+                      pending: "blue",
+                      approved: "orange",
+                      refunded: "green",
+                      rejected: "red",
+                    };
+                    return <Tag color={colors[status]}>{status?.toUpperCase()}</Tag>;
+                  },
+                },
+              ]}
+              dataSource={purchase?.returns}
+              pagination={false}
+              rowKey={(record) => record?.id}
+            />
+          </Card>
+        )}
       </div>
     </div>
-  );
+    );
 }
