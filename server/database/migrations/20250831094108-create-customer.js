@@ -1,6 +1,5 @@
 "use strict";
 
-/** @type {import('sequelize-cli').Migration} */
 module.exports = {
     async up(queryInterface, Sequelize) {
         const tableOpts = { engine: "InnoDB", charset: "utf8mb4", collate: "utf8mb4_unicode_ci" };

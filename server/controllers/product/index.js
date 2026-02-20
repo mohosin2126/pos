@@ -1,9 +1,9 @@
 "use strict";
 
-const { Product, Category } = require("../../database/models");
+const { Product, Category, sequelize } = require("../../database/models");
 const {badRequest, created, conflict, serverError, parsePagination, paginated, notFound, success} = require("../../utils/api-response");
+const { calculateProfitMetrics, validateSellingPrice } = require("../../utils/price-calculator");
 
-// CREATE
 const create = async (req, res) => {
     try {
         const {
@@ -54,7 +54,6 @@ const create = async (req, res) => {
     }
 };
 
-// GET ALL
 const getAll = async (req, res) => {
     try {
         const { page, limit, offset } = parsePagination(req.query, {
@@ -101,7 +100,6 @@ const getAll = async (req, res) => {
     }
 };
 
-// GET ONE
 const getOne = async (req, res) => {
     try {
         const { id } = req.params;
@@ -126,7 +124,6 @@ const getOne = async (req, res) => {
     }
 };
 
-// UPDATE
 const update = async (req, res) => {
     try {
         const { id } = req.params;
@@ -169,7 +166,6 @@ const update = async (req, res) => {
     }
 };
 
-// DELETE
 const destroy = async (req, res) => {
     try {
         const { id } = req.params;
@@ -184,4 +180,54 @@ const destroy = async (req, res) => {
     }
 };
 
-module.exports = { create, getAll, getOne, update, destroy };
+const getCostFromPurchaseHistory = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const product = await Product.findByPk(id);
+        if (!product) return notFound(res, "Product not found");
+
+        const [lastPurchase] = await sequelize.query(
+            `SELECT pi.unitPrice as lastCost, p.purchaseDate
+             FROM purchase_items pi
+             JOIN purchases p ON p.id = pi.purchaseId
+             WHERE pi.productId = ?
+             ORDER BY p.purchaseDate DESC, p.id DESC
+             LIMIT 1`,
+            { replacements: [id], type: sequelize.QueryTypes.SELECT }
+        );
+
+        const [avgCostResult] = await sequelize.query(
+            `SELECT 
+                SUM(pi.quantity * pi.unitPrice) / NULLIF(SUM(pi.quantity), 0) as avgCost,
+                SUM(pi.quantity) as totalPurchased
+             FROM purchase_items pi
+             JOIN purchases p ON p.id = pi.purchaseId
+             WHERE pi.productId = ?
+             AND p.status IN ('purchase', 'received')`,
+            { replacements: [id], type: sequelize.QueryTypes.SELECT }
+        );
+
+        const lastCost = lastPurchase ? parseFloat(lastPurchase.lastCost) : null;
+        const avgCost = avgCostResult && avgCostResult.avgCost ? parseFloat(avgCostResult.avgCost) : null;
+        const costPrice = avgCost || lastCost || 0;
+        const sellingPrice = product.price || 0;
+
+        const profitMetrics = costPrice > 0 ? calculateProfitMetrics(sellingPrice, costPrice) : null;
+
+        return success(res, "Cost data retrieved", {
+            productId: product.id,
+            productName: product.name,
+            price: sellingPrice,
+            lastCost: lastCost,
+            avgCost: avgCost,
+            totalPurchased: avgCostResult ? parseInt(avgCostResult.totalPurchased) || 0 : 0,
+            profitMetrics: profitMetrics,
+            stockQuantity: product.stockQuantity,
+        });
+    } catch (err) {
+        return serverError(res, "Failed to retrieve cost data", err);
+    }
+};
+
+module.exports = { create, getAll, getOne, update, destroy, getCostFromPurchaseHistory };

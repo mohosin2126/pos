@@ -21,7 +21,6 @@ const hashIfPresent = async (password) => {
     return bcrypt.hash(password, saltRounds);
 };
 
-// CREATE
 const create = async (req, res) => {
     try {
         const { error, value } = createUserValidation.validate(req.body, {
@@ -44,7 +43,6 @@ const create = async (req, res) => {
     }
 };
 
-// GET ALL
 const getAll = async (req, res) => {
     try {
         const { page, limit, offset } = parsePagination(req.query, {
@@ -65,7 +63,6 @@ const getAll = async (req, res) => {
     }
 };
 
-// GET ONE
 const getOne = async (req, res) => {
     try {
         const { id } = req.params;
@@ -77,7 +74,6 @@ const getOne = async (req, res) => {
     }
 };
 
-// UPDATE
 const update = async (req, res) => {
     try {
         const { id } = req.params;
@@ -99,7 +95,6 @@ const update = async (req, res) => {
     }
 };
 
-// DESTROY
 const destroy = async (req, res) => {
     try {
         const { id } = req.params;

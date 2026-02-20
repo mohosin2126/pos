@@ -88,6 +88,7 @@ export interface TProductPayload {
   category?: Category;
   sku?: string;
   barcode?: string;
+  price?: number;
   stockQuantity?: number;
   reorderLevel?: number;
   isTrackStock?: boolean;
@@ -174,6 +175,7 @@ export interface TPOSItem {
   productId: number;
   quantity: number;
   unitPrice: number;
+  discountType?: "none" | "percent" | "fixed";
   discountAmount: number;
   taxPercent: number;
 }
@@ -362,7 +364,8 @@ export type LoaderProps = {
 export type CartItem = {
   barcode: string;
   category?: string;
-  discount: number;
+  discountAmount: number;
+  discountType: "none" | "percent" | "fixed";
   id: number;
   name: string;
   price: number;
@@ -370,3 +373,4 @@ export type CartItem = {
   quantity: number;
   tax: number;
 };
+

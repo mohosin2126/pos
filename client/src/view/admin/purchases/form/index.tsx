@@ -1,5 +1,5 @@
-import { Form, message, Button, Card } from "antd";
-import { FaSave } from "react-icons/fa";
+import { Form, message, Button, Card, Table, InputNumber, Select, DatePicker, Space } from "antd";
+import { FaSave, FaPlus, FaTrash } from "react-icons/fa";
 import dayjs from "dayjs";
 import {
     useCreatePurchase,
@@ -15,8 +15,9 @@ import {
     CustomSelect,
     CustomTextArea,
 } from "@/components/form";
-import { validateOrderCalculation } from "@/utils/pos-calculations";
-import { add, multiply, percentage, max, roundTo } from "@/utils/math-utils";
+import { validateLineTotal, validateOrderCalculation } from "@/utils/pos-calculations";
+import { add, subtract, multiply, percentage, max, roundTo } from "@/utils/math-utils";
+import type { TLineItem } from "@/interface/common";
 
 export default function PurchaseForm() {
     const [form] = Form.useForm();
@@ -33,6 +34,11 @@ export default function PurchaseForm() {
     const { data: suppliersOption } = useSuppliers();
     const { data: productsOption } = useProducts();
 
+    // Line items state
+    const [lineItems, setLineItems] = useState<any[]>([]);
+    const [subtotal, setSubtotal] = useState(0);
+    const [grandTotal, setGrandTotal] = useState(0);
+
     useEffect(() => {
         if (isUpdate && purchase) {
             try {
@@ -43,6 +49,19 @@ export default function PurchaseForm() {
                         : null,
                     expiryDate: purchase.expiryDate ? dayjs(purchase.expiryDate) : null,
                 });
+                
+                // Load existing line items
+                if (purchase.items && purchase.items.length > 0) {
+                    setLineItems(purchase.items.map((item: any, idx: number) => ({
+                        key: idx,
+                        productId: item.productId,
+                        quantity: item.quantity,
+                        unitPrice: item.unitPrice,
+                        lineTotal: item.lineTotal,
+                        expiryDate: item.expiryDate ? dayjs(item.expiryDate) : null,
+                        batchNo: item.batchNo,
+                    })));
+                }
             } catch (err) {
                 console.error(err);
                 message.error("Failed to set purchase data.");
@@ -50,56 +69,140 @@ export default function PurchaseForm() {
         }
     }, [purchase, isUpdate, form]);
 
-    const handleFieldChange = (changedValues: any) => {
-        setAutoCalculating(true);
-        setTimeout(() => {
-            const formValues = form.getFieldsValue();
-            const {
-                discountType,
-                discountAmount,
-                orderTaxPercent,
-                shippingCharge,
-                netTotalAmount,
-            } = formValues;
+    // Recalculate totals when line items or form values change
+    useEffect(() => {
+        calculateTotals();
+    }, [lineItems]);
 
-            if (orderTaxPercent !== undefined && netTotalAmount) {
-                const taxAmount = percentage(netTotalAmount || 0, orderTaxPercent || 0);
+    const calculateTotals = () => {
+        // Calculate subtotal from line items
+        const sub = lineItems.reduce((sum, item) => add(sum, item.lineTotal || 0), 0);
+        setSubtotal(sub);
 
-                if (changedValues.orderTaxPercent !== undefined) {
-                    form.setFieldValue("orderTaxAmount", taxAmount);
-                }
-            }
+        const formValues = form.getFieldsValue();
+        const discountType = formValues.discountType || "none";
+        const discountAmount = formValues.discountAmount || 0;
+        const orderTaxPercent = formValues.orderTaxPercent || 0;
+        const shippingCharge = formValues.shippingCharge || 0;
 
-            if (netTotalAmount !== undefined) {
-                const netTotal = netTotalAmount || 0;
-                const taxAmount = formValues.orderTaxAmount || 0;
-                const shipping = shippingCharge || 0;
+        // Calculate order discount
+        let orderDiscount = 0;
+        if (discountType === "percent") {
+            orderDiscount = percentage(sub, discountAmount);
+        } else if (discountType === "fixed") {
+            orderDiscount = Math.min(discountAmount, sub);
+        }
 
-                const totalAmount = max(add(add(netTotal, taxAmount), shipping), 0);
+        // Calculate tax on (subtotal - discount)
+        const afterDiscount = max(subtract(sub, orderDiscount), 0);
+        const taxAmount = percentage(afterDiscount, orderTaxPercent);
 
-                if (
-                    changedValues.orderTaxAmount !== undefined ||
-                    changedValues.shippingCharge !== undefined
-                ) {
-                    form.setFieldValue("totalAmount", totalAmount);
-                }
-            }
+        // Calculate grand total
+        const total = roundTo(add(add(afterDiscount, taxAmount), shippingCharge), 2);
+        setGrandTotal(total);
 
-            setAutoCalculating(false);
-        }, 100);
+        // Update form fields
+        form.setFieldsValue({
+            netTotalAmount: roundTo(sub, 2),
+            orderTaxAmount: roundTo(taxAmount, 2),
+            totalAmount: total,
+            totalItems: lineItems.reduce((sum, item) => add(sum, item.quantity || 0), 0),
+        });
     };
 
-    const handleFinish = async (values: { purchaseDate: string | number | Date | dayjs.Dayjs | null | undefined; expiryDate: string | number | Date | dayjs.Dayjs | null | undefined; }) => {
+    const handleFieldChange = (changedValues: any) => {
+        // Recalculate when discount, tax, or shipping changes
+        if (changedValues.discountType !== undefined ||
+            changedValues.discountAmount !== undefined ||
+            changedValues.orderTaxPercent !== undefined ||
+            changedValues.shippingCharge !== undefined) {
+            calculateTotals();
+        }
+    };
+
+    const addLineItem = () => {
+        const newItem = {
+            key: Date.now(),
+            productId: null,
+            quantity: 1,
+            unitPrice: 0,
+            lineTotal: 0,
+            expiryDate: null,
+            batchNo: "",
+        };
+        setLineItems([...lineItems, newItem]);
+    };
+
+    const removeLineItem = (key: number) => {
+        setLineItems(lineItems.filter(item => item.key !== key));
+    };
+
+    const updateLineItem = (key: number, field: string, value: any) => {
+        setLineItems(lineItems.map(item => {
+            if (item.key === key) {
+                const updated = { ...item, [field]: value };
+                
+                // Recalculate line total when quantity or unitPrice changes
+                if (field === 'quantity' || field === 'unitPrice') {
+                    const qty = field === 'quantity' ? value : updated.quantity;
+                    const price = field === 'unitPrice' ? value : updated.unitPrice;
+                    updated.lineTotal = roundTo(multiply(qty || 0, price || 0), 2);
+                }
+                
+                return updated;
+            }
+            return item;
+        }));
+    };
+
+    const handleFinish = async (values: any) => {
         setLoading(true);
+
+        // Validate line items
+        if (lineItems.length === 0) {
+            message.error("Please add at least one line item");
+            setLoading(false);
+            return;
+        }
+
+        for (const item of lineItems) {
+            if (!item.productId) {
+                message.error("Please select a product for all line items");
+                setLoading(false);
+                return;
+            }
+            if (!item.quantity || item.quantity <= 0) {
+                message.error("Quantity must be greater than 0");
+                setLoading(false);
+                return;
+            }
+            if (item.unitPrice < 0) {
+                message.error("Unit price cannot be negative");
+                setLoading(false);
+                return;
+            }
+        }
+
         const formattedValues = {
             ...values,
             purchaseDate: values.purchaseDate
                 ? dayjs(values.purchaseDate).format("YYYY-MM-DD")
                 : null,
-            expiryDate: values.expiryDate
-                ? dayjs(values.expiryDate).format("YYYY-MM-DD")
-                : null,
+            items: lineItems.map(item => ({
+                productId: item.productId,
+                quantity: item.quantity,
+                unitPrice: item.unitPrice,
+                lineTotal: item.lineTotal,
+                expiryDate: item.expiryDate
+                    ? dayjs(item.expiryDate).format("YYYY-MM-DD")
+                    : null,
+                batchNo: item.batchNo || null,
+            })),
         };
+
+        // Remove single product field
+        delete formattedValues.productId;
+        delete formattedValues.expiryDate;
         try {
             if (isUpdate) {
                 await updatePurchase(id, formattedValues);
@@ -133,21 +236,16 @@ export default function PurchaseForm() {
                 form={form}
                 onFinish={handleFinish}
                 onValuesChange={handleFieldChange}
-                initialValues={
-                    isUpdate
-                        ? {
-                            ...purchase,
-                            purchaseDate: purchase?.purchaseDate
-                                ? dayjs(purchase.purchaseDate)
-                                : null,
-                            expiryDate: purchase?.expiryDate
-                                ? dayjs(purchase.expiryDate)
-                                : null,
-                        }
-                        : {}
-                }
+                initialValues={{
+                    status: "po",
+                    discountType: "none",
+                    discountAmount: 0,
+                    orderTaxPercent: 0,
+                    shippingCharge: 0,
+                }}
             >
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4">
+                {/* Supplier and Basic Info */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4">
                     <CustomSelect
                         label="Supplier"
                         name="supplierId"
@@ -155,15 +253,6 @@ export default function PurchaseForm() {
                         rules={[{ required: true, message: "Supplier is required" }]}
                         mode="single"
                         options={suppliersOption}
-                    />
-
-                    <CustomSelect
-                        label="Product"
-                        name="productId"
-                        placeholder="Select Product"
-                        rules={[{ required: true, message: "Product is required" }]}
-                        mode="single"
-                        options={productsOption}
                     />
 
                     <CustomInput
@@ -191,21 +280,6 @@ export default function PurchaseForm() {
                             { label: "Ordered", value: "ordered" },
                             { label: "Purchase", value: "purchase" },
                             { label: "Received", value: "received" },
-                            { label: "Partial", value: "partial" },
-                            { label: "Partial Return", value: "partial_return" },
-                            { label: "Full Return", value: "full_return" },
-                            { label: "Cancelled", value: "cancelled" },
-                        ]}
-                    />
-
-                    <CustomInput
-                        label="Total Items"
-                        name="totalItems"
-                        type="number"
-                        placeholder="Enter total items"
-                        rules={[
-                            { required: true, message: "Total items is required" },
-                            { pattern: /^[0-9]+$/, message: "Total items must be a positive integer" }
                         ]}
                     />
 
@@ -215,16 +289,8 @@ export default function PurchaseForm() {
                         placeholder="Enter supplier address"
                     />
 
-                    <CustomInput
-                        label="Pay Term Value"
-                        name="payTermValue"
-                        placeholder="Enter pay term value"
-                        type="number"
-                        rules={[{ pattern: /^[0-9]+$/, message: "Must be a positive integer" }]}
-                    />
-
                     <CustomSelect
-                        label="Pay Term Unit"
+                        label="Pay Term"
                         name="payTermUnit"
                         placeholder="Select pay term unit"
                         mode="single"
@@ -233,124 +299,214 @@ export default function PurchaseForm() {
                             { label: "Months", value: "months" },
                         ]}
                     />
+                </div>
 
-                    <CustomSelect
-                        label="Discount Type"
-                        name="discountType"
-                        placeholder="Select discount type"
-                        mode="single"
-                        options={[
-                            { label: "None", value: "none" },
-                            { label: "Percent", value: "percent" },
-                            { label: "Fixed", value: "fixed" },
-                        ]}
-                    />
+                {/* Line Items Table */}
+                <div className="!mt-6">
+                    <div className="flex justify-between items-center mb-3">
+                        <h3 className="text-lg font-semibold">Line Items</h3>
+                        <Button
+                            type="dashed"
+                            onClick={addLineItem}
+                            icon={<FaPlus />}
+                            className="!flex !items-center"
+                        >
+                            Add Item
+                        </Button>
+                    </div>
 
-                    <CustomInput
-                        label="Discount Amount"
-                        name="discountAmount"
-                        type="number"
-                        placeholder="Enter discount amount"
-                        rules={[
-                            { pattern: /^[0-9]*\.?[0-9]*$/, message: "Invalid amount format" },
-                            { min: 0, message: "Discount cannot be negative" }
-                        ]}
-                    />
+                    <div className="overflow-x-auto">
+                        <Table
+                            dataSource={lineItems}
+                            pagination={false}
+                            size="small"
+                            locale={{ emptyText: "No items added. Click 'Add Item' to start." }}
+                            columns={[
+                                {
+                                    title: "Product",
+                                    dataIndex: "productId",
+                                    key: "productId",
+                                    width: "25%",
+                                    render: (value, record) => (
+                                        <Select
+                                            style={{ width: "100%" }}
+                                            placeholder="Select product"
+                                            value={value}
+                                            onChange={(val) => updateLineItem(record.key, "productId", val)}
+                                            options={productsOption}
+                                            showSearch
+                                            optionFilterProp="label"
+                                        />
+                                    ),
+                                },
+                                {
+                                    title: "Quantity",
+                                    dataIndex: "quantity",
+                                    key: "quantity",
+                                    width: "12%",
+                                    render: (value, record) => (
+                                        <InputNumber
+                                            style={{ width: "100%" }}
+                                            min={1}
+                                            value={value}
+                                            onChange={(val) => updateLineItem(record.key, "quantity", val)}
+                                            placeholder="Qty"
+                                        />
+                                    ),
+                                },
+                                {
+                                    title: "Unit Price",
+                                    dataIndex: "unitPrice",
+                                    key: "unitPrice",
+                                    width: "15%",
+                                    render: (value, record) => (
+                                        <InputNumber
+                                            style={{ width: "100%" }}
+                                            min={0}
+                                            step={0.01}
+                                            value={value}
+                                            onChange={(val) => updateLineItem(record.key, "unitPrice", val)}
+                                            placeholder="0.00"
+                                            prefix="৳"
+                                        />
+                                    ),
+                                },
+                                {
+                                    title: "Line Total",
+                                    dataIndex: "lineTotal",
+                                    key: "lineTotal",
+                                    width: "15%",
+                                    render: (value) => (
+                                        <span className="font-semibold">৳{roundTo(value || 0, 2).toFixed(2)}</span>
+                                    ),
+                                },
+                                {
+                                    title: "Batch No",
+                                    dataIndex: "batchNo",
+                                    key: "batchNo",
+                                    width: "15%",
+                                    render: (value, record) => (
+                                        <input
+                                            type="text"
+                                            className="ant-input"
+                                            value={value}
+                                            onChange={(e) => updateLineItem(record.key, "batchNo", e.target.value)}
+                                            placeholder="Batch"
+                                        />
+                                    ),
+                                },
+                                {
+                                    title: "Expiry Date",
+                                    dataIndex: "expiryDate",
+                                    key: "expiryDate",
+                                    width: "15%",
+                                    render: (value, record) => (
+                                        <DatePicker
+                                            style={{ width: "100%" }}
+                                            value={value}
+                                            onChange={(val) => updateLineItem(record.key, "expiryDate", val)}
+                                            format="YYYY-MM-DD"
+                                        />
+                                    ),
+                                },
+                                {
+                                    title: "Action",
+                                    key: "action",
+                                    width: "8%",
+                                    render: (_, record) => (
+                                        <Button
+                                            type="text"
+                                            danger
+                                            icon={<FaTrash />}
+                                            onClick={() => removeLineItem(record.key)}
+                                        />
+                                    ),
+                                },
+                            ]}
+                        />
+                    </div>
 
-                    <CustomInput
-                        label="Order Tax (%)"
-                        name="orderTaxPercent"
-                        type="number"
-                        step="0.01"
-                        placeholder="Enter order tax %"
-                        rules={[
-                            { pattern: /^[0-9]*\.?[0-9]*$/, message: "Invalid percentage" },
-                            { min: 0, max: 100, message: "Tax must be between 0 and 100" }
-                        ]}
-                    />
+                    {/* Totals Summary */}
+                    <div className="mt-4 p-4 bg-gray-50 rounded">
+                        <div className="flex justify-end">
+                            <div className="w-full md:w-1/2">
+                                <div className="flex justify-between mb-2">
+                                    <span>Subtotal:</span>
+                                    <span className="font-semibold">৳{roundTo(subtotal, 2).toFixed(2)}</span>
+                                </div>
+                                
+                                <div className="grid grid-cols-2 gap-2 mb-2">
+                                    <CustomSelect
+                                        label=""
+                                        name="discountType"
+                                        mode="single"
+                                        options={[
+                                            { label: "No Discount", value: "none" },
+                                            { label: "Percent", value: "percent" },
+                                            { label: "Fixed", value: "fixed" },
+                                        ]}
+                                    />
+                                    <CustomInput
+                                        label=""
+                                        name="discountAmount"
+                                        type="number"
+                                        placeholder="0"
+                                    />
+                                </div>
 
-                    <CustomInput
-                        label="Order Tax Amount (Auto-calculated)"
-                        name="orderTaxAmount"
-                        type="number"
-                        placeholder="Automatically calculated"
-                        disabled
-                        rules={[
-                            { pattern: /^[0-9]*\.?[0-9]*$/, message: "Invalid amount format" }
-                        ]}
-                    />
+                                <div className="flex justify-between mb-2">
+                                    <span>Order Tax (%):</span>
+                                    <CustomInput
+                                        label=""
+                                        name="orderTaxPercent"
+                                        type="number"
+                                        placeholder="0"
+                                        className="!w-24"
+                                    />
+                                </div>
 
-                    <CustomInput
-                        label="Shipping Charge"
-                        name="shippingCharge"
-                        type="number"
-                        placeholder="Enter shipping charge"
-                        rules={[
-                            { pattern: /^[0-9]*\.?[0-9]*$/, message: "Invalid amount format" },
-                            { min: 0, message: "Shipping charge cannot be negative" }
-                        ]}
-                    />
+                                <div className="flex justify-between mb-2">
+                                    <span>Shipping:</span>
+                                    <CustomInput
+                                        label=""
+                                        name="shippingCharge"
+                                        type="number"
+                                        placeholder="0"
+                                        className="!w-24"
+                                    />
+                                </div>
 
-                    <CustomInput
-                        label="Net Total Amount"
-                        name="netTotalAmount"
-                        type="number"
-                        placeholder="Subtotal (from items)"
-                        rules={[
-                            { required: true, message: "Net total is required" },
-                            { pattern: /^[0-9]*\.?[0-9]*$/, message: "Invalid amount format" },
-                            { min: 0, message: "Amount cannot be negative" }
-                        ]}
-                    />
+                                <div className="flex justify-between mt-3 pt-3 border-t-2 border-gray-300">
+                                    <span className="font-bold text-lg">Grand Total:</span>
+                                    <span className="font-bold text-lg text-green-600">
+                                        ৳{roundTo(grandTotal, 2).toFixed(2)}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-                    <CustomInput
-                        label="Total Amount (Auto-calculated)"
-                        name="totalAmount"
-                        type="number"
-                        placeholder="Automatically calculated"
-                        disabled
-                        rules={[
-                            { pattern: /^[0-9]*\.?[0-9]*$/, message: "Invalid amount format" }
-                        ]}
-                    />
+                {/* Hidden fields for backend compatibility */}
+                <input type="hidden" name="totalItems" />
+                <input type="hidden" name="netTotalAmount" />
+                <input type="hidden" name="orderTaxAmount" />
+                <input type="hidden" name="totalAmount" />
 
+                {/* Additional Fields */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 !mt-6">
                     <CustomInput
                         label="Amount Paid"
                         name="amountPaid"
                         type="number"
                         placeholder="Enter amount paid"
-                        rules={[
-                            { pattern: /^[0-9]*\.?[0-9]*$/, message: "Invalid amount format" },
-                            { min: 0, message: "Amount paid cannot be negative" }
-                        ]}
                     />
 
                     <CustomInput
-                        label="Warranty Value"
-                        name="warrantyValue"
+                        label="Pay Term Value"
+                        name="payTermValue"
+                        placeholder="Enter pay term value"
                         type="number"
-                        placeholder="Enter warranty value"
-                        rules={[
-                            { pattern: /^[0-9]*$/, message: "Must be a positive integer" },
-                            { min: 0, message: "Warranty value cannot be negative" }
-                        ]}
-                    />
-
-                    <CustomSelect
-                        label="Warranty Unit"
-                        name="warrantyUnit"
-                        placeholder="Select warranty unit"
-                        mode="single"
-                        options={[
-                            { label: "Months", value: "months" },
-                            { label: "Years", value: "years" },
-                        ]}
-                    />
-
-                    <CustomDate
-                        label="Expiry Date"
-                        name="expiryDate"
-                        placeholder="Select expiry date"
                     />
 
                     <CustomTextArea
@@ -358,7 +514,6 @@ export default function PurchaseForm() {
                         name="notes"
                         rows={3}
                         placeholder="Enter notes if any"
-                        className="md:col-span-2"
                     />
 
                     <CustomTextArea
@@ -366,17 +521,17 @@ export default function PurchaseForm() {
                         name="shippingDetails"
                         rows={3}
                         placeholder="Enter shipping details"
-                        className="md:col-span-2"
                     />
                 </div>
 
                 <Button
                     icon={<FaSave />}
-                    loading={loading || autoCalculating}
+                    loading={loading}
                     htmlType="submit"
                     className="btn hover:!text-[#69feb0] !mt-5 !px-6"
+                    disabled={lineItems.length === 0}
                 >
-                    {isUpdate ? "Update Purchase" : "Add Purchase"}
+                    {isUpdate ? "Update Purchase" : "Create Purchase"}
                 </Button>
             </Form>
         </Card>

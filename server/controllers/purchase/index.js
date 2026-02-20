@@ -109,6 +109,9 @@ const create = async (req, res) => {
                 createdItems.push(lineItem);
             }
 
+            for (const item of calculatedItems) {
+            }
+
             p.items = createdItems;
             return p;
         });
@@ -252,6 +255,9 @@ const update = async (req, res) => {
                         },
                         { transaction: t }
                     );
+                }
+
+                for (const item of calculatedItems) {
                 }
             }
 

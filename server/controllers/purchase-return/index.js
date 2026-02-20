@@ -5,7 +5,6 @@ const {
     success, created, badRequest, notFound, serverError, parsePagination, paginated,
 } = require("../../utils/api-response");
 
-// GET ALL RETURNS
 const getAll = async (req, res) => {
     try {
         const { page, limit, offset } = parsePagination(req.query, { page: 1, limit: 20, maxLimit: 100 });
@@ -20,7 +19,6 @@ const getAll = async (req, res) => {
     }
 };
 
-// GET ONE RETURN
 const getOne = async (req, res) => {
     try {
         const { id } = req.params;
@@ -34,14 +32,12 @@ const getOne = async (req, res) => {
     }
 };
 
-// UPDATE RETURN
 const update = async (req, res) => {
     try {
         const { id } = req.params;
         const purchaseReturn = await PurchaseReturn.findByPk(id);
         if (!purchaseReturn) return notFound(res, "Return not found");
 
-        // Only allow updates to pending returns
         if (purchaseReturn.refundStatus !== "pending") {
             return badRequest(res, "Can only update returns with pending refund status");
         }
@@ -55,7 +51,6 @@ const update = async (req, res) => {
             notes: req.body.notes,
         };
 
-        // Remove undefined values
         Object.keys(updatable).forEach(key => updatable[key] === undefined && delete updatable[key]);
 
         const updated = await purchaseReturn.update(updatable);
@@ -65,7 +60,6 @@ const update = async (req, res) => {
     }
 };
 
-// DELETE RETURN
 const destroy = async (req, res) => {
     try {
         const { id } = req.params;
@@ -82,7 +76,6 @@ const destroy = async (req, res) => {
     }
 };
 
-// APPROVE RETURN
 const approveReturn = async (req, res) => {
     try {
         const { id } = req.params;
@@ -108,7 +101,6 @@ const approveReturn = async (req, res) => {
     }
 };
 
-// PROCESS REFUND
 const processRefund = async (req, res) => {
     try {
         const { id } = req.params;
@@ -127,7 +119,6 @@ const processRefund = async (req, res) => {
     }
 };
 
-// REJECT RETURN
 const rejectReturn = async (req, res) => {
     try {
         const { id } = req.params;

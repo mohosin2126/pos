@@ -3,8 +3,6 @@
 const { Category } = require("../../database/models");
 const {created, serverError, success, notFound} = require("../../utils/api-response");
 
-
-// CREATE
 const create = async (req, res) => {
     try {
         const category = await Category.create(req.body);
@@ -14,7 +12,6 @@ const create = async (req, res) => {
     }
 };
 
-// GET ALL
 const getAll = async (req, res) => {
     try {
         const categories = await Category.findAll();
@@ -24,7 +21,6 @@ const getAll = async (req, res) => {
     }
 };
 
-// GET ONE
 const getOne = async (req, res) => {
     try {
         const category = await Category.findByPk(req.params.id);
@@ -35,7 +31,6 @@ const getOne = async (req, res) => {
     }
 };
 
-// UPDATE
 const update = async (req, res) => {
     try {
         const category = await Category.findByPk(req.params.id);
@@ -48,7 +43,6 @@ const update = async (req, res) => {
     }
 };
 
-// DESTROY
 const destroy = async (req, res) => {
     try {
         const category = await Category.findByPk(req.params.id);

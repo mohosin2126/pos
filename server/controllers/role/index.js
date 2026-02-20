@@ -1,6 +1,5 @@
 const {Role} = require("../../database/models");
 
-// CREATE
 const create = async (req, res) => {
     try {
         const {name, permissions} = req.body;
@@ -32,7 +31,6 @@ const create = async (req, res) => {
     }
 };
 
-// GET ALL
 const getAll = async (req, res) => {
     try {
         const roles = await Role.findAll({
@@ -45,7 +43,6 @@ const getAll = async (req, res) => {
     }
 };
 
-// GET ONE
 const getOne = async (req, res) => {
     try {
         const {id} = req.params;
@@ -62,7 +59,6 @@ const getOne = async (req, res) => {
     }
 };
 
-// UPDATE
 const update = async (req, res) => {
     try {
         const {id} = req.params;
@@ -85,7 +81,6 @@ const update = async (req, res) => {
     }
 };
 
-// DESTROY
 const destroy = async (req, res) => {
     try {
         const {id} = req.params;

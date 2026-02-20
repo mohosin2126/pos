@@ -277,3 +277,135 @@ export const getBreakdownText = (totals: POSTotals): string[] => {
   }
   return lines;
 };
+
+// ===== Profit Calculation Functions =====
+
+export interface ProfitMetrics {
+  margin: number;
+  marginPercent: number;
+  markup: number;
+  markupPercent: number;
+  isProfit: boolean;
+}
+
+/**
+ * Calculate profit margin and markup
+ * @param sellingPrice - Selling price
+ * @param costPrice - Cost price
+ * @returns ProfitMetrics object
+ */
+export const calculateProfitMargin = (
+  sellingPrice: number,
+  costPrice: number
+): ProfitMetrics => {
+  const price = sellingPrice || 0;
+  const cost = costPrice || 0;
+
+  // Profit margin = selling price - cost price
+  const margin = roundTo(subtract(price, cost), 2);
+
+  // Margin % = ((selling price - cost price) / selling price) × 100
+  let marginPercent = 0;
+  if (greaterThan(price, 0)) {
+    marginPercent = roundTo(multiply(divide(margin, price), 100), 2);
+  }
+
+  // Markup = selling price - cost price (same as margin in absolute terms)
+  const markup = margin;
+
+  // Markup % = ((selling price - cost price) / cost price) × 100
+  let markupPercent = 0;
+  if (greaterThan(cost, 0)) {
+    markupPercent = roundTo(multiply(divide(markup, cost), 100), 2);
+  }
+
+  return {
+    margin,
+    marginPercent,
+    markup,
+    markupPercent,
+    isProfit: !lessThan(margin, 0),
+  };
+};
+
+/**
+ * Calculate markup percentage from margin percentage
+ * @param marginPercent - Margin percentage
+ * @returns Markup percentage
+ */
+export const calculateMarkupPercent = (
+  sellingPrice: number,
+  costPrice: number
+): number => {
+  const cost = costPrice || 0;
+  if (lessThan(cost, 0) || cost === 0) return 0;
+
+  const price = sellingPrice || 0;
+  const markup = subtract(price, cost);
+  return roundTo(multiply(divide(markup, cost), 100), 2);
+};
+
+/**
+ * Validate price against cost with warning messages
+ * @param price - Proposed selling price
+ * @param cost - Cost price
+ * @returns Validation result with warning message
+ */
+export const validatePriceVsCost = (
+  price: number,
+  cost: number
+): { isValid: boolean; warning: string | null; metrics: ProfitMetrics | null } => {
+  if (lessThan(price, 0)) {
+    return {
+      isValid: false,
+      warning: "Selling price cannot be negative",
+      metrics: null,
+    };
+  }
+
+  const metrics = calculateProfitMargin(price, cost);
+
+  let warning: string | null = null;
+  if (greaterThan(cost, 0) && lessThan(price, cost)) {
+    warning = `Warning: Selling price (${formatCurrency(price)}) is below cost price (${formatCurrency(cost)}). Loss per unit: ${formatCurrency(Math.abs(metrics.margin))}`;
+  } else if (greaterThan(cost, 0) && lessThan(metrics.marginPercent, 10)) {
+    warning = `Low margin warning: Margin is only ${metrics.marginPercent.toFixed(2)}%. Consider increasing price.`;
+  }
+
+  return {
+    isValid: true,
+    warning,
+    metrics,
+  };
+};
+
+/**
+ * Calculate suggested price based on cost and desired markup percentage
+ * @param cost - Cost price
+ * @param markupPercent - Desired markup percentage
+ * @returns Suggested selling price
+ */
+export const calculateSuggestedPrice = (
+  cost: number,
+  markupPercent: number
+): number => {
+  const costDec = cost || 0;
+  const markup = markupPercent || 0;
+
+  // Suggested price = cost × (1 + markup% / 100)
+  const multiplier = add(1, divide(markup, 100));
+  return roundTo(multiply(costDec, multiplier), 2);
+};
+
+/**
+ * Get profit margin color for visual indicators
+ * @param marginPercent - Margin percentage
+ * @returns Color name (red, yellow, or green)
+ */
+export const getProfitMarginColor = (
+  marginPercent: number
+): "red" | "yellow" | "green" => {
+  if (lessThan(marginPercent, 0)) return "red";
+  if (lessThan(marginPercent, 20)) return "yellow";
+  return "green";
+};

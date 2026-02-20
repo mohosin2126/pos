@@ -101,7 +101,6 @@ const listOutOfStockProducts = async (_req, res) => {
     }
 };
 
-// flattened product + summary 
 const listSummary = async (_req, res) => {
     try {
         const [rows] = await sequelize.query(
