@@ -36,6 +36,7 @@ async function recomputeForProducts(productIds, t) {
     }
 
    
+    const byProd = new Map();
     for (const row of pLots) {
         const pid = Number(row.productId);
         const lotKey = row.expiryDate ? new Date(row.expiryDate).toISOString().slice(0, 10) : "NULL";

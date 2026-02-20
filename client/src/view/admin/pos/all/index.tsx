@@ -56,45 +56,59 @@ export default function AllPos() {
         }
     }, []);
 
-    // ————— Helpers —————
+
+    const normalizeProduct = (p: any) => p?.product ?? p;
+
     const productUnitPrice = (p: any) =>
         Number(p?.unitPrice ?? p?.price ?? 0);
 
     const productStock = (p: any) =>
         Number(p?.stockQuantity ?? p?.stock ?? 0);
 
+    const productAvailableQty = (p: any) =>
+        Number(p?.unexpiredQty ?? productStock(normalizeProduct(p)));
+
     const productCategoryName = (p: any) =>
         p?.category?.name ?? p?.category ?? "";
 
-    // Normalize a sellable product → CartItem
-    const toCartItem = (p: any): CartItem => ({
-        id: p?.id,
-        productId: p?.id,
-        name: p?.name,
-        price: productUnitPrice(p),
-        quantity: 1,
-        barcode: p?.barcode ?? "",
-        category: productCategoryName(p),
-        discount: Number(p?.discountAmount ?? 0),
-        tax: Number(p?.taxPercent ?? 0),
-    });
 
-    // Add product to cart (from sellableProducts)
+    const toCartItem = (p: any): CartItem => {
+        const baseProduct = normalizeProduct(p);
+
+        return {
+            id: baseProduct?.id,
+            productId: baseProduct?.id,
+            name: baseProduct?.name,
+            price: productUnitPrice(baseProduct),
+            quantity: 1,
+            barcode: baseProduct?.barcode ?? "",
+            category: productCategoryName(baseProduct),
+            discount: Number(baseProduct?.discountAmount ?? 0),
+            tax: Number(baseProduct?.taxPercent ?? 0),
+        };
+    };
+
+
     const addProductToCart = (product: any) => {
-        if (!product) return;
+        const baseProduct = normalizeProduct(product);
+        if (!baseProduct) return;
 
-        const existingItem = cartItems.find((c) => c.productId === product.id);
-        const stock = productStock(product);
+        const existingItem = cartItems.find(
+            (c) => c.productId === baseProduct.id
+        );
+        const stock = productAvailableQty(product);
 
         if (existingItem) {
-            // optional: prevent exceeding stock
+        
             if (existingItem.quantity + 1 > stock && stock > 0) {
                 message.warning("Not enough stock for this item");
                 return;
             }
             setCartItems((prev) =>
                 prev.map((c) =>
-                    c.productId === product.id ? { ...c, quantity: c.quantity + 1 } : c
+                    c.productId === baseProduct.id
+                        ? { ...c, quantity: c.quantity + 1 }
+                        : c
                 )
             );
         } else {
@@ -102,23 +116,22 @@ export default function AllPos() {
                 message.warning("This product is out of stock");
                 return;
             }
-            setCartItems((prev) => [...prev, toCartItem(product)]);
+            setCartItems((prev) => [...prev, toCartItem(baseProduct)]);
         }
     };
-
-    // Handle barcode scanning over sellable products only
     const handleBarcodeScan = (barcode: string) => {
-        const product = sellableProducts.find((p: any) => p?.barcode === barcode);
+        const product = sellableProducts.find(
+            (p: any) => normalizeProduct(p)?.barcode === barcode
+        );
         if (product) {
+            const baseProduct = normalizeProduct(product);
             addProductToCart(product);
             setBarcodeInput("");
-            message.success(`${product?.name} added to cart`);
+            message.success(`${baseProduct?.name} added to cart`);
         } else {
             message.error("Product not found");
         }
     };
-
-    // Update cart item quantity
     const updateQuantity = (id: number, quantity: number) => {
         if (quantity <= 0) {
             setCartItems((prev) => prev.filter((item) => item.id !== id));
@@ -129,12 +142,9 @@ export default function AllPos() {
         }
     };
 
-    // Remove item from cart
     const removeFromCart = (id: number) => {
         setCartItems((prev) => prev.filter((item) => item.id !== id));
     };
-
-    // Calculate totals
     const calculateTotals = () => {
         const subtotal = cartItems.reduce(
             (sum, item) => sum + item.price * item.quantity,
@@ -151,7 +161,7 @@ export default function AllPos() {
         return { subtotal, totalDiscount, totalTax, total };
     };
 
-    // Place order
+
     const handlePlaceOrder = async () => {
         if (cartItems.length === 0) {
             message.error("Please add items to cart");
@@ -213,18 +223,17 @@ export default function AllPos() {
         }
     };
 
-    // Print invoice
     const handlePrintInvoice = () => {
         window.print();
     };
 
-    // Filter sellable products by search term
     const filteredProducts = useMemo(() => {
         const term = searchTerm.trim().toLowerCase();
         if (!term) return sellableProducts ?? [];
         return (sellableProducts ?? []).filter((p: any) => {
-            const name = p?.name?.toLowerCase() ?? "";
-            const barcode = p?.barcode ?? "";
+            const baseProduct = normalizeProduct(p);
+            const name = baseProduct?.name?.toLowerCase() ?? "";
+            const barcode = baseProduct?.barcode ?? "";
             return name.includes(term) || barcode.includes(term);
         });
     }, [sellableProducts, searchTerm]);
@@ -239,7 +248,7 @@ export default function AllPos() {
             />
             <Card bodyStyle={{ padding: "0px 14px 14px" }}>
                 <div className="flex-1 flex overflow-hidden">
-                    {/* Left Column: Scanner + Product list (sellable only) */}
+                
                     <div className="w-1/3 bg-white border-r border-gray-200 flex flex-col">
                         <div className="p-4 border-b border-gray-200">
                             <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
@@ -276,9 +285,13 @@ export default function AllPos() {
 
                         <div className="flex-1 p-4 overflow-y-auto">
                             <div className="space-y-2">
-                                {(filteredProducts ?? []).map((product: any) => (
+                                {(filteredProducts ?? []).map((product: any) => {
+                                    const baseProduct = normalizeProduct(product);
+                                    const availableQty = productAvailableQty(product);
+
+                                    return (
                                     <Card
-                                        key={product?.id}
+                                        key={baseProduct?.id}
                                         size="small"
                                         className="cursor-pointer hover:shadow-md transition-shadow !mb-3"
                                         onClick={() => addProductToCart(product)}
@@ -287,31 +300,32 @@ export default function AllPos() {
                                             <div>
                                                 <Link
                                                     className="!w-max"
-                                                    to={`/admin/sales/view/${product?.id}`}
+                                                    to={`/admin/product/view/${baseProduct?.id}`}
                                                 >
                                                     <div className="font-medium text-sm !w-max">
-                                                        {product?.name}
+                                                        {baseProduct?.name}
                                                     </div>
                                                 </Link>
 
                                                 <div className="text-xs text-gray-500">
-                                                    {productCategoryName(product)}
+                                                    {productCategoryName(baseProduct)}
                                                 </div>
                                                 <div className="text-xs text-gray-400">
-                                                    Stock: {productStock(product)}
+                                                    Stock: {availableQty}
                                                 </div>
                                             </div>
                                             <div className="text-right">
                                                 <div className="font-bold text-green-600">
-                                                    ৳{productUnitPrice(product)}
+                                                    ৳{productUnitPrice(baseProduct)}
                                                 </div>
                                                 <div className="text-xs text-gray-400">
-                                                    {product?.barcode}
+                                                    {baseProduct?.barcode}
                                                 </div>
                                             </div>
                                         </div>
                                     </Card>
-                                ))}
+                                    );
+                                })}
                                 {!productsLoading && filteredProducts?.length === 0 && (
                                     <div className="text-center text-gray-500 text-sm py-6">
                                         No sellable products found.
