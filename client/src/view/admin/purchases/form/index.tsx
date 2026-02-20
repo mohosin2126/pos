@@ -15,6 +15,8 @@ import {
     CustomSelect,
     CustomTextArea,
 } from "@/components/form";
+import { validateOrderCalculation } from "@/utils/pos-calculations";
+import { add, multiply, percentage, max, roundTo } from "@/utils/math-utils";
 
 export default function PurchaseForm() {
     const [form] = Form.useForm();
@@ -27,6 +29,7 @@ export default function PurchaseForm() {
     const { purchase } = usePurchase(id);
 
     const [loading, setLoading] = useState(false);
+    const [autoCalculating, setAutoCalculating] = useState(false);
     const { data: suppliersOption } = useSuppliers();
     const { data: productsOption } = useProducts();
 
@@ -46,6 +49,45 @@ export default function PurchaseForm() {
             }
         }
     }, [purchase, isUpdate, form]);
+
+    const handleFieldChange = (changedValues: any) => {
+        setAutoCalculating(true);
+        setTimeout(() => {
+            const formValues = form.getFieldsValue();
+            const {
+                discountType,
+                discountAmount,
+                orderTaxPercent,
+                shippingCharge,
+                netTotalAmount,
+            } = formValues;
+
+            if (orderTaxPercent !== undefined && netTotalAmount) {
+                const taxAmount = percentage(netTotalAmount || 0, orderTaxPercent || 0);
+
+                if (changedValues.orderTaxPercent !== undefined) {
+                    form.setFieldValue("orderTaxAmount", taxAmount);
+                }
+            }
+
+            if (netTotalAmount !== undefined) {
+                const netTotal = netTotalAmount || 0;
+                const taxAmount = formValues.orderTaxAmount || 0;
+                const shipping = shippingCharge || 0;
+
+                const totalAmount = max(add(add(netTotal, taxAmount), shipping), 0);
+
+                if (
+                    changedValues.orderTaxAmount !== undefined ||
+                    changedValues.shippingCharge !== undefined
+                ) {
+                    form.setFieldValue("totalAmount", totalAmount);
+                }
+            }
+
+            setAutoCalculating(false);
+        }, 100);
+    };
 
     const handleFinish = async (values: { purchaseDate: string | number | Date | dayjs.Dayjs | null | undefined; expiryDate: string | number | Date | dayjs.Dayjs | null | undefined; }) => {
         setLoading(true);
@@ -90,6 +132,7 @@ export default function PurchaseForm() {
                 layout="vertical"
                 form={form}
                 onFinish={handleFinish}
+                onValuesChange={handleFieldChange}
                 initialValues={
                     isUpdate
                         ? {
@@ -160,7 +203,10 @@ export default function PurchaseForm() {
                         name="totalItems"
                         type="number"
                         placeholder="Enter total items"
-                        rules={[{ required: true, message: "Total items is required" }]}
+                        rules={[
+                            { required: true, message: "Total items is required" },
+                            { pattern: /^[0-9]+$/, message: "Total items must be a positive integer" }
+                        ]}
                     />
 
                     <CustomInput
@@ -174,6 +220,7 @@ export default function PurchaseForm() {
                         name="payTermValue"
                         placeholder="Enter pay term value"
                         type="number"
+                        rules={[{ pattern: /^[0-9]+$/, message: "Must be a positive integer" }]}
                     />
 
                     <CustomSelect
@@ -204,20 +251,33 @@ export default function PurchaseForm() {
                         name="discountAmount"
                         type="number"
                         placeholder="Enter discount amount"
+                        rules={[
+                            { pattern: /^[0-9]*\.?[0-9]*$/, message: "Invalid amount format" },
+                            { min: 0, message: "Discount cannot be negative" }
+                        ]}
                     />
 
                     <CustomInput
                         label="Order Tax (%)"
                         name="orderTaxPercent"
                         type="number"
+                        step="0.01"
                         placeholder="Enter order tax %"
+                        rules={[
+                            { pattern: /^[0-9]*\.?[0-9]*$/, message: "Invalid percentage" },
+                            { min: 0, max: 100, message: "Tax must be between 0 and 100" }
+                        ]}
                     />
 
                     <CustomInput
-                        label="Order Tax Amount"
+                        label="Order Tax Amount (Auto-calculated)"
                         name="orderTaxAmount"
                         type="number"
-                        placeholder="Enter order tax amount"
+                        placeholder="Automatically calculated"
+                        disabled
+                        rules={[
+                            { pattern: /^[0-9]*\.?[0-9]*$/, message: "Invalid amount format" }
+                        ]}
                     />
 
                     <CustomInput
@@ -225,20 +285,33 @@ export default function PurchaseForm() {
                         name="shippingCharge"
                         type="number"
                         placeholder="Enter shipping charge"
+                        rules={[
+                            { pattern: /^[0-9]*\.?[0-9]*$/, message: "Invalid amount format" },
+                            { min: 0, message: "Shipping charge cannot be negative" }
+                        ]}
                     />
 
                     <CustomInput
                         label="Net Total Amount"
                         name="netTotalAmount"
                         type="number"
-                        placeholder="Enter net total amount"
+                        placeholder="Subtotal (from items)"
+                        rules={[
+                            { required: true, message: "Net total is required" },
+                            { pattern: /^[0-9]*\.?[0-9]*$/, message: "Invalid amount format" },
+                            { min: 0, message: "Amount cannot be negative" }
+                        ]}
                     />
 
                     <CustomInput
-                        label="Total Amount"
+                        label="Total Amount (Auto-calculated)"
                         name="totalAmount"
                         type="number"
-                        placeholder="Enter total amount"
+                        placeholder="Automatically calculated"
+                        disabled
+                        rules={[
+                            { pattern: /^[0-9]*\.?[0-9]*$/, message: "Invalid amount format" }
+                        ]}
                     />
 
                     <CustomInput
@@ -246,6 +319,10 @@ export default function PurchaseForm() {
                         name="amountPaid"
                         type="number"
                         placeholder="Enter amount paid"
+                        rules={[
+                            { pattern: /^[0-9]*\.?[0-9]*$/, message: "Invalid amount format" },
+                            { min: 0, message: "Amount paid cannot be negative" }
+                        ]}
                     />
 
                     <CustomInput
@@ -253,6 +330,10 @@ export default function PurchaseForm() {
                         name="warrantyValue"
                         type="number"
                         placeholder="Enter warranty value"
+                        rules={[
+                            { pattern: /^[0-9]*$/, message: "Must be a positive integer" },
+                            { min: 0, message: "Warranty value cannot be negative" }
+                        ]}
                     />
 
                     <CustomSelect
@@ -291,7 +372,7 @@ export default function PurchaseForm() {
 
                 <Button
                     icon={<FaSave />}
-                    loading={loading}
+                    loading={loading || autoCalculating}
                     htmlType="submit"
                     className="btn hover:!text-[#69feb0] !mt-5 !px-6"
                 >

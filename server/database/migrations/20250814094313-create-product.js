@@ -21,7 +21,7 @@ module.exports = {
             },
             sku: {type: Sequelize.STRING, allowNull: true, unique: true},
             barcode: {type: Sequelize.STRING, allowNull: true},
-
+            price: {type: Sequelize.DECIMAL(10, 2), allowNull: false, defaultValue: 0},
 
             stockQuantity: {type: Sequelize.INTEGER, allowNull: false, defaultValue: 0},
             reorderLevel: {type: Sequelize.INTEGER, allowNull: true},

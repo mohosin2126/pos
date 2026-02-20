@@ -41,7 +41,5 @@ module.exports = function registerRoutes(app) {
     app.use("/api/v1/admin/customer", customerManagement);
     app.use("/api/v1/admin/invoice",invoiceManagement);
     app.use('/api/v1/auth', authRoutes);
-
-    // common routes
     app.use("/api/v1/admin/common", commonRoutes);
 };

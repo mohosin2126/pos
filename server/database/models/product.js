@@ -5,7 +5,6 @@ const {Model} = require("sequelize");
 module.exports = (sequelize, DataTypes) => {
     class Product extends Model {
         static associate(models) {
-            // Each Product belongs to one Category
             Product.belongsTo(models.Category, {
                 foreignKey: "categoryId",
                 as: "category",
@@ -36,6 +35,11 @@ module.exports = (sequelize, DataTypes) => {
             barcode: {
                 type: DataTypes.STRING,
                 allowNull: true,
+            },
+            price: {
+                type: DataTypes.DECIMAL(18, 2),
+                allowNull: false,
+                defaultValue: 0
             },
             stockQuantity: {
                 type: DataTypes.INTEGER,

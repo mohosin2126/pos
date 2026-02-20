@@ -1,5 +1,6 @@
 "use strict";
 const { Model } = require("sequelize");
+const { validateLineTotal } = require("../../utils/price-calculator");
 
 module.exports = (sequelize, DataTypes) => {
     class PurchaseItem extends Model {
@@ -14,7 +15,7 @@ module.exports = (sequelize, DataTypes) => {
             purchaseId: { type: DataTypes.INTEGER, allowNull: false },
             productId: { type: DataTypes.INTEGER, allowNull: false },
 
-            quantity: { type: DataTypes.DECIMAL(18, 2), allowNull: false },
+            quantity: { type: DataTypes.INTEGER, allowNull: false },
             unitPrice: { type: DataTypes.DECIMAL(18, 2), allowNull: false },
             lineTotal: { type: DataTypes.DECIMAL(18, 2), allowNull: false },
             expiryDate: { type: DataTypes.DATE, allowNull: true },
@@ -25,20 +26,16 @@ module.exports = (sequelize, DataTypes) => {
             modelName: "PurchaseItem",
             tableName: "purchase_items",
             validate: {
-                quantityPositive() {
-                    if (this.quantity <= 0) {
-                        throw new Error("Quantity must be greater than 0");
-                    }
-                },
-                priceNonNegative() {
-                    if (this.unitPrice < 0) {
-                        throw new Error("Unit price cannot be negative");
-                    }
-                },
                 lineTotalValid() {
-                    const expected = parseFloat(this.quantity) * parseFloat(this.unitPrice);
-                    if (Math.abs(parseFloat(this.lineTotal) - expected) > 0.01) {
-                        throw new Error("Line total must equal quantity * unitPrice");
+                    const result = validateLineTotal(this.quantity, this.unitPrice);
+                    if (!result.isValid) {
+                        throw new Error(result.error);
+                    }
+                    const expectedLineTotal = result.lineTotal;
+                    const actualLineTotal = parseFloat(this.lineTotal);
+                    const diff = Math.abs(actualLineTotal - expectedLineTotal);
+                    if (diff > 0.01) {
+                        throw new Error(`Line total must equal quantity × unitPrice. Expected ${expectedLineTotal}, got ${actualLineTotal}`);
                     }
                 },
             },

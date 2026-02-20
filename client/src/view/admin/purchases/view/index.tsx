@@ -2,6 +2,7 @@ import { Card, Row, Col, Tag, Typography, Divider, Table } from "antd";
 import dayjs from "dayjs";
 import { useParams } from "react-router-dom";
 import { usePurchase } from "@/hooks/admin/purchase";
+import { formatCurrency } from "@/utils/pos-calculations";
 
 const { Title } = Typography;
 
@@ -83,21 +84,21 @@ export default function PurchaseDetails() {
           />
           <InfoRow
             label="Discount :"
-            value={`${purchase?.discountAmount} ${
-              purchase?.discountType === "percent" ? "%" : "$"
-            }`}
+            value={`${purchase?.discountAmount ? formatCurrency(purchase.discountAmount) : "0"} ${
+              purchase?.discountType === "percent" ? "(%" : ""
+            }${purchase?.discountType === "percent" ? ")" : ""}`}
           />
           <InfoRow
             label="Order Tax :"
-            value={`${purchase?.orderTaxPercent}% ($${purchase?.orderTaxAmount})`}
+            value={`${purchase?.orderTaxPercent || 0}% (${formatCurrency(purchase?.orderTaxAmount || 0)})`}
           />
           <InfoRow
             label="Shipping Charge :"
-            value={`$${purchase?.shippingCharge}`}
+            value={formatCurrency(purchase?.shippingCharge || 0)}
           />
-          <InfoRow label="Net Total :" value={`$${purchase?.netTotalAmount}`} />
-          <InfoRow label="Total Amount :" value={`$${purchase?.totalAmount}`} />
-          <InfoRow label="Amount Paid :" value={`$${purchase?.amountPaid}`} />
+          <InfoRow label="Net Total :" value={formatCurrency(purchase?.netTotalAmount || 0)} />
+          <InfoRow label="Total Amount :" value={formatCurrency(purchase?.totalAmount || 0)} />
+          <InfoRow label="Amount Paid :" value={formatCurrency(purchase?.amountPaid || 0)} />
           <InfoRow
             label="Warranty :"
             value={`${purchase?.warrantyValue} ${purchase?.warrantyUnit}`}
@@ -135,7 +136,7 @@ export default function PurchaseDetails() {
                 key: "amount",
                 render: (amount: any) => {
                   const num = Number(amount);
-                  return !isNaN(num) ? `$${num.toFixed(2)}` : "----";
+                  return !isNaN(num) ? formatCurrency(num) : "----";
                 },
               },
             ]}
@@ -163,19 +164,13 @@ export default function PurchaseDetails() {
                   title: "Unit Price",
                   dataIndex: "unitPrice",
                   key: "unitPrice",
-                  render: (price: any) => {
-                    const num = Number(price);
-                    return !isNaN(num) ? `$${num.toFixed(2)}` : "----";
-                  },
+                  render: (price: any) => formatCurrency(Number(price) || 0),
                 },
                 {
                   title: "Line Total",
                   dataIndex: "lineTotal",
                   key: "lineTotal",
-                  render: (total: any) => {
-                    const num = Number(total);
-                    return !isNaN(num) ? `$${num.toFixed(2)}` : "----";
-                  },
+                  render: (total: any) => formatCurrency(Number(total) || 0),
                 },
                 {
                   title: "Expiry Date",

@@ -10,24 +10,22 @@ const {
     updatePurchaseValidation,
     createPurchaseReturnValidation,
 } = require("./validation");
+const {
+    validateLineTotal,
+    calculateOrderTotal,
+    calculateTotalItems,
+} = require("../../utils/price-calculator");
 
-
-// ===================== end recompute =====================
-
-// Create Purchase Order (with items)
 const create = async (req, res) => {
     try {
-        // Validate request
         const { error, value } = createPurchaseOrderValidation.validate(req.body);
         if (error) return badRequest(res, error.details[0].message);
 
         const { items, supplierId } = value;
 
-        // Verify supplier
         const supplier = await Supplier.findByPk(supplierId);
         if (!supplier) return badRequest(res, "Supplier not found");
 
-        // Verify all products exist and are active
         const productIds = items.map(item => item.productId);
         const products = await Product.findAll({ where: { id: productIds } });
         if (products.length !== productIds.length) {
@@ -39,7 +37,33 @@ const create = async (req, res) => {
             }
         }
 
-        // Create purchase with items in transaction
+        const calculatedItems = [];
+        for (const item of items) {
+            const validated = validateLineTotal(item.quantity, item.unitPrice);
+            if (!validated.isValid) {
+                return badRequest(res, `Item validation error: ${validated.error}`);
+            }
+            calculatedItems.push({
+                ...item,
+                quantity: validated.quantity,
+                unitPrice: validated.unitPrice,
+                lineTotal: validated.lineTotal,
+            });
+        }
+
+        const orderCalc = calculateOrderTotal(
+            calculatedItems,
+            { type: value.discountType || "none", amount: value.discountAmount || 0 },
+            value.orderTaxPercent || 0,
+            value.shippingCharge || 0
+        );
+
+        if (!orderCalc.isValid) {
+            return badRequest(res, `Order calculation error: ${orderCalc.error}`);
+        }
+
+        const totalItemsCount = calculateTotalItems(calculatedItems);
+
         const purchase = await sequelize.transaction(async (t) => {
             const p = await Purchase.create(
                 {
@@ -47,30 +71,29 @@ const create = async (req, res) => {
                     supplierAddress: value.supplierAddress,
                     referenceNo: value.referenceNo,
                     purchaseDate: value.purchaseDate,
-                    status: "po", // Default to purchase order status
+                    status: "po",
                     payTermValue: value.payTermValue,
                     payTermUnit: value.payTermUnit,
-                    discountType: value.discountType,
-                    discountAmount: value.discountAmount,
-                    orderTaxPercent: value.orderTaxPercent,
-                    orderTaxAmount: value.orderTaxAmount,
-                    shippingCharge: value.shippingCharge,
+                    discountType: value.discountType || "none",
+                    discountAmount: orderCalc.orderDiscount,
+                    orderTaxPercent: value.orderTaxPercent || 0,
+                    orderTaxAmount: orderCalc.orderTax,
+                    shippingCharge: value.shippingCharge || 0,
                     additionalExpenses: value.additionalExpenses,
-                    netTotalAmount: value.netTotalAmount,
-                    totalAmount: value.totalAmount,
-                    amountPaid: value.amountPaid,
+                    totalItems: totalItemsCount,
+                    netTotalAmount: orderCalc.subtotal,
+                    totalAmount: orderCalc.total,
+                    amountPaid: value.amountPaid || 0,
                     notes: value.notes,
                     shippingDetails: value.shippingDetails,
                     warrantyValue: value.warrantyValue,
                     warrantyUnit: value.warrantyUnit,
-                    productId: null, // Multi-item POs don't use this field
+                    productId: null,
                 },
                 { transaction: t }
             );
-
-            // Create line items
             const createdItems = [];
-            for (const item of items) {
+            for (const item of calculatedItems) {
                 const lineItem = await PurchaseItem.create(
                     {
                         purchaseId: p.id,
@@ -96,7 +119,6 @@ const create = async (req, res) => {
     }
 };
 
-// GET ALL
 const getAll = async (req, res) => {
     try {
         const { page, limit, offset } = parsePagination(req.query, { page: 1, limit: 20, maxLimit: 100 });
@@ -115,7 +137,6 @@ const getAll = async (req, res) => {
     }
 };
 
-// GET ONE
 const getOne = async (req, res) => {
     try {
         const purchase = await Purchase.findByPk(req.params.id, {
@@ -133,67 +154,92 @@ const getOne = async (req, res) => {
     }
 };
 
-// UPDATE
 const update = async (req, res) => {
     try {
         const { id } = req.params;
         const purchase = await Purchase.findByPk(id, { include: { model: PurchaseItem, as: "items" } });
         if (!purchase) return notFound(res, "Purchase not found");
 
-        // Only allow updates to draft or PO status
         if (purchase.status !== "draft" && purchase.status !== "po") {
             return badRequest(res, "Can only update purchases in draft or po status");
         }
 
-        // Validate incoming data
         const { error, value } = updatePurchaseValidation.validate(req.body);
         if (error) return badRequest(res, error.details[0].message);
 
-        // If items are provided, validate products
+        let calculatedItems = value.items;
         if (value.items && value.items.length > 0) {
             const productIds = value.items.map(item => item.productId);
             const products = await Product.findAll({ where: { id: productIds } });
             if (products.length !== productIds.length) {
                 return badRequest(res, "One or more products not found");
             }
+
+            calculatedItems = [];
+            for (const item of value.items) {
+                const validated = validateLineTotal(item.quantity, item.unitPrice);
+                if (!validated.isValid) {
+                    return badRequest(res, `Item validation error: ${validated.error}`);
+                }
+                calculatedItems.push({
+                    ...item,
+                    quantity: validated.quantity,
+                    unitPrice: validated.unitPrice,
+                    lineTotal: validated.lineTotal,
+                });
+            }
         }
 
-        // Update in transaction
-        const updated = await sequelize.transaction(async (t) => {
-            // Update purchase record
-            await purchase.update(
-                {
-                    supplierId: value.supplierId ?? purchase.supplierId,
-                    supplierAddress: value.supplierAddress ?? purchase.supplierAddress,
-                    referenceNo: value.referenceNo ?? purchase.referenceNo,
-                    purchaseDate: value.purchaseDate ?? purchase.purchaseDate,
-                    status: value.status ?? purchase.status,
-                    payTermValue: value.payTermValue ?? purchase.payTermValue,
-                    payTermUnit: value.payTermUnit ?? purchase.payTermUnit,
-                    discountType: value.discountType ?? purchase.discountType,
-                    discountAmount: value.discountAmount ?? purchase.discountAmount,
-                    orderTaxPercent: value.orderTaxPercent ?? purchase.orderTaxPercent,
-                    orderTaxAmount: value.orderTaxAmount ?? purchase.orderTaxAmount,
-                    shippingCharge: value.shippingCharge ?? purchase.shippingCharge,
-                    additionalExpenses: value.additionalExpenses ?? purchase.additionalExpenses,
-                    netTotalAmount: value.netTotalAmount ?? purchase.netTotalAmount,
-                    totalAmount: value.totalAmount ?? purchase.totalAmount,
-                    amountPaid: value.amountPaid ?? purchase.amountPaid,
-                    notes: value.notes ?? purchase.notes,
-                    shippingDetails: value.shippingDetails ?? purchase.shippingDetails,
-                    warrantyValue: value.warrantyValue ?? purchase.warrantyValue,
-                    warrantyUnit: value.warrantyUnit ?? purchase.warrantyUnit,
-                },
-                { transaction: t }
+        let orderCalc = null;
+        if (calculatedItems && calculatedItems.length > 0) {
+            orderCalc = calculateOrderTotal(
+                calculatedItems,
+                { type: value.discountType ?? purchase.discountType ?? "none", amount: value.discountAmount ?? purchase.discountAmount ?? 0 },
+                value.orderTaxPercent ?? purchase.orderTaxPercent ?? 0,
+                value.shippingCharge ?? purchase.shippingCharge ?? 0
             );
 
-            // Update line items if provided
-            if (value.items && value.items.length > 0) {
-                // Delete old items
+            if (!orderCalc.isValid) {
+                return badRequest(res, `Order calculation error: ${orderCalc.error}`);
+            }
+        }
+
+        const updated = await sequelize.transaction(async (t) => {
+            const updateData = {
+                supplierId: value.supplierId ?? purchase.supplierId,
+                supplierAddress: value.supplierAddress ?? purchase.supplierAddress,
+                referenceNo: value.referenceNo ?? purchase.referenceNo,
+                purchaseDate: value.purchaseDate ?? purchase.purchaseDate,
+                status: value.status ?? purchase.status,
+                payTermValue: value.payTermValue ?? purchase.payTermValue,
+                payTermUnit: value.payTermUnit ?? purchase.payTermUnit,
+                discountType: value.discountType ?? purchase.discountType,
+                discountAmount: value.discountAmount ?? purchase.discountAmount,
+                orderTaxPercent: value.orderTaxPercent ?? purchase.orderTaxPercent,
+                orderTaxAmount: value.orderTaxAmount ?? purchase.orderTaxAmount,
+                shippingCharge: value.shippingCharge ?? purchase.shippingCharge,
+                additionalExpenses: value.additionalExpenses ?? purchase.additionalExpenses,
+                amountPaid: value.amountPaid ?? purchase.amountPaid,
+                notes: value.notes ?? purchase.notes,
+                shippingDetails: value.shippingDetails ?? purchase.shippingDetails,
+                warrantyValue: value.warrantyValue ?? purchase.warrantyValue,
+                warrantyUnit: value.warrantyUnit ?? purchase.warrantyUnit,
+            };
+
+            if (orderCalc) {
+                updateData.discountAmount = orderCalc.orderDiscount;
+                updateData.orderTaxAmount = orderCalc.orderTax;
+                updateData.totalItems = calculateTotalItems(calculatedItems);
+                updateData.netTotalAmount = orderCalc.subtotal;
+                updateData.totalAmount = orderCalc.total;
+            }
+
+            await purchase.update(updateData, { transaction: t });
+
+            if (calculatedItems && calculatedItems.length > 0) {
                 await PurchaseItem.destroy({ where: { purchaseId: id }, transaction: t });
 
-                // Create new items
-                for (const item of value.items) {
+                for (const item of calculatedItems) {
                     await PurchaseItem.create(
                         {
                             purchaseId: id,
@@ -209,13 +255,12 @@ const update = async (req, res) => {
                 }
             }
 
-            // Recompute inventory for affected products
             const affectedProductIds = new Set();
             for (const item of purchase.items) {
                 affectedProductIds.add(item.productId);
             }
-            if (value.items) {
-                for (const item of value.items) {
+            if (calculatedItems) {
+                for (const item of calculatedItems) {
                     affectedProductIds.add(item.productId);
                 }
             }
@@ -237,7 +282,6 @@ const update = async (req, res) => {
     }
 };
 
-// DELETE
 const destroy = async (req, res) => {
     try {
         const { id } = req.params;
@@ -250,7 +294,6 @@ const destroy = async (req, res) => {
         }
 
         await sequelize.transaction(async (t) => {
-            // Collect product IDs from items
             const productIds = new Set();
             for (const item of purchase.items) {
                 productIds.add(item.productId);
@@ -310,7 +353,6 @@ const approvePO = async (req, res) => {
     }
 };
 
-// CREATE PURCHASE RETURN
 const createReturn = async (req, res) => {
     try {
     
@@ -373,7 +415,6 @@ const createReturn = async (req, res) => {
     }
 };
 
-// GET RETURNS
 const getReturns = async (req, res) => {
     try {
         const { purchaseId } = req.params;

@@ -5,6 +5,12 @@ const { recomputeForProducts } = require("../../utils/inventory-recompute");
 const {
     success, created, badRequest, notFound, serverError, parsePagination, paginated,
 } = require("../../utils/api-response");
+const {
+    validateLineTotal,
+    calculateItemTotal,
+    calculateOrderTotal,
+    calculateTotalItems,
+} = require("../../utils/price-calculator");
 
 async function getRemainingLots(productId, t) {
     const [pRows] = await sequelize.query(
@@ -61,7 +67,6 @@ async function getRemainingLots(productId, t) {
 
 
 
-// ---- customer + invoice helpers ----
 async function resolveCustomerIdFromPayload(payload, t) {
     if (!payload) return null;
 
@@ -120,7 +125,6 @@ async function generateInvoiceNo(t) {
     return `${prefix}${seq.toString().padStart(4, "0")}`;
 }
 
-// ---- CONTROLLER ACTIONS ----
 const create = async (req, res) => {
     try {
         const { items } = req.body;
@@ -187,24 +191,28 @@ const create = async (req, res) => {
                 }
                 if (remaining > 0) throw { _badRequest: `Insufficient stock for product ${pid}. Need ${qty}.` };
 
-                const base = Number(item.unitPrice) * qty;
-                const disc = item.discountType === "percent"
-                    ? (base * Number(item.discountAmount || 0)) / 100
-                    : (item.discountType === "fixed" ? Number(item.discountAmount || 0) : 0);
-                const taxable = Math.max(0, base - disc);
-                const tax = (taxable * Number(item.taxPercent || 0)) / 100;
-                const lineTotal = taxable + tax;
-
-                await SaleItem.create({
-                    saleId: sale.id,
-                    productId: pid,
+                const itemCalc = calculateItemTotal({
                     quantity: qty,
                     unitPrice: item.unitPrice,
                     discountType: item.discountType || "none",
                     discountAmount: item.discountAmount || 0,
                     taxPercent: item.taxPercent || 0,
-                    taxAmount: tax,
-                    lineTotal,
+                });
+
+                if (!itemCalc.isValid) {
+                    throw { _badRequest: `Item calculation error for product ${pid}: ${itemCalc.error}` };
+                }
+
+                await SaleItem.create({
+                    saleId: sale.id,
+                    productId: pid,
+                    quantity: itemCalc.quantity,
+                    unitPrice: itemCalc.unitPrice,
+                    discountType: item.discountType || "none",
+                    discountAmount: itemCalc.discount,
+                    taxPercent: item.taxPercent || 0,
+                    taxAmount: itemCalc.tax,
+                    lineTotal: itemCalc.lineTotal,
                     allocations,
                 }, { transaction: t });
 
@@ -222,26 +230,26 @@ const create = async (req, res) => {
             );
             const tr = Array.isArray(tot) ? tot[0] : tot;
 
-            // Calculate proper total with order-level discount and tax
-            const itemSubtotal = Number(tr.netTotalAmount || 0);
-            const itemTaxes = Number(tr.totalTax || 0);
-            
-            let orderDiscount = 0;
-            if (sale.discountType === "percent") {
-                orderDiscount = (itemSubtotal * sale.discountAmount) / 100;
-            } else if (sale.discountType === "fixed") {
-                orderDiscount = sale.discountAmount;
+            const saleItems = await SaleItem.findAll({ where: { saleId: sale.id }, transaction: t });
+
+            const orderCalc = calculateOrderTotal(
+                saleItems,
+                { type: sale.discountType || "none", amount: sale.discountAmount || 0 },
+                sale.orderTaxPercent || 0,
+                sale.shippingCharge || 0
+            );
+
+            if (!orderCalc.isValid) {
+                throw { _badRequest: `Order calculation error: ${orderCalc.error}` };
             }
-            
-            const subtotalAfterOrderDiscount = Math.max(0, itemSubtotal - orderDiscount);
-            const orderTax = (subtotalAfterOrderDiscount * (sale.orderTaxPercent || 0)) / 100;
-            const finalTotal = itemSubtotal - orderDiscount + itemTaxes + orderTax + (sale.shippingCharge || 0);
+
+            const totalItemsCount = calculateTotalItems(saleItems);
 
             await sale.update({
-                totalItems: Number(tr.totalItems || 0),
-                netTotalAmount: itemSubtotal,
-                totalAmount: finalTotal,
-                orderTaxAmount: orderTax,
+                totalItems: totalItemsCount,
+                netTotalAmount: orderCalc.subtotal,
+                totalAmount: orderCalc.total,
+                orderTaxAmount: orderCalc.orderTax,
             }, { transaction: t });
 
             await recomputeForProducts([...affected], t);

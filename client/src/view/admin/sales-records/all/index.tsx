@@ -10,6 +10,7 @@ import { Link } from "react-router-dom";
 import dayjs from "dayjs";
 import { useSales } from "@/hooks/admin/sales";
 import Loader from "@/components/re-useable/loader";
+import { formatCurrency } from "@/utils/pos-calculations";
 
 const { Option } = Select;
 
@@ -67,35 +68,35 @@ export default function SalesRecords() {
       dataIndex: ["invoice", "subTotal"],
       key: "subTotal",
       render: (amount?: string) =>
-        amount ? `$${Number(amount).toFixed(2)}` : "N/A",
+        amount ? formatCurrency(Number(amount)) : "N/A",
     },
     {
       title: "Discount",
       dataIndex: ["invoice", "discountAmount"],
       key: "discountAmount",
       render: (amount?: string) =>
-        amount ? `$${Number(amount).toFixed(2)}` : "N/A",
+        amount ? formatCurrency(Number(amount)) : "N/A",
     },
     {
       title: "Tax",
       dataIndex: ["invoice", "orderTaxAmount"],
       key: "orderTaxAmount",
       render: (amount?: string) =>
-        amount ? `$${Number(amount).toFixed(2)}` : "N/A",
+        amount ? formatCurrency(Number(amount)) : "N/A",
     },
     {
       title: "Shipping",
       dataIndex: ["invoice", "shippingCharge"],
       key: "shippingCharge",
       render: (amount?: string) =>
-        amount ? `$${Number(amount).toFixed(2)}` : "N/A",
+        amount ? formatCurrency(Number(amount)) : "N/A",
     },
     {
       title: "Total",
       dataIndex: ["invoice", "totalAmount"],
       key: "totalAmount",
       render: (amount?: string) =>
-        amount ? `$${Number(amount).toFixed(2)}` : "N/A",
+        amount ? formatCurrency(Number(amount)) : "N/A",
     },
     {
       title: "Paid",
