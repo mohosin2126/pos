@@ -13,7 +13,6 @@ export const ActionButton: React.FC<TActionButtonProps> = ({
 }) => {
   return (
     <Space>
-      {/* View */}
       {viewUrl ? (
         <Link to={viewUrl}>
           <button className="action-btn group bg-[#005555]/10 hover:bg-[#005555]/15">
@@ -31,7 +30,6 @@ export const ActionButton: React.FC<TActionButtonProps> = ({
         )
       )}
 
-      {/* Edit */}
       {editUrl ? (
         <Link to={editUrl}>
           <button
@@ -52,7 +50,6 @@ export const ActionButton: React.FC<TActionButtonProps> = ({
         )
       )}
 
-      {/* Delete */}
       {onDelete && (
         <button
           onClick={onDelete}

@@ -1,7 +1,6 @@
 import Banner from "./banner";
 import Contact from "./contact";
 import Features from "./services";
-import Footer from "./footer";
 import Packages from "./packages";
 import Services from "./features";
 import DeliveryProcess from "./delivery-process";
@@ -17,7 +16,6 @@ export default function HomePage() {
       <Packages />
       <Connect />
       <Contact />
-      <Footer />
     </div>
   );
 }

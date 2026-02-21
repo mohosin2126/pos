@@ -1,5 +1,4 @@
 import Contact from "../home/contact";
-import Footer from "../home/footer";
 import CommonBanner from "@/components/common/banner";
 
 export default function ContactPage() {
@@ -7,10 +6,9 @@ export default function ContactPage() {
     <div className="container mx-auto">
       <CommonBanner
         title="Get in Touch"
-        description="We’re here to answer your questions and provide the support you need. Reach out to us anytime."
+        description="We're here to answer your questions and provide the support you need. Reach out to us anytime."
       />
       <Contact />
-      <Footer />
     </div>
   );
 }

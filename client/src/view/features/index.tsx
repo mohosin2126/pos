@@ -1,9 +1,8 @@
 import React from "react";
-import Footer from "../home/footer";
 import CommonBanner from "@/components/common/banner";
-import FeaturesShowcase from "./showcase/features-showcase";
-import HowItWorks from "./works/how-it-works";
-import Integrations from "./integration/integrations";
+import FeaturesShowcase from "./showcase";
+import HowItWorks from "./works";
+import Integrations from "./integration";
 import { HiChartBar, HiClock, HiShieldCheck } from "react-icons/hi";
 
 const highlights = [
@@ -29,12 +28,13 @@ const highlights = [
 
 export default function FeaturesPage() {
   return (
-    <div className="container mx-auto space-y-6 pb-12 lg:space-y-16 lg:pb-16">
-      <CommonBanner
-        title="Features that feel effortless"
-        description="A modern POS stack that stays calm under pressure and keeps your team fast."
-      />
-      <div className="relative -mt-10 px-4 sm:px-6 lg:px-10">
+    <div className="container mx-auto">
+      <div className="space-y-12 sm:space-y-16 lg:space-y-20 pb-12 lg:pb-16">
+        <CommonBanner
+          title="Features that feel effortless"
+          description="A modern POS stack that stays calm under pressure and keeps your team fast."
+        />
+      <div className="relative px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
         <div className="grid gap-4 sm:grid-cols-3 sm:gap-6">
           {highlights.map((item) => (
             <div
@@ -57,7 +57,7 @@ export default function FeaturesPage() {
       <FeaturesShowcase />
       <HowItWorks />
       <Integrations />
-      <Footer />
+      </div>
     </div>
   );
 }

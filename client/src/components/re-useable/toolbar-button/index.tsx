@@ -1,18 +1,18 @@
 import React from "react";
 import { Button, Tooltip } from "antd";
-// import { BiSolidFilePdf } from "react-icons/bi";
-// import { BsFileEarmarkExcelFill } from "react-icons/bs";
+import { BiSolidFilePdf } from "react-icons/bi";
+import { BsFileEarmarkExcelFill } from "react-icons/bs";
 import { SlRefresh } from "react-icons/sl";
 import { TToolbarButtonProps } from "@/interface/menu-and-common";
 
 const ToolbarButton: React.FC<TToolbarButtonProps> = ({
-  // onPdfClick,
-  // onExcelClick,
+  onPdfClick,
+  onExcelClick,
   onRefreshClick,
 }) => {
   return (
     <div className="flex items-center gap-2">
-      {/* {onPdfClick && (
+      {onPdfClick && (
         <Tooltip title="Export as PDF">
           <Button
             color="default"
@@ -36,7 +36,7 @@ const ToolbarButton: React.FC<TToolbarButtonProps> = ({
             <BsFileEarmarkExcelFill size={18} />
           </Button>
         </Tooltip>
-      )} */}
+      )}
 
       {onRefreshClick && (
         <Tooltip title="Refresh">

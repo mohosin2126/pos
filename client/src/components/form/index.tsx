@@ -31,7 +31,6 @@ const { TextArea } = Input;
 const { Option } = Select;
 const { Dragger } = Upload;
 
-/* Input field*/
 export const CustomInput: React.FC<TCustomInputProps> = ({
   label,
   name,
@@ -76,7 +75,6 @@ export const CustomInput: React.FC<TCustomInputProps> = ({
   );
 };
 
-// number input field
 export const CustomNumberInput: React.FC<TCustomNumberInputProps> = ({
   label,
   name,
@@ -109,7 +107,6 @@ export const CustomNumberInput: React.FC<TCustomNumberInputProps> = ({
     </Form.Item>
   );
 };
-/* File upload*/
 export const FileUpload: React.FC<TFileUploadProps> = ({
   label,
   name,
@@ -153,7 +150,6 @@ export const FileUpload: React.FC<TFileUploadProps> = ({
   );
 };
 
-/* Select field*/
 export const CustomSelect: React.FC<TCustomSelectProps> = ({
   label,
   name,
@@ -205,7 +201,6 @@ export const CustomSelect: React.FC<TCustomSelectProps> = ({
   );
 };
 
-/* Select Box like Radio Select*/
 export const CustomSelectBox: React.FC<TCustomSelectBoxProps> = ({
   label,
   name,
@@ -235,7 +230,6 @@ export const CustomSelectBox: React.FC<TCustomSelectBoxProps> = ({
   );
 };
 
-/* Checkbox field */
 export const CustomCheckbox: React.FC<TCustomCheckboxProps> = ({
   name,
   rules = [],
@@ -254,7 +248,6 @@ export const CustomCheckbox: React.FC<TCustomCheckboxProps> = ({
   );
 };
 
-/* Date field */
 export const CustomDate: React.FC<TCustomDateProps> = ({
   label,
   name,
@@ -282,7 +275,6 @@ export const CustomDate: React.FC<TCustomDateProps> = ({
   );
 };
 
-/* Date Range field */
 export const CustomDateRange: React.FC<TCustomDateRangeProps> = ({
   label,
   name,
@@ -310,7 +302,6 @@ export const CustomDateRange: React.FC<TCustomDateRangeProps> = ({
   );
 };
 
-/* TextArea field */
 export const CustomTextArea: React.FC<TCustomTextAreaProps> = ({
   label,
   name,

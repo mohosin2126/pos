@@ -135,7 +135,7 @@ const FeaturesShowcase = () => {
             </div>
           </div>
 
-          {/* <div className="relative">
+          <div className="relative">
             <div className="absolute -top-6 right-6 hidden h-28 w-28 rounded-2xl bg-white/5 blur-2xl lg:block"></div>
             <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
               <div className="flex items-center justify-between">
@@ -228,7 +228,7 @@ const FeaturesShowcase = () => {
                 ))}
               </div>
             </div>
-          </div> */}
+          </div>
         </div>
 
         <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4 lg:gap-7">
@@ -237,7 +237,6 @@ const FeaturesShowcase = () => {
               key={feature.id}
               className="group relative rounded-2xl border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02] p-6 transition-all duration-300 hover:-translate-y-2 hover:border-[#7ff6d0] hover:bg-gradient-to-br hover:from-white/10 hover:to-white/[0.05] hover:shadow-lg hover:shadow-[#7ff6d0]/20 backdrop-blur"
             >
-              {/* Corner accent */}
               <div className="absolute top-0 right-0 h-20 w-20 rounded-bl-2xl bg-gradient-to-bl from-[#7ff6d0]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               
               <div className="relative z-10 mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-[#0b1321] text-[#7ff6d0] transition-all duration-300 group-hover:border-[#7ff6d0]/50 group-hover:bg-[#0b1321]">

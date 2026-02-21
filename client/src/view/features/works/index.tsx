@@ -91,7 +91,6 @@ const HowItWorks = () => {
                   key={step.id}
                   className="group relative rounded-2xl border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02] p-5 sm:p-6 backdrop-blur transition-all duration-300 hover:border-[#7ff6d0] hover:bg-gradient-to-br hover:from-white/10 hover:to-white/[0.05] hover:-translate-x-2 hover:shadow-lg hover:shadow-[#7ff6d0]/20"
                 >
-                  {/* Corner accent line */}
                   <div className="absolute top-0 left-0 h-1 w-0 bg-[#7ff6d0] rounded-full group-hover:w-8 transition-all duration-300"></div>
                   
                   <div className="absolute -left-10 top-6 flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-[#0b1321] text-xs font-semibold text-white transition-all duration-300 group-hover:border-[#7ff6d0] group-hover:shadow-lg group-hover:shadow-[#7ff6d0]/50">

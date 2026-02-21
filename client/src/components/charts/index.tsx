@@ -129,9 +129,9 @@ export const GraphChart: React.FC = () => {
 
 export const DonutChart: React.FC = () => {
   const categories = ["Suppliers", "Categories", "Products", "Purchases"];
-  const values = [12, 8, 45, 20]; // demo numbers
+  const values = [12, 8, 45, 20];
 
-  const [activeIndex, setActiveIndex] = useState<number | null>(null); // null = Total
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
   const total = values.reduce((a, b) => a + b, 0);
 
@@ -212,8 +212,8 @@ export const DonutChart: React.FC = () => {
             theme={{
               components: {
                 DatePicker: {
-                  hoverBorderColor: "#005555", // border on hover
-                  activeBorderColor: "#005555", // border on focus/active
+                  hoverBorderColor: "#005555",
+                  activeBorderColor: "#005555",
                   activeShadow: "0 0 0 2px rgba(124,58,237,0.12)",
                 },
               },

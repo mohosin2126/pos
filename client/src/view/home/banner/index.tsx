@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import effetImg from "./effect.png";
 import { MdDateRange } from "react-icons/md";
 import screenImg from "./screen.png";
@@ -9,6 +10,7 @@ import { RiStarSFill } from "react-icons/ri";
 
 
 const Banner = () => {
+    const navigate = useNavigate();
     const [scrollY, setScrollY] = useState(0);
     const [reduceMotion, setReduceMotion] = useState(false);
 
@@ -63,6 +65,7 @@ const Banner = () => {
                 <button
                     className="!text-primary cursor-pointer flex items-center gap-2 mt-4 sm:mt-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 rounded-md text-sm sm:text-base"
                     aria-label="Schedule a meeting"
+                    onClick={() => navigate("/contact")}
                 >
                     <MdDateRange className="text-base md:text-lg" />
                     Schedule A Meet

@@ -14,7 +14,7 @@ const Footer = () => {
             <ul className="mt-6 space-y-3">
               <li>
                 <Link
-                  to={"/"}
+                  to={"/features"}
                   className="text-[#46d4b5] hover:underline flex items-center gap-2"
                 >
                   <IoArrowRedo size={20} />
@@ -23,7 +23,7 @@ const Footer = () => {
               </li>
               <li>
                 <Link
-                  to={"/"}
+                  to={"/pricing"}
                   className="text-[#46d4b5] hover:underline flex items-center gap-2"
                 >
                   <IoArrowRedo size={20} />
@@ -32,7 +32,7 @@ const Footer = () => {
               </li>
               <li>
                 <Link
-                  to={"/"}
+                  to={"/contact"}
                   className="text-[#46d4b5] hover:underline flex items-center gap-2"
                 >
                   <IoArrowRedo size={20} />
@@ -49,10 +49,10 @@ const Footer = () => {
               Connect with us and stay in the loop.
             </p>
             <div className="flex items-center gap-4 mt-6">
-              <a href="#" aria-label="Twitter" className="button !p-3">
+              <a href="https://twitter.com" aria-label="Twitter" className="button !p-3" target="_blank" rel="noopener noreferrer">
                 <FaTwitter size={22} />
               </a>
-              <a href="#" aria-label="Facebook" className="button !p-3">
+              <a href="https://facebook.com" aria-label="Facebook" className="button !p-3" target="_blank" rel="noopener noreferrer">
                 <FaFacebookF size={22} />
               </a>
             </div>
@@ -83,7 +83,7 @@ const Footer = () => {
               Questions? We've got answers. Try us.
             </p>
             <div className="mt-6">
-              <button className="button">EMAIL US</button>
+              <Link to="/contact" className="button inline-block">EMAIL US</Link>
             </div>
           </div>
         </div>

@@ -120,7 +120,6 @@ const Integrations = () => {
                 key={item.id}
                 className="group relative rounded-2xl border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02] p-6 transition-all duration-300 hover:-translate-y-2 hover:border-[#7ff6d0] hover:bg-gradient-to-br hover:from-white/10 hover:to-white/[0.05] hover:shadow-lg hover:shadow-[#7ff6d0]/20 backdrop-blur overflow-hidden"
               >
-                {/* Gradient background overlay on hover */}
                 <div className="absolute inset-0 bg-gradient-to-br from-[#7ff6d0]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
                 
                 <div className="relative z-10 mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-[#0b1321] transition-all duration-300 group-hover:border-[#7ff6d0]/50 group-hover:shadow-md group-hover:shadow-[#7ff6d0]/30" style={{ color: item.accentColor }}>
