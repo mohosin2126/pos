@@ -12,13 +12,16 @@ import {
 } from "./math-utils";
 
 export interface CartItem {
+  barcode: string;
+  category?: string;
+  discountAmount: number;
+  discountType: "none" | "percent" | "fixed";
   id: number;
-  productId: number;
   name: string;
   price: number;
+  productId: number;
   quantity: number;
-  discount?: number;
-  tax?: number;
+  tax: number;
 }
 
 export interface POSSettings {
@@ -55,8 +58,8 @@ export const calculatePOSTotals = (
   // Calculate item discounts
   let itemDiscounts = 0;
   for (const item of cartItems) {
-    const discount = item.discount || 0;
-    itemDiscounts = add(itemDiscounts, discount);
+    const discountAmount = item.discountAmount || 0;
+    itemDiscounts = add(itemDiscounts, discountAmount);
   }
   itemDiscounts = roundTo(itemDiscounts, 2);
 
@@ -64,7 +67,7 @@ export const calculatePOSTotals = (
   let itemTaxes = 0;
   for (const item of cartItems) {
     const itemSubtotal = multiply(item.price || 0, item.quantity || 0);
-    const itemDiscount = item.discount || 0;
+    const itemDiscount = item.discountAmount || 0;
     const taxableAmount = max(subtract(itemSubtotal, itemDiscount), 0);
     const taxPercent = item.tax || 0;
     const itemTax = percentage(taxableAmount, taxPercent);

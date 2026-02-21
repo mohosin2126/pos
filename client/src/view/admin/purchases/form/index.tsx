@@ -15,7 +15,6 @@ import {
     CustomSelect,
     CustomTextArea,
 } from "@/components/form";
-import { validateLineTotal, validateOrderCalculation } from "@/utils/pos-calculations";
 import { add, subtract, multiply, percentage, max, roundTo } from "@/utils/math-utils";
 import type { TLineItem } from "@/interface/common";
 
@@ -215,14 +214,13 @@ export default function PurchaseForm() {
                 navigate("/admin/purchase/all");
             }
             setLoading(false);
-        } catch (error) {
+        } catch (error: any) {
             setLoading(false);
-            message.error(
-                error?.response?.data?.message ||
+            const errorMessage = error?.response?.data?.message || 
                 `Failed to ${
                     isUpdate ? "update" : "create"
-                } purchase. Please try again.`
-            );
+                } purchase. Please try again.`;
+            message.error(errorMessage);
         }
     };
 

@@ -84,7 +84,8 @@ export default function AllPos() {
             quantity: 1,
             barcode: baseProduct?.barcode ?? "",
             category: productCategoryName(baseProduct),
-            discount: Number(baseProduct?.discountAmount ?? 0),
+            discountAmount: Number(baseProduct?.discountAmount ?? 0),
+            discountType: "none",
             tax: Number(baseProduct?.taxPercent ?? 0),
         };
     };
@@ -211,8 +212,8 @@ export default function AllPos() {
                     productId: item.productId,
                     quantity: item.quantity,
                     unitPrice: item.price,
-                    discountType: "none",
-                    discountAmount: item.discount || 0,
+                    discountType: item.discountType,
+                    discountAmount: item.discountAmount || 0,
                     taxPercent: item.tax || 0,
                 })),
             };

@@ -12,6 +12,7 @@ import {
   CustomInput,
   CustomSelect,
   CustomTextArea,
+  CustomNumberInput,
   FileUpload,
 } from "@/components/form";
 import { formatTagsForInput, normalizeTags } from "@/utils/tag-utils";
@@ -142,11 +143,11 @@ export default function ProductForm() {
             rules={[{ required: true, message: "Reorder Level is required" }]}
           />
 
-          <CustomInput
+          <CustomNumberInput
             label="Selling Price"
             name="price"
-            type="number"
-            step="0.01"
+            step={0.01}
+            min={0}
             placeholder="Enter selling price"
             rules={[
               { required: true, message: "Selling price is required" },
