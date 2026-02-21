@@ -91,9 +91,9 @@ const Footer = () => {
         {/* Bottom copyright bar */}
         <div className="border-t border-[#223041] mt-10 pt-6 text-[#93a3b5]">
           <p className="text-center text-sm">
-            Copyright 2025 © —{" "}
+            Copyright 2026 © —{" "}
             <Link to="#" className="text-[#46d4b5]">
-              Gen-Z Dev
+              MAS Dev
             </Link>
           </p>
         </div>
