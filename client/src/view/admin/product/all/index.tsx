@@ -20,6 +20,7 @@ import type { TProductPayload } from "@/interface/common";
 import { useDeleteProduct, useProducts } from "@/hooks/admin/products";
 import { RiResetLeftFill } from "react-icons/ri";
 import Loader from "@/components/re-useable/loader";
+import { normalizeTags } from "@/utils/tag-utils";
 
 const { Option } = Select;
 
@@ -108,12 +109,12 @@ export default function AllProducts() {
       title: "Tags",
       dataIndex: "tags",
       key: "tags",
-      render: (tags: string) =>
-        tags ? tags.split(",").map((tag) => (
+      render: (tags: unknown) =>
+        normalizeTags(tags).map((tag) => (
           <Tag color="blue" className="capitalize" key={tag}>
-            {tag.trim()}
+            {tag}
           </Tag>
-        )) : null,
+        )),
     },
     {
       title: "Actions",

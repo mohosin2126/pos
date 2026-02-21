@@ -4,6 +4,24 @@ const { Product, Category, sequelize } = require("../../database/models");
 const {badRequest, created, conflict, serverError, parsePagination, paginated, notFound, success} = require("../../utils/api-response");
 const { calculateProfitMetrics, validateSellingPrice } = require("../../utils/price-calculator");
 
+const normalizeTags = (value) => {
+    if (Array.isArray(value)) {
+        return value
+            .filter((item) => typeof item === "string")
+            .map((item) => item.trim())
+            .filter((item) => item.length > 0);
+    }
+
+    if (typeof value === "string") {
+        return value
+            .split(",")
+            .map((item) => item.trim())
+            .filter((item) => item.length > 0);
+    }
+
+    return [];
+};
+
 const create = async (req, res) => {
     try {
         const {
@@ -41,7 +59,7 @@ const create = async (req, res) => {
             isTrackStock,
             imageUrl,
             status,
-            tags,
+            tags: normalizeTags(tags),
             createdBy,
         });
 
@@ -92,7 +110,11 @@ const getAll = async (req, res) => {
             ],
         });
 
-        const data = result.rows.map((row) => row.get({ plain: true }));
+        const data = result.rows.map((row) => {
+            const item = row.get({ plain: true });
+            item.tags = normalizeTags(item.tags);
+            return item;
+        });
 
         return paginated(res, { rows: data, count: result.count }, { page, limit }, "Fetched successfully");
     } catch (err) {
@@ -117,6 +139,7 @@ const getOne = async (req, res) => {
 
         if (!product) return notFound(res, "Product not found");
         const p = product.get({ plain: true });
+        p.tags = normalizeTags(p.tags);
 
         return success(res, "Success", p);
     } catch (err) {
@@ -149,9 +172,12 @@ const update = async (req, res) => {
             "isTrackStock",
             "imageUrl",
             "status",
-            "tags",
             "updatedBy",
         ];
+
+        if (req.body.tags !== undefined) {
+            product.tags = normalizeTags(req.body.tags);
+        }
         fields.forEach((field) => {
             if (req.body[field] !== undefined) product[field] = req.body[field];
         });

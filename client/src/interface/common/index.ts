@@ -94,7 +94,7 @@ export interface TProductPayload {
   isTrackStock?: boolean;
   imageUrl?: string;
   status?: "active" | "inactive";
-  tags?: string;
+  tags?: string[];
   createdBy?: number;
   updatedBy?: number | null;
   createdAt?: string;
