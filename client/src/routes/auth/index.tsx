@@ -1,11 +1,19 @@
 import { useState } from "react";
+import { Navigate } from "react-router-dom";
 import LoginForm from "../../view/auth/login-form";
 import Lottie from "lottie-react";
 import animationData from "../../assets/Online Work.json";
 import logoFull from "@/assets/logo/logo-full.svg";
+import { useUser } from "@/context-api";
 
 export default function Auth() {
+  const { user } = useUser();
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
+
+  if (user) {
+    const roleSlug = user.role?.toLowerCase().replace(/\s+/g, "-") || "admin";
+    return <Navigate to={`/${roleSlug}/dashboard`} replace />;
+  }
 
   return (
     <div className="bg-[#0b1029] w-screen h-full min-h-screen flex flex-col lg:flex-row justify-center items-center lg:pr-20 py-10 px-4">
@@ -31,7 +39,7 @@ export default function Auth() {
             Welcome back!
           </h1>
 
-          {/* Tabs (Signup disabled, keep active state) */}
+          {/* Tabs  */}
           <div className="w-full grid grid-cols-2 items-center mt-2 mb-8">
             <button
               onClick={() => setActiveTab("login")}
