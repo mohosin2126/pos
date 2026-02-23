@@ -7,6 +7,7 @@ import { TbLockPassword } from "react-icons/tb";
 import { IoMailOutline } from "react-icons/io5";
 import useApi from "../../../hooks/use-api";
 import { useUser } from "@/context-api";
+import { getFirstPermittedRoute } from "@/utils/get-first-permitted-route";
 
 export default function LoginForm() {
     const [formData, setFormData] = useState({
@@ -51,9 +52,18 @@ export default function LoginForm() {
             Cookies.set("user", JSON.stringify(userData), { expires: 7 });
             setUser(userData);
 
-            // Navigate to role-based path (e.g. /admin, /manager, /cashier)
-            const roleSlug = (userData.role || "admin").toLowerCase().replace(/\\s+/g, "-");
-            navigate(`/${roleSlug}`);
+        
+            const roleSlug = (userData.role || "admin").toLowerCase().replace(/\s+/g, "-");
+
+            if (userData.role?.toLowerCase() === "admin") {
+                navigate(`/${roleSlug}`);
+            } else {
+                const landingPath = getFirstPermittedRoute(
+                    userData.permissions || [],
+                    roleSlug
+                );
+                navigate(landingPath);
+            }
         } catch (error: any) {
             message.error(
                 error?.response?.data?.message || error?.message || "Login failed"

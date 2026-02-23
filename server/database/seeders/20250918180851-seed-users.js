@@ -30,7 +30,7 @@ module.exports = {
             {
                 firstName: 'Admin',
                 lastName: 'User',
-                email: 'admin@example.com',
+                email: 'admin@demo.com',
                 isActive: true,
                 allowLogin: true,
                 username: 'admin',
