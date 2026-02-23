@@ -7,7 +7,7 @@ import {
   TNavLinkProps,
 } from "@/interface/menu-and-common";
 
-/* NavLinkIconDropdown */
+
 function NavLinkIconDropdown({
   submenuData,
   currentPath,

@@ -12,13 +12,16 @@ import {
 } from "./math-utils";
 
 export interface CartItem {
+  barcode: string;
+  category?: string;
+  discountAmount: number;
+  discountType: "none" | "percent" | "fixed";
   id: number;
-  productId: number;
   name: string;
   price: number;
+  productId: number;
   quantity: number;
-  discount?: number;
-  tax?: number;
+  tax: number;
 }
 
 export interface POSSettings {
@@ -55,8 +58,8 @@ export const calculatePOSTotals = (
   // Calculate item discounts
   let itemDiscounts = 0;
   for (const item of cartItems) {
-    const discount = item.discount || 0;
-    itemDiscounts = add(itemDiscounts, discount);
+    const discountAmount = item.discountAmount || 0;
+    itemDiscounts = add(itemDiscounts, discountAmount);
   }
   itemDiscounts = roundTo(itemDiscounts, 2);
 
@@ -64,7 +67,7 @@ export const calculatePOSTotals = (
   let itemTaxes = 0;
   for (const item of cartItems) {
     const itemSubtotal = multiply(item.price || 0, item.quantity || 0);
-    const itemDiscount = item.discount || 0;
+    const itemDiscount = item.discountAmount || 0;
     const taxableAmount = max(subtract(itemSubtotal, itemDiscount), 0);
     const taxPercent = item.tax || 0;
     const itemTax = percentage(taxableAmount, taxPercent);
@@ -278,7 +281,7 @@ export const getBreakdownText = (totals: POSTotals): string[] => {
   return lines;
 };
 
-// ===== Profit Calculation Functions =====
+
 
 export interface ProfitMetrics {
   margin: number;
@@ -288,12 +291,7 @@ export interface ProfitMetrics {
   isProfit: boolean;
 }
 
-/**
- * Calculate profit margin and markup
- * @param sellingPrice - Selling price
- * @param costPrice - Cost price
- * @returns ProfitMetrics object
- */
+
 export const calculateProfitMargin = (
   sellingPrice: number,
   costPrice: number
@@ -301,19 +299,16 @@ export const calculateProfitMargin = (
   const price = sellingPrice || 0;
   const cost = costPrice || 0;
 
-  // Profit margin = selling price - cost price
+ 
   const margin = roundTo(subtract(price, cost), 2);
 
-  // Margin % = ((selling price - cost price) / selling price) × 100
   let marginPercent = 0;
   if (greaterThan(price, 0)) {
     marginPercent = roundTo(multiply(divide(margin, price), 100), 2);
   }
-
-  // Markup = selling price - cost price (same as margin in absolute terms)
   const markup = margin;
 
-  // Markup % = ((selling price - cost price) / cost price) × 100
+
   let markupPercent = 0;
   if (greaterThan(cost, 0)) {
     markupPercent = roundTo(multiply(divide(markup, cost), 100), 2);
@@ -328,11 +323,6 @@ export const calculateProfitMargin = (
   };
 };
 
-/**
- * Calculate markup percentage from margin percentage
- * @param marginPercent - Margin percentage
- * @returns Markup percentage
- */
 export const calculateMarkupPercent = (
   sellingPrice: number,
   costPrice: number
@@ -345,12 +335,7 @@ export const calculateMarkupPercent = (
   return roundTo(multiply(divide(markup, cost), 100), 2);
 };
 
-/**
- * Validate price against cost with warning messages
- * @param price - Proposed selling price
- * @param cost - Cost price
- * @returns Validation result with warning message
- */
+
 export const validatePriceVsCost = (
   price: number,
   cost: number
@@ -379,12 +364,7 @@ export const validatePriceVsCost = (
   };
 };
 
-/**
- * Calculate suggested price based on cost and desired markup percentage
- * @param cost - Cost price
- * @param markupPercent - Desired markup percentage
- * @returns Suggested selling price
- */
+
 export const calculateSuggestedPrice = (
   cost: number,
   markupPercent: number
@@ -392,16 +372,11 @@ export const calculateSuggestedPrice = (
   const costDec = cost || 0;
   const markup = markupPercent || 0;
 
-  // Suggested price = cost × (1 + markup% / 100)
+  
   const multiplier = add(1, divide(markup, 100));
   return roundTo(multiply(costDec, multiplier), 2);
 };
 
-/**
- * Get profit margin color for visual indicators
- * @param marginPercent - Margin percentage
- * @returns Color name (red, yellow, or green)
- */
 export const getProfitMarginColor = (
   marginPercent: number
 ): "red" | "yellow" | "green" => {

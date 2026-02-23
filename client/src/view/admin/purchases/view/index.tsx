@@ -241,7 +241,7 @@ export default function PurchaseDetails() {
               ]}
               dataSource={purchase?.returns}
               pagination={false}
-              rowKey={(record) => record?.id}
+              rowKey={(record, index = 0) => `${record?.id ?? index}`}
             />
           </Card>
         )}

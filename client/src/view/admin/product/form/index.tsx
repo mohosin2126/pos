@@ -12,8 +12,10 @@ import {
   CustomInput,
   CustomSelect,
   CustomTextArea,
+  CustomNumberInput,
   FileUpload,
 } from "@/components/form";
+import { formatTagsForInput, normalizeTags } from "@/utils/tag-utils";
 
 export default function ProductForm() {
   const [form] = Form.useForm();
@@ -34,6 +36,7 @@ export default function ProductForm() {
       form.setFieldsValue({
         ...product,
         isTrackStock: product.isTrackStock ? "true" : "false",
+        tags: formatTagsForInput(product.tags),
       });
     } else {
       form.resetFields();
@@ -43,11 +46,15 @@ export default function ProductForm() {
   const handleFinish = async (values: any) => {
     setLoading(true);
     try {
+      const payload = {
+        ...values,
+        tags: normalizeTags(values.tags),
+      };
       if (isUpdate && product?.id !== undefined) {
-        await updateProduct(product?.id.toString(), values);
+        await updateProduct(product?.id.toString(), payload);
         message.success("Product updated successfully!");
       } else {
-        await createProduct(values);
+        await createProduct(payload);
         message.success("Product created successfully!");
         form.resetFields();
       }
@@ -136,11 +143,11 @@ export default function ProductForm() {
             rules={[{ required: true, message: "Reorder Level is required" }]}
           />
 
-          <CustomInput
+          <CustomNumberInput
             label="Selling Price"
             name="price"
-            type="number"
-            step="0.01"
+            step={0.01}
+            min={0}
             placeholder="Enter selling price"
             rules={[
               { required: true, message: "Selling price is required" },

@@ -28,6 +28,7 @@ import {
 import dayjs from "dayjs";
 import { useParams } from "react-router-dom";
 import { useProduct } from "@/hooks/admin/products";
+import { normalizeTags } from "@/utils/tag-utils";
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -66,7 +67,7 @@ export default function ProductDetails() {
     if (!product?.isTrackStock)
       return { color: "default", text: "Not Tracked" };
 
-    const stockQty = product.stockQuantity ?? 0; // fallback to 0 if undefined
+    const stockQty = product.stockQuantity ?? 0; 
     const reorderLevel = product.reorderLevel ?? 0;
 
     if (stockQty <= 0) return { color: "error", text: "Out of Stock" };
@@ -90,10 +91,7 @@ export default function ProductDetails() {
   const stockStatus = getStockStatus();
   const stockPercentage = getStockPercentage();
 
-  const tags = (product?.tags ?? "")
-    .split(",")
-    .map((tag) => tag.trim())
-    .filter((tag) => tag);
+  const tags = normalizeTags(product?.tags);
 
   return (
     <div className="">

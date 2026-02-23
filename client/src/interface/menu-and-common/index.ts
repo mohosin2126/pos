@@ -1,7 +1,4 @@
 import type { ComponentType, ReactNode } from "react";
-// export type TMenuTitle = {
-//   title: string;
-// };
 
 export type TMenuItem = {
   label: string;
@@ -15,7 +12,7 @@ export type TMenuBlock = {
   title: string;
   menu: TMenuItem[];
 };
-// export type TMenuEntry = TMenuItem | TMenuTitle;
+
 
 export type TNavItemProps = {
   menu: TMenuItem;

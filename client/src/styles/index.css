@@ -17,9 +17,6 @@ body {
   width: 6px;
 }
 
-/* .sidebar::-webkit-scrollbar-track {
-  background: #1f1f1f;
-} */
 
 .sidebar::-webkit-scrollbar-thumb {
   background: #b8bbbb;
@@ -30,38 +27,16 @@ body {
   @apply bg-[#134843] text-[#49dcbb] px-6 py-2 font-semibold border border-[#49dcbb] rounded-md cursor-pointer;
 }
 
-/* drop down custom css for set all dropdown use one  */
-
-/* .ant-dropdown-menu-item {
-  transition: background-color 0.2s, color 0.2s;
-}
-
-
-.ant-dropdown-menu-item:hover {
-  background-color: #186566 !important; 
-  color: #69fec1 !important; 
-}
-
-.ant-dropdown-menu-item-active {
-  background-color: #186566 !important; 
-  color: #69fec1 !important; 
-}
-
-
-.ant-dropdown-menu-item-only-child {
-  padding: 0.5rem 1rem; 
-} */
 
 .apexcharts-legend {
-  /* flex-wrap: nowrap !important; */
+ 
   justify-content: center !important;
   width: 100% !important;
   bottom: 0px !important;
   height: 60px !important;
 }
 
-/* for input field  */
-/* Input & Textarea */
+
 .ant-input:hover,
 .ant-input:focus,
 .ant-input-affix-wrapper:hover,
@@ -268,6 +243,63 @@ body {
     transform: scale(1);
     opacity: 1;
   }
+}
+
+/* Feature page animations */
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-0.5rem);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(1rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-bounce {
+  animation: bounce 0.6s ease-in-out infinite;
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite;
+}
+
+.animate-slide-in-up {
+  animation: slideInUp 0.5s ease-out;
+}
+
+.animate-fade-in-scale {
+  animation: fadeInScale 0.4s ease-out;
 }
 
 .ant-skeleton-title {

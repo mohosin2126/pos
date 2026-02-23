@@ -137,7 +137,7 @@ export default function PurchaseOrder() {
   const filteredData = purchaseOrders?.filter((item) => {
     const matchesSearch =
       (item.referenceNo?.toLowerCase() || "").includes(searchText.toLowerCase()) ||
-      (item.supplier?.name?.toLowerCase() || "").includes(searchText.toLowerCase());
+      (item.supplier?.companyName?.toLowerCase() || "").includes(searchText.toLowerCase());
     return matchesSearch;
   });
 

@@ -29,7 +29,7 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         console.log('Register form submitted:', formData);
-        // Add your registration logic here
+
     };
 
     return (

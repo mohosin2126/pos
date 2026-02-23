@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Promotions & Marketing illustration -->
+  <!-- Megaphone -->
+  <g transform="translate(4, 8)">
+    <path d="M8 20L28 8v32L8 28z" fill="#144443" stroke="#4fe7c4" stroke-width="1.5"/>
+    <rect x="2" y="19" width="8" height="10" rx="2" fill="#0f2322" stroke="#4fe7c4" stroke-width="1.2"/>
+    <ellipse cx="28" cy="24" rx="4" ry="16" fill="#4fe7c4" opacity="0.2" stroke="#4fe7c4" stroke-width="1"/>
+  </g>
+  <!-- Sound waves -->
+  <path d="M38 18c3-2 5 2 5 6s-2 8-5 6" stroke="#4fe7c4" stroke-width="1.2" fill="none" opacity="0.6" stroke-linecap="round"/>
+  <path d="M42 14c4-3 7 4 7 10s-3 13-7 10" stroke="#4fe7c4" stroke-width="1.2" fill="none" opacity="0.4" stroke-linecap="round"/>
+  <path d="M46 10c5-3 9 5 9 14s-4 17-9 14" stroke="#4fe7c4" stroke-width="1.2" fill="none" opacity="0.25" stroke-linecap="round"/>
+  <!-- Discount tag -->
+  <g transform="translate(40, 36)">
+    <rect width="20" height="14" rx="3" fill="#0f2322" stroke="#4fe7c4" stroke-width="1.2"/>
+    <circle cx="5" cy="7" r="2" fill="none" stroke="#4fe7c4" stroke-width="1"/>
+    <text x="8" y="10" font-family="Outfit, sans-serif" font-size="8" fill="#4fe7c4" font-weight="700">%</text>
+  </g>
+  <!-- Stars / sparkles -->
+  <circle cx="42" cy="8" r="2" fill="#4fe7c4" opacity="0.7"/>
+  <circle cx="48" cy="4" r="1.5" fill="#69fec1" opacity="0.5"/>
+  <circle cx="56" cy="8" r="1" fill="#4fe7c4" opacity="0.3"/>
+  <!-- Gift ribbon -->
+  <rect x="4" y="46" width="14" height="12" rx="2" fill="#144443" stroke="#4fe7c4" stroke-width="1"/>
+  <line x1="11" y1="46" x2="11" y2="58" stroke="#4fe7c4" stroke-width="1" opacity="0.5"/>
+  <line x1="4" y1="52" x2="18" y2="52" stroke="#4fe7c4" stroke-width="1" opacity="0.5"/>
+  <path d="M8 46c-2-3 0-5 3-3" stroke="#4fe7c4" stroke-width="0.8" fill="none" opacity="0.6"/>
+  <path d="M14 46c2-3 0-5-3-3" stroke="#4fe7c4" stroke-width="0.8" fill="none" opacity="0.6"/>
+</svg>

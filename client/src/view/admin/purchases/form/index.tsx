@@ -12,10 +12,10 @@ import { useProducts, useSuppliers } from "@/hooks/common";
 import {
     CustomDate,
     CustomInput,
+    CustomNumberInput,
     CustomSelect,
     CustomTextArea,
 } from "@/components/form";
-import { validateLineTotal, validateOrderCalculation } from "@/utils/pos-calculations";
 import { add, subtract, multiply, percentage, max, roundTo } from "@/utils/math-utils";
 import type { TLineItem } from "@/interface/common";
 
@@ -74,6 +74,12 @@ export default function PurchaseForm() {
         calculateTotals();
     }, [lineItems]);
 
+    const toNumber = (value: any, fallback = 0) => {
+        if (value === null || value === undefined || value === "") return fallback;
+        const num = Number(value);
+        return Number.isFinite(num) ? num : fallback;
+    };
+
     const calculateTotals = () => {
         // Calculate subtotal from line items
         const sub = lineItems.reduce((sum, item) => add(sum, item.lineTotal || 0), 0);
@@ -106,11 +112,13 @@ export default function PurchaseForm() {
             netTotalAmount: roundTo(sub, 2),
             orderTaxAmount: roundTo(taxAmount, 2),
             totalAmount: total,
-            totalItems: lineItems.reduce((sum, item) => add(sum, item.quantity || 0), 0),
         });
     };
 
     const handleFieldChange = (changedValues: any) => {
+        if (changedValues.discountType === "none") {
+            form.setFieldsValue({ discountAmount: 0 });
+        }
         // Recalculate when discount, tax, or shipping changes
         if (changedValues.discountType !== undefined ||
             changedValues.discountAmount !== undefined ||
@@ -188,11 +196,21 @@ export default function PurchaseForm() {
             purchaseDate: values.purchaseDate
                 ? dayjs(values.purchaseDate).format("YYYY-MM-DD")
                 : null,
+            discountAmount: values.discountType === "none" ? 0 : toNumber(values.discountAmount, 0),
+            orderTaxPercent: toNumber(values.orderTaxPercent, 0),
+            orderTaxAmount: toNumber(values.orderTaxAmount, 0),
+            shippingCharge: toNumber(values.shippingCharge, 0),
+            netTotalAmount: toNumber(values.netTotalAmount, 0),
+            totalAmount: toNumber(values.totalAmount, 0),
+            amountPaid: toNumber(values.amountPaid, 0),
+            payTermValue: values.payTermValue === null || values.payTermValue === undefined || values.payTermValue === ""
+                ? null
+                : toNumber(values.payTermValue, 0),
             items: lineItems.map(item => ({
                 productId: item.productId,
-                quantity: item.quantity,
-                unitPrice: item.unitPrice,
-                lineTotal: item.lineTotal,
+                quantity: toNumber(item.quantity, 0),
+                unitPrice: toNumber(item.unitPrice, 0),
+                lineTotal: toNumber(item.lineTotal, 0),
                 expiryDate: item.expiryDate
                     ? dayjs(item.expiryDate).format("YYYY-MM-DD")
                     : null,
@@ -200,10 +218,13 @@ export default function PurchaseForm() {
             })),
         };
 
-        // Remove single product field
+    
         delete formattedValues.productId;
         delete formattedValues.expiryDate;
         try {
+            if (!isUpdate) {
+                delete formattedValues.status;
+            }
             if (isUpdate) {
                 await updatePurchase(id, formattedValues);
                 message.success("Purchase updated successfully!");
@@ -215,14 +236,13 @@ export default function PurchaseForm() {
                 navigate("/admin/purchase/all");
             }
             setLoading(false);
-        } catch (error) {
+        } catch (error: any) {
             setLoading(false);
-            message.error(
-                error?.response?.data?.message ||
+            const errorMessage = error?.response?.data?.message || 
                 `Failed to ${
                     isUpdate ? "update" : "create"
-                } purchase. Please try again.`
-            );
+                } purchase. Please try again.`;
+            message.error(errorMessage);
         }
     };
 
@@ -446,20 +466,23 @@ export default function PurchaseForm() {
                                             { label: "Fixed", value: "fixed" },
                                         ]}
                                     />
-                                    <CustomInput
-                                        label=""
-                                        name="discountAmount"
-                                        type="number"
-                                        placeholder="0"
-                                    />
+                                    {form.getFieldValue("discountType") !== "none" && (
+                                        <CustomInput
+                                            label=""
+                                            name="discountAmount"
+                                            type="number"
+                                            placeholder={form.getFieldValue("discountType") === "percent" ? "%" : "৳"}
+                                        />
+                                    )}
                                 </div>
 
                                 <div className="flex justify-between mb-2">
                                     <span>Order Tax (%):</span>
-                                    <CustomInput
+                                    <CustomNumberInput
                                         label=""
                                         name="orderTaxPercent"
-                                        type="number"
+                                        min={0}
+                                        step={0.01}
                                         placeholder="0"
                                         className="!w-24"
                                     />
@@ -467,10 +490,11 @@ export default function PurchaseForm() {
 
                                 <div className="flex justify-between mb-2">
                                     <span>Shipping:</span>
-                                    <CustomInput
+                                    <CustomNumberInput
                                         label=""
                                         name="shippingCharge"
-                                        type="number"
+                                        min={0}
+                                        step={0.01}
                                         placeholder="0"
                                         className="!w-24"
                                     />
@@ -488,10 +512,15 @@ export default function PurchaseForm() {
                 </div>
 
                 {/* Hidden fields for backend compatibility */}
-                <input type="hidden" name="totalItems" />
-                <input type="hidden" name="netTotalAmount" />
-                <input type="hidden" name="orderTaxAmount" />
-                <input type="hidden" name="totalAmount" />
+                <Form.Item name="netTotalAmount" hidden>
+                    <input />
+                </Form.Item>
+                <Form.Item name="orderTaxAmount" hidden>
+                    <input />
+                </Form.Item>
+                <Form.Item name="totalAmount" hidden>
+                    <input />
+                </Form.Item>
 
                 {/* Additional Fields */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 !mt-6">

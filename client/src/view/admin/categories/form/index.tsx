@@ -16,7 +16,6 @@ export default function CategoryForm({
   const { createCategory } = useCreateCategory();
   const { updateCategory } = useUpdateCategory();
 
-  // Handle submit
   const handleFinish = async (values: any) => {
     setLoading(true);
     try {
@@ -39,7 +38,6 @@ export default function CategoryForm({
     }
   };
 
-  // Set default values if editing
   useEffect(() => {
     if (updateValue) {
       form.setFieldsValue(updateValue);

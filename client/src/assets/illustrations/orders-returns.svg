@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Orders & Returns illustration -->
+  <!-- Shopping bag -->
+  <rect x="6" y="18" width="26" height="30" rx="3" fill="#0f2322" stroke="#4fe7c4" stroke-width="1.5"/>
+  <path d="M13 18V14a6 6 0 0 1 12 0v4" stroke="#4fe7c4" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <!-- Items in bag -->
+  <rect x="11" y="26" width="7" height="7" rx="1" fill="#4fe7c4" opacity="0.3"/>
+  <rect x="20" y="26" width="7" height="7" rx="1" fill="#4fe7c4" opacity="0.2"/>
+  <rect x="11" y="35" width="7" height="7" rx="1" fill="#4fe7c4" opacity="0.15"/>
+  <!-- Return arrow (circular) -->
+  <g transform="translate(42, 18)">
+    <circle cx="10" cy="10" r="12" fill="#0f2322" stroke="#4fe7c4" stroke-width="1.5" opacity="0.8"/>
+    <path d="M10 2a8 8 0 1 1-6 3" stroke="#4fe7c4" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    <polyline points="1,2 4,5 7,2" stroke="#4fe7c4" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <!-- Exchange arrows -->
+  <line x1="33" y1="32" x2="40" y2="32" stroke="#4fe7c4" stroke-width="1" stroke-dasharray="2,1" opacity="0.5"/>
+  <polyline points="38,30 40,32 38,34" stroke="#4fe7c4" stroke-width="1" fill="none" stroke-linecap="round" opacity="0.5"/>
+  <!-- Receipt with refund -->
+  <rect x="36" y="40" width="20" height="16" rx="2" fill="#144443" stroke="#4fe7c4" stroke-width="1"/>
+  <line x1="39" y1="44" x2="53" y2="44" stroke="#4fe7c4" stroke-width="0.8" opacity="0.4"/>
+  <line x1="39" y1="47" x2="51" y2="47" stroke="#4fe7c4" stroke-width="0.8" opacity="0.3"/>
+  <line x1="39" y1="52" x2="53" y2="52" stroke="#4fe7c4" stroke-width="1" opacity="0.5"/>
+  <!-- Refund badge -->
+  <circle cx="8" cy="12" r="5" fill="#4fe7c4" opacity="0.2"/>
+  <text x="5.5" y="14.5" font-size="6" fill="#4fe7c4" font-weight="600">↺</text>
+</svg>

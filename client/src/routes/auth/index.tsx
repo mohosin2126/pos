@@ -1,10 +1,8 @@
 import { useState } from "react";
 import LoginForm from "../../view/auth/login-form";
-// import RegisterForm from "../../view/auth/register-form";
-// import ThirdPartyAuth from "../../view/auth/third-party-auth";
 import Lottie from "lottie-react";
-// @ts-ignore
 import animationData from "../../assets/Online Work.json";
+import logoFull from "@/assets/logo/logo-full.svg";
 
 export default function Auth() {
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
@@ -26,8 +24,11 @@ export default function Auth() {
       <div className="w-full lg:w-lg 2xl:w-xl bg-[#0e2c34] flex flex-col h-fit rounded-md order-1 lg:order-2">
         <div className="flex flex-col justify-center p-4 lg:p-10">
           {/* Header */}
-          <h1 className="text-xl lg:text-4xl text-center font-bold text-white">
-            Welcome to <span className="text-[#3bedb2]">POS</span>!
+          <div className="flex justify-center mb-2">
+            <img src={logoFull} alt="POS" className="h-10 lg:h-12 w-auto" />
+          </div>
+          <h1 className="text-lg lg:text-2xl text-center font-bold text-white">
+            Welcome back!
           </h1>
 
           {/* Tabs (Signup disabled, keep active state) */}
@@ -42,8 +43,6 @@ export default function Auth() {
             >
               Login
             </button>
-
-            {/* Keep the tab but disable it so only Login is usable */}
             <button
               type="button"
               disabled
@@ -58,18 +57,11 @@ export default function Auth() {
               Signup
             </button>
           </div>
-
-          {/* Form Content — always render Login only */}
           <div className="w-full h-full lg:h-[calc(100vh-320px)]">
             <LoginForm />
-            {/* If you later re-enable register, render conditionally:
-               {activeTab === 'login' ? <LoginForm .../> : <RegisterForm .../>}
-            */}
           </div>
 
-          {/* Third Party Auth — intentionally hidden
-          <ThirdPartyAuth />
-          */}
+        
         </div>
       </div>
     </div>

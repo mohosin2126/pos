@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import effetImg from "./effect.png";
 import { MdDateRange } from "react-icons/md";
 import screenImg from "./screen.png";
@@ -6,9 +7,11 @@ import handImg from "./hand.png";
 import filgerImg from "./finger.png";
 import { GoDotFill } from "react-icons/go";
 import { RiStarSFill } from "react-icons/ri";
+import heroPattern from "@/assets/backgrounds/hero-pattern.svg";
 
 
 const Banner = () => {
+    const navigate = useNavigate();
     const [scrollY, setScrollY] = useState(0);
     const [reduceMotion, setReduceMotion] = useState(false);
 
@@ -33,7 +36,9 @@ const Banner = () => {
     const progress = reduceMotion ? 1 : Math.min(scrollY / 200, 1);
 
     return (
-        <section className="w-full px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20 overflow-hidden">
+        <section className="w-full px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20 overflow-hidden relative">
+            {/* Background pattern */}
+            <div className="absolute inset-0 opacity-40 pointer-events-none" style={{ backgroundImage: `url(${heroPattern})`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
             {/* title */}
             <div className="flex flex-col items-center gap-y-2 text-center max-w-7xl mx-auto">
                 <h1 className="font-bold leading-tight text-2xl md:text-4xl lg:text-6xl">
@@ -63,6 +68,7 @@ const Banner = () => {
                 <button
                     className="!text-primary cursor-pointer flex items-center gap-2 mt-4 sm:mt-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 rounded-md text-sm sm:text-base"
                     aria-label="Schedule a meeting"
+                    onClick={() => navigate("/contact")}
                 >
                     <MdDateRange className="text-base md:text-lg" />
                     Schedule A Meet

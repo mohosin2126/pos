@@ -44,7 +44,6 @@ const Services = () => {
         <section className="bg-[#0f1a2a] py-20 px-4 lg:px-10 rounded-md">
             <div>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-                    {/* Left Section - Feature Cards */}
                     <div className="order-2 lg:order-1 grid grid-cols-1 lg:grid-cols-2 gap-6">
                         {servicesData.map((service) => (
                             <div
@@ -65,7 +64,6 @@ const Services = () => {
                         ))}
                     </div>
 
-                    {/* Right Section - Main Description */}
                     <div className="order-1 lg:order-2 space-y-6">
                         <div>
                             <h2 className="text-4xl lg:text-5xl font-bold text-[#4fe7c4] mb-4">
@@ -84,7 +82,6 @@ const Services = () => {
                             ensure customer satisfaction effortlessly.
                         </p>
 
-                        {/* Replaced "Book A Call" with a Dashboard button that routes */}
                         <Link
                             to="/admin/dashboard"
                             className="button inline-block bg-[#4fe7c4] text-[#0f1a2a] font-semibold px-6 py-3 rounded-lg hover:opacity-90 transition"

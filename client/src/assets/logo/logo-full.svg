@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 50" fill="none">
+  <!-- Shopping bag icon with barcode -->
+  <g transform="translate(2, 3)">
+    <!-- Bag body -->
+    <rect x="4" y="14" width="30" height="28" rx="3" fill="#144443" stroke="#4fe7c4" stroke-width="1.5"/>
+    <!-- Bag handle -->
+    <path d="M12 14V10a7 7 0 0 1 14 0v4" stroke="#4fe7c4" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    <!-- Barcode lines inside bag -->
+    <line x1="11" y1="22" x2="11" y2="34" stroke="#4fe7c4" stroke-width="1.2" opacity="0.7"/>
+    <line x1="14.5" y1="22" x2="14.5" y2="34" stroke="#4fe7c4" stroke-width="2" opacity="0.8"/>
+    <line x1="18" y1="22" x2="18" y2="34" stroke="#4fe7c4" stroke-width="1" opacity="0.6"/>
+    <line x1="21" y1="22" x2="21" y2="34" stroke="#4fe7c4" stroke-width="1.5" opacity="0.7"/>
+    <line x1="24" y1="22" x2="24" y2="34" stroke="#4fe7c4" stroke-width="2" opacity="0.9"/>
+    <line x1="27.5" y1="22" x2="27.5" y2="34" stroke="#4fe7c4" stroke-width="1" opacity="0.6"/>
+    <!-- Accent dot on handle -->
+    <circle cx="19" cy="7" r="1.5" fill="#4fe7c4" opacity="0.9"/>
+  </g>
+  <!-- POS text -->
+  <text x="52" y="36" font-family="Outfit, Arial, sans-serif" font-weight="700" font-size="32" fill="white" letter-spacing="3">POS</text>
+  <!-- Accent underline -->
+  <rect x="52" y="40" width="42" height="2.5" rx="1.25" fill="#4fe7c4" opacity="0.8"/>
+</svg>

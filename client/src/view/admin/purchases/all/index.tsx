@@ -116,8 +116,8 @@ export default function Purchases() {
 
   const filteredData = purchases?.filter((item) => {
     const matchesSearch =
-      item.referenceNo.toLowerCase().includes(searchText.toLowerCase()) ||
-      item.supplierAddress.toLowerCase().includes(searchText.toLowerCase());
+      (item.referenceNo?.toLowerCase() || "").includes(searchText.toLowerCase()) ||
+      (item.supplierAddress?.toLowerCase() || "").includes(searchText.toLowerCase());
     const matchesStatus =
       filterStatus === "all" ? true : item.status === filterStatus;
     return matchesSearch && matchesStatus;

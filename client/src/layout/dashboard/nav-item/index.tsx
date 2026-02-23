@@ -66,7 +66,7 @@ export default function NavItem({
         )}
       </div>
 
-      {/* Render submenu if it exists and is open */}
+  
       {submenu && (
         <div
           ref={submenuRef}

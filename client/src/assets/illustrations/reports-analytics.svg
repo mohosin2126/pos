@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Reports & Analytics illustration -->
+  <!-- Circular chart (donut) -->
+  <circle cx="22" cy="22" r="14" fill="none" stroke="#144443" stroke-width="6"/>
+  <circle cx="22" cy="22" r="14" fill="none" stroke="#4fe7c4" stroke-width="6" stroke-dasharray="55 88" stroke-dashoffset="0" opacity="0.9"/>
+  <circle cx="22" cy="22" r="14" fill="none" stroke="#69fec1" stroke-width="6" stroke-dasharray="22 88" stroke-dashoffset="-55" opacity="0.5"/>
+  <circle cx="22" cy="22" r="8" fill="#0f2322"/>
+  <text x="18" y="25" font-family="Outfit, sans-serif" font-size="8" fill="#4fe7c4" font-weight="700">%</text>
+  <!-- Line chart -->
+  <rect x="38" y="6" width="24" height="24" rx="3" fill="#0f2322" stroke="#4fe7c4" stroke-width="1"/>
+  <polyline points="42,24 46,18 50,20 54,12 58,15" stroke="#4fe7c4" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Data dots -->
+  <circle cx="42" cy="24" r="1.5" fill="#69fec1"/>
+  <circle cx="46" cy="18" r="1.5" fill="#69fec1"/>
+  <circle cx="50" cy="20" r="1.5" fill="#69fec1"/>
+  <circle cx="54" cy="12" r="1.5" fill="#69fec1"/>
+  <circle cx="58" cy="15" r="1.5" fill="#69fec1"/>
+  <!-- Document / report -->
+  <rect x="6" y="40" width="22" height="18" rx="2" fill="#144443" stroke="#4fe7c4" stroke-width="1.2"/>
+  <line x1="10" y1="45" x2="24" y2="45" stroke="#4fe7c4" stroke-width="0.8" opacity="0.5"/>
+  <line x1="10" y1="48" x2="22" y2="48" stroke="#4fe7c4" stroke-width="0.8" opacity="0.4"/>
+  <line x1="10" y1="51" x2="20" y2="51" stroke="#4fe7c4" stroke-width="0.8" opacity="0.3"/>
+  <line x1="10" y1="54" x2="24" y2="54" stroke="#4fe7c4" stroke-width="1" opacity="0.6"/>
+  <!-- Growth arrow -->
+  <g transform="translate(36, 36)">
+    <rect width="24" height="22" rx="3" fill="#0f2322" stroke="#4fe7c4" stroke-width="1" opacity="0.8"/>
+    <!-- Bar chart mini -->
+    <rect x="4" y="14" width="4" height="5" rx="0.5" fill="#4fe7c4" opacity="0.4"/>
+    <rect x="10" y="10" width="4" height="9" rx="0.5" fill="#4fe7c4" opacity="0.6"/>
+    <rect x="16" y="6" width="4" height="13" rx="0.5" fill="#4fe7c4" opacity="0.9"/>
+  </g>
+</svg>

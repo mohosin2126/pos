@@ -1,5 +1,6 @@
 import { Outlet } from "react-router-dom";
 import Navbar from "@/view/home/navbar";
+import Footer from "@/view/home/footer";
 import { useEffect } from "react";
 import LocomotiveScroll from "locomotive-scroll";
 
@@ -21,14 +22,17 @@ export default function HomeLayout() {
   }, []);
 
   return (
-    <div
-      data-scroll-container
-      className="bg-[#0a131d] text-white font-primary text-sm md:text-base"
-    >
+    <>
       <Navbar />
-      <main className="pt-28">
-        <Outlet />
-      </main>
-    </div>
+      <div
+        data-scroll-container
+        className="bg-[#0a131d] text-white font-primary text-sm md:text-base overflow-x-hidden"
+      >
+        <main className="pt-28">
+          <Outlet />
+        </main>
+        <Footer />
+      </div>
+    </>
   );
 }
