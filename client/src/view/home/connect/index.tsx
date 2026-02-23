@@ -1,8 +1,10 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import ctaBg from "@/assets/backgrounds/cta-bg.svg";
+import { useBasePath } from "@/hooks/common/use-base-path";
 
 const Connect = () => {
+    const basePath = useBasePath();
     return (
         <div
             className="bg-cover bg-center rounded-xl p-8 border border-[#2a3441] max-w-2xl mx-auto flex flex-col items-center text-center"
@@ -15,7 +17,7 @@ const Connect = () => {
                 Join thousands of shopkeepers who have streamlined their operations with
                 our POS system. Start your journey today!
             </p>
-            <Link to="/admin/dashboard" className="button">
+            <Link to={`${basePath}/dashboard`} className="button">
                 Dashboard
             </Link>
         </div>

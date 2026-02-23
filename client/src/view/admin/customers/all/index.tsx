@@ -22,9 +22,11 @@ import { showConfirmDelete } from "@/components/re-useable/delete-modal";
 import { useState } from "react";
 import type { ColumnsType } from "antd/es/table";
 import Loader from "@/components/re-useable/loader";
+import { useBasePath } from "@/hooks/common/use-base-path";
 const { Option } = Select;
 
 export default function AllCustomer() {
+  const basePath = useBasePath();
   const { customers, refetch, loading } = useCustomers();
   const [searchText, setSearchText] = useState<string>("");
   const [filterStatus, setFilterStatus] = useState<
@@ -136,7 +138,7 @@ export default function AllCustomer() {
         />
         <div className="flex items-center gap-x-3">
           <ToolbarButton onRefreshClick={() => refetch()} />
-          <Link to="/admin/user/add">
+          <Link to={`${basePath}/user/add`}>
             <Button
               type="primary"
               className="btn hover:!text-[#69feb0]"

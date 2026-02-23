@@ -8,10 +8,12 @@ import { useState } from "react";
 import { ActionButton } from "@/components/re-useable/action-button";
 import dayjs from "dayjs";
 import Loader from "@/components/re-useable/loader";
+import { useBasePath } from "@/hooks/common/use-base-path";
 
 const { Option } = Select;
 
 export default function SellableProducts() {
+  const basePath = useBasePath();
   const [searchText, setSearchText] = useState<string>("");
   const [filterStatus, setFilterStatus] = useState<
     "all" | "active" | "inactive"
@@ -120,7 +122,7 @@ export default function SellableProducts() {
       title: "Actions",
       key: "actions",
       render: (_: any, record: any) => (
-        <ActionButton viewUrl={`/admin/product/view/${record?.product?.id}`} />
+        <ActionButton viewUrl={`${basePath}/product/view/${record?.product?.id}`} />
       ),
     },
   ];
@@ -152,7 +154,7 @@ export default function SellableProducts() {
         />
         <div className="flex items-center gap-x-3">
           <ToolbarButton onRefreshClick={() => refetch()} />
-          <Link to="/admin/product/create">
+          <Link to={`${basePath}/product/create`}>
             <Button
               type="primary"
               icon={<MdAddCircleOutline />}

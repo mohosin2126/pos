@@ -11,10 +11,12 @@ import {
 
 import { useSupplier } from "@/hooks/admin/supplier";
 import { ArrowLeftOutlined } from "@ant-design/icons";
+import { useBasePath } from "@/hooks/common/use-base-path";
 
 export default function SupplierDetails() {
   const { id } = useParams();
   const { supplier } = useSupplier(id);
+  const basePath = useBasePath();
 
   const InfoRow = ({ label, value }: { label: string; value: any }) => (
     <Row className="mb-3">
@@ -51,12 +53,12 @@ export default function SupplierDetails() {
             </div>
           </div>
           <div className="flex flex-col md:flex-row gap-2">
-            <Link to={`/admin/supplier/update/${supplier?.id}`}>
+            <Link to={`${basePath}/supplier/update/${supplier?.id}`}>
               <Button icon={<FiEdit />} className="btn hover:!text-[#69feb0]">
                 Edit
               </Button>
             </Link>
-            <Link to="/admin/supplier/all">
+            <Link to={`${basePath}/supplier/all`}>
               <Button className="outlet-btn" icon={<ArrowLeftOutlined />}>
                 Back
               </Button>

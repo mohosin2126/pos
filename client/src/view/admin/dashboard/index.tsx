@@ -12,8 +12,12 @@ import {
 } from "react-icons/md";
 import { ArrowDownOutlined, ArrowUpOutlined } from "@ant-design/icons";
 import SummaryTable from "@/view/admin/dashboard/summary-table";
+import { usePermissions } from "@/hooks/common/use-permissions";
+import { PERMISSIONS } from "@/data/permissions";
 
 export default function Dashboard() {
+  const { hasPermission, isAdmin } = usePermissions();
+
   const allSummary = [
     {
       id: 1,
@@ -21,6 +25,7 @@ export default function Dashboard() {
       value: "48,988,078",
       percentage: "+35%",
       icon: MdPointOfSale,
+      permission: PERMISSIONS.VIEW_SALES,
     },
     {
       id: 2,
@@ -28,6 +33,7 @@ export default function Dashboard() {
       value: "16,478,145",
       percentage: "-22%",
       icon: MdAssignmentReturn,
+      permission: PERMISSIONS.VIEW_SALES,
     },
     {
       id: 3,
@@ -35,6 +41,7 @@ export default function Dashboard() {
       value: "24,145,789",
       percentage: "+8%",
       icon: MdShoppingBag,
+      permission: PERMISSIONS.VIEW_PURCHASES,
     },
     {
       id: 4,
@@ -42,6 +49,7 @@ export default function Dashboard() {
       value: "18,458,747",
       percentage: "+5%",
       icon: MdAssignmentReturned,
+      permission: PERMISSIONS.VIEW_PURCHASE_RETURNS,
     },
   ];
   const statsData = [
@@ -51,6 +59,7 @@ export default function Dashboard() {
       value: 124,
       percentage: "+35%",
       icon: MdProductionQuantityLimits,
+      permission: PERMISSIONS.VIEW_SUPPLIERS,
     },
     {
       id: 2,
@@ -58,6 +67,7 @@ export default function Dashboard() {
       value: 78,
       percentage: "+12%",
       icon: MdCategory,
+      permission: PERMISSIONS.VIEW_CATEGORIES,
     },
     {
       id: 3,
@@ -65,6 +75,7 @@ export default function Dashboard() {
       value: 452,
       percentage: "+8%",
       icon: MdInventory,
+      permission: PERMISSIONS.VIEW_PRODUCTS,
     },
     {
       id: 4,
@@ -72,13 +83,23 @@ export default function Dashboard() {
       value: 32,
       percentage: "+5%",
       icon: MdShoppingCart,
+      permission: PERMISSIONS.VIEW_PURCHASES,
     },
   ];
 
+  // Filter cards based on role permissions
+  const visibleSummary = allSummary.filter(
+    (item) => isAdmin || hasPermission(item.permission)
+  );
+  const visibleStats = statsData.filter(
+    (item) => isAdmin || hasPermission(item.permission)
+  );
+
   return (
     <div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {allSummary.map((item, index) => {
+      {visibleSummary.length > 0 && (
+      <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-${Math.min(visibleSummary.length, 4)} gap-6`}>
+        {visibleSummary.map((item, index) => {
           const Icon = item.icon;
           return (
             <Card
@@ -136,9 +157,11 @@ export default function Dashboard() {
           );
         })}
       </div>
+      )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 my-6">
-        {statsData.map((item, index) => {
+      {visibleStats.length > 0 && (
+      <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-${Math.min(visibleStats.length, 4)} gap-6 my-6`}>
+        {visibleStats.map((item, index) => {
           const IconComponent = item.icon;
           return (
             <Card
@@ -197,6 +220,7 @@ export default function Dashboard() {
           );
         })}
       </div>
+      )}
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <GraphChart />

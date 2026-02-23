@@ -49,7 +49,7 @@ export const notificationItems = (
   return items;
 };
 
-export const dropDownItems = (user?: TDemoUser): MenuProps["items"] => [
+export const dropDownItems = (user?: TDemoUser, basePath = "/admin"): MenuProps["items"] => [
   {
     label: (
       <>
@@ -66,7 +66,7 @@ export const dropDownItems = (user?: TDemoUser): MenuProps["items"] => [
     type: "divider" as const,
   },
   {
-    label: <Link to="/admin/settings/view-profile">Profile</Link>,
+    label: <Link to={`${basePath}/settings/view-profile`}>Profile</Link>,
     key: "0",
   },
   {

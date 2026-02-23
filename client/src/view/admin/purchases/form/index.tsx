@@ -18,11 +18,13 @@ import {
 } from "@/components/form";
 import { add, subtract, multiply, percentage, max, roundTo } from "@/utils/math-utils";
 import type { TLineItem } from "@/interface/common";
+import { useBasePath } from "@/hooks/common/use-base-path";
 
 export default function PurchaseForm() {
     const [form] = Form.useForm();
     const { id } = useParams();
     const navigate = useNavigate();
+    const basePath = useBasePath();
     const isUpdate = Boolean(id);
 
     const { createPurchase } = useCreatePurchase();
@@ -228,12 +230,12 @@ export default function PurchaseForm() {
             if (isUpdate) {
                 await updatePurchase(id, formattedValues);
                 message.success("Purchase updated successfully!");
-                navigate("/admin/purchase/all");
+                navigate(`${basePath}/purchase/all`);
             } else {
                 await createPurchase(formattedValues);
                 message.success("Purchase created successfully!");
                 form.resetFields();
-                navigate("/admin/purchase/all");
+                navigate(`${basePath}/purchase/all`);
             }
             setLoading(false);
         } catch (error: any) {

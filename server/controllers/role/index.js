@@ -25,9 +25,15 @@ const create = async (req, res) => {
             return conflict(res, "Role name already exists.");
         }
 
+        // Ensure view_dashboard is always included
+        const permissions = Array.isArray(value.permissions) ? value.permissions : [];
+        if (!permissions.includes("view_dashboard")) {
+            permissions.push("view_dashboard");
+        }
+
         const role = await Role.create({
             name: value.name,
-            permissions: value.permissions,
+            permissions: permissions,
         });
 
         return createdResponse(res, "Role created successfully", role);
@@ -94,9 +100,15 @@ const update = async (req, res) => {
             return unprocessable(res, "Cannot rename the admin role.");
         }
 
+        // Ensure view_dashboard is always included in permissions
+        let updatedPermissions = value.permissions || role.permissions;
+        if (Array.isArray(updatedPermissions) && !updatedPermissions.includes("view_dashboard")) {
+            updatedPermissions = [...updatedPermissions, "view_dashboard"];
+        }
+
         await role.update({
             name: value.name || role.name,
-            permissions: value.permissions || role.permissions,
+            permissions: updatedPermissions,
         });
 
         return success(res, "Role updated successfully", role);

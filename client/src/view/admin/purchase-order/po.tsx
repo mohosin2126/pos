@@ -12,8 +12,10 @@ import { MdAddCircleOutline } from "react-icons/md";
 import { useDeletePurchase, usePurchases, useApprovePO } from "@/hooks/admin/purchase";
 import Loader from "@/components/re-useable/loader";
 import { TPurchasePayload } from "@/interface/common";
+import { useBasePath } from "@/hooks/common/use-base-path";
 
 export default function PurchaseOrder() {
+  const basePath = useBasePath();
   const { purchases, refetch, loading } = usePurchases();
   const { deletePurchase } = useDeletePurchase();
   const { approvePO } = useApprovePO();
@@ -119,10 +121,10 @@ export default function PurchaseOrder() {
             </Button>
           )}
           <ActionButton
-            viewUrl={`/admin/purchase/view/${record?.id}`}
+            viewUrl={`${basePath}/purchase/view/${record?.id}`}
             editUrl={
               record.status === "po" || record.status === "draft"
-                ? `/admin/purchase/update/${record?.id}`
+                ? `${basePath}/purchase/update/${record?.id}`
                 : undefined
             }
             onDelete={() => handleDelete(record)}
@@ -148,7 +150,7 @@ export default function PurchaseOrder() {
         />
         <div className="flex items-center gap-x-3">
           <ToolbarButton onRefreshClick={() => refetch()} />
-          <Link to="/admin/purchase/add">
+          <Link to={`${basePath}/purchase/add`}>
             <Button
               type="primary"
               icon={<MdAddCircleOutline />}

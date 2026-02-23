@@ -6,6 +6,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useCreateUser, useUpdateUser, useUser } from "@/hooks/admin/user";
 import { useRoleOptions } from "@/hooks/admin/role";
+import { useBasePath } from "@/hooks/common/use-base-path";
 import {
   CustomCheckbox,
   CustomDate,
@@ -19,6 +20,7 @@ export default function UserForm() {
 
   const { id } = useParams();
   const navigate = useNavigate();
+  const basePath = useBasePath();
   const isUpdate = Boolean(id);
 
   const { createUser } = useCreateUser();
@@ -55,12 +57,12 @@ export default function UserForm() {
       if (isUpdate) {
         await updateUser(id, formattedValues);
         message.success("User updated successfully!");
-        navigate("/admin/user/all");
+        navigate(`${basePath}/user/all`);
       } else {
         await createUser(formattedValues);
         message.success("User added successfully!");
         form.resetFields();
-        navigate("/admin/user/all");
+        navigate(`${basePath}/user/all`);
       }
     } catch (error: any) {
       setLoading(false);

@@ -7,8 +7,10 @@ import {
     HiSupport,
 } from "react-icons/hi";
 import {Link} from "react-router-dom";
+import { useBasePath } from "@/hooks/common/use-base-path";
 
 const Services = () => {
+    const basePath = useBasePath();
     const servicesData = [
         {
             id: 1,
@@ -83,7 +85,7 @@ const Services = () => {
                         </p>
 
                         <Link
-                            to="/admin/dashboard"
+                            to={`${basePath}/dashboard`}
                             className="button inline-block bg-[#4fe7c4] text-[#0f1a2a] font-semibold px-6 py-3 rounded-lg hover:opacity-90 transition"
                         >
                             Dashboard

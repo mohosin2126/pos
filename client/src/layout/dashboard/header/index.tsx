@@ -12,10 +12,12 @@ import { demoNotifications } from "@/data";
 import Cookies from "js-cookie";
 import useApi from "@/hooks/use-api";
 import { useUser } from "@/context-api";
+import { useBasePath } from "@/hooks/common/use-base-path";
 
 export default function Header({ setNavOpened, navOpened, setIsCollapsed }: TSidebarProps) {
     const navigate = useNavigate();
     const { user, setUser } = useUser();
+    const basePath = useBasePath();
 
     const handleMenuClick: MenuProps["onClick"] = async ({ key }) => {
         if (key === "logout") {
@@ -97,7 +99,7 @@ export default function Header({ setNavOpened, navOpened, setIsCollapsed }: TSid
                             items: notificationItems(demoNotifications),
                             onClick: ({ key }) => {
                                 if (key === "viewAll") {
-                                    navigate("/admin/roles-and-permissions");
+                                    navigate(`${basePath}/roles-and-permissions`);
                                 }
                             },
                         }}
@@ -113,7 +115,7 @@ export default function Header({ setNavOpened, navOpened, setIsCollapsed }: TSid
 
                     <Dropdown
                         menu={{
-                            items: dropDownItems(user as any),
+                            items: dropDownItems(user as any, basePath),
                             onClick: handleMenuClick,
                         }}
                     >

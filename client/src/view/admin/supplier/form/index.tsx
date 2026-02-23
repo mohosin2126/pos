@@ -9,11 +9,13 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import type { TSupplierPayload } from "@/interface/common";
 import { CustomInput, CustomSelect, CustomTextArea } from "@/components/form";
+import { useBasePath } from "@/hooks/common/use-base-path";
 
 export default function SupplierForm() {
   const [form] = Form.useForm();
   const { id } = useParams();
   const navigate = useNavigate();
+  const basePath = useBasePath();
   const isUpdate = Boolean(id);
   const [loading, setLoading] = useState(false);
 
@@ -52,14 +54,14 @@ export default function SupplierForm() {
         console.log("update for value:", supplierCode);
         await updateSupplier(id, payload);
         message.success("Supplier updated successfully!");
-        navigate("/admin/supplier/all");
+        navigate(`${basePath}/supplier/all`);
       } else {
       
         payload = values;
         await createSupplier(payload);
         message.success("Supplier added successfully!");
         form.resetFields();
-        navigate("/admin/supplier/all");
+        navigate(`${basePath}/supplier/all`);
       }
     } catch (error: any) {
       console.error(error);

@@ -2,12 +2,13 @@ import { useEffect, useMemo, useState } from "react";
 import { NavIconbar } from "../side-nav-icon-bar";
 import { useLocation } from "react-router-dom";
 import { TSidebarProps } from "@/interface/menu-and-common";
-import { adminMenuItems } from "@/data";
+import { getMenuItems } from "@/data";
 import NavItem from "@/layout/dashboard/nav-item";
 import logoFull from "@/assets/logo/logo-full.svg";
 import logoIcon from "@/assets/logo/logo-icon.svg";
 import { useUser } from "@/context-api";
 import { filterMenuByPermissions } from "@/utils/menu-filter";
+import { useBasePath } from "@/hooks/common/use-base-path";
 
 export default function Sidebar({
   navOpened,
@@ -18,10 +19,11 @@ export default function Sidebar({
   const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
   const location = useLocation();
   const { user } = useUser();
+  const basePath = useBasePath();
 
   const filteredMenuItems = useMemo(
-    () => filterMenuByPermissions(adminMenuItems, user),
-    [user]
+    () => filterMenuByPermissions(getMenuItems(basePath), user),
+    [user, basePath]
   );
 
   const handleSubmenuToggle = (label: string) =>

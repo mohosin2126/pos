@@ -10,9 +10,11 @@ import {
 import { Link, useParams } from "react-router-dom";
 import { useUser } from "@/hooks/admin/user";
 import { ArrowLeftOutlined } from "@ant-design/icons";
+import { useBasePath } from "@/hooks/common/use-base-path";
 
 export default function ViewUser() {
   const { id } = useParams();
+  const basePath = useBasePath();
   const { user } = useUser(id);
   // console.log("find user is :", user);
 
@@ -59,12 +61,12 @@ export default function ViewUser() {
             </div>
           </div>
           <div className="flex flex-col md:flex-row gap-2">
-            <Link to={`/admin/user/update/${user?.id}`}>
+            <Link to={`${basePath}/user/update/${user?.id}`}>
               <Button className="btn hover:!text-[#69feb0]" icon={<FiEdit />}>
                 Edit
               </Button>
             </Link>
-            <Link to="/admin/invoice/all">
+            <Link to={`${basePath}/invoice/all`}>
               <Button className="outlet-btn" icon={<ArrowLeftOutlined />}>
                 Back
               </Button>

@@ -1,8 +1,10 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { HiOutlineCash, HiOutlineCalendar, HiOutlineShieldCheck } from "react-icons/hi";
+import { useBasePath } from "@/hooks/common/use-base-path";
 
 const Packages = () => {
+    const basePath = useBasePath();
     const packagesData = [
         {
             id: 1,
@@ -148,7 +150,7 @@ const Packages = () => {
                                     {/* dashboard button (replaces CHOOSE PLAN) */}
                                     <div>
                                         <Link
-                                            to="/admin/dashboard"
+                                            to={`${basePath}/dashboard`}
                                             className={`${t.button} w-full inline-block text-center py-3 rounded-md font-semibold tracking-wide hover:brightness-110 transition`}
                                         >
                                             Dashboard

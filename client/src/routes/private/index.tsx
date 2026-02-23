@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { Navigate, Outlet, useLocation, useParams } from "react-router-dom";
 import Cookies from "js-cookie";
 import useApi from "@/hooks/use-api";
 import { useUser } from "@/context-api";
@@ -16,6 +16,7 @@ function FullscreenSpinner() {
 export default function AdminGuard() {
   const token = useMemo(() => Cookies.get("token") || "", []);
   const location = useLocation();
+  const { role: urlRole } = useParams<{ role: string }>();
   const { user, setUser } = useUser();
   const [checking, setChecking] = useState(true);
   const [authorized, setAuthorized] = useState(false);
@@ -31,10 +32,13 @@ export default function AdminGuard() {
       }
       try {
         if (user) {
-        
+          // Validate the URL role slug matches the user's actual role
+          const userSlug = user.role?.toLowerCase().replace(/\s+/g, "-");
+          const isRoleMatch = urlRole === userSlug;
           const isAuthorized =
-            user.role === "admin" ||
-            (Array.isArray(user.permissions) && user.permissions.length > 0);
+            isRoleMatch &&
+            (user.role === "admin" ||
+              (Array.isArray(user.permissions) && user.permissions.length > 0));
           setAuthorized(isAuthorized);
           return;
         }
@@ -46,10 +50,13 @@ export default function AdminGuard() {
         if (!ok || !profile) throw new Error("Failed to fetch profile");
         if (!cancelled) {
           setUser(profile);
+          const profileSlug = profile.role?.toLowerCase().replace(/\s+/g, "-");
+          const isRoleMatch = urlRole === profileSlug;
           const isAuthorized =
-            profile.role === "admin" ||
-            (Array.isArray(profile.permissions) &&
-              profile.permissions.length > 0);
+            isRoleMatch &&
+            (profile.role === "admin" ||
+              (Array.isArray(profile.permissions) &&
+                profile.permissions.length > 0));
           setAuthorized(isAuthorized);
         }
       } catch {

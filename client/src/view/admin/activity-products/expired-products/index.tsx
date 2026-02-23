@@ -8,9 +8,11 @@ import { useState } from "react";
 import dayjs from "dayjs";
 import { ActionButton } from "@/components/re-useable/action-button";
 import Loader from "@/components/re-useable/loader";
+import { useBasePath } from "@/hooks/common/use-base-path";
 const { Option } = Select;
 
 export default function ExpiredProducts() {
+  const basePath = useBasePath();
   const [searchText, setSearchText] = useState<string>("");
   const [filterStatus, setFilterStatus] = useState<
     "all" | "active" | "inactive"
@@ -114,7 +116,7 @@ export default function ExpiredProducts() {
       title: "Actions",
       key: "actions",
       render: (_: any, record: any) => (
-        <ActionButton viewUrl={`/admin/product/view/${record?.product?.id}`} />
+        <ActionButton viewUrl={`${basePath}/product/view/${record?.product?.id}`} />
       ),
     },
   ];

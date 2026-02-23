@@ -5,10 +5,12 @@ import { ArrowLeftOutlined, PrinterOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { DashboardTitle } from "@/components/re-useable/dashboard-titile";
 import { TInvoice } from "@/interface/common";
+import { useBasePath } from "@/hooks/common/use-base-path";
 
 export default function ViewInvoice() {
   const { invoices, loading } = useInvoices();
   const { id } = useParams();
+  const basePath = useBasePath();
 
   if (loading) {
     return <div className="text-2xl md:text-4xl ">Loading...</div>;
@@ -48,7 +50,7 @@ export default function ViewInvoice() {
           />
         </div>
         <Space wrap>
-          <Link to="/admin/invoice/all">
+          <Link to={`${basePath}/invoice/all`}>
             <Button className="outlet-btn" icon={<ArrowLeftOutlined />}>
               Back
             </Button>

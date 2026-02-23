@@ -11,10 +11,12 @@ import dayjs from "dayjs";
 import { useSales } from "@/hooks/admin/sales";
 import Loader from "@/components/re-useable/loader";
 import { formatCurrency } from "@/utils/pos-calculations";
+import { useBasePath } from "@/hooks/common/use-base-path";
 
 const { Option } = Select;
 
 export default function SalesRecords() {
+  const basePath = useBasePath();
   const { sales, refetch, loading } = useSales();
   const [searchText, setSearchText] = useState<string>("");
   const [filterStatus, setFilterStatus] = useState<
@@ -109,7 +111,7 @@ export default function SalesRecords() {
       title: "Actions",
       key: "actions",
       render: (_: any, record: any) => (
-        <ActionButton viewUrl={`/admin/sales/view/${record?.id}`} />
+        <ActionButton viewUrl={`${basePath}/sales/view/${record?.id}`} />
       ),
     },
   ];

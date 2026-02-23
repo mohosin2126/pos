@@ -11,10 +11,12 @@ import type { TInvoice } from "@/interface/common";
 import dayjs from "dayjs";
 import { ActionButton } from "@/components/re-useable/action-button";
 import Loader from "@/components/re-useable/loader";
+import { useBasePath } from "@/hooks/common/use-base-path";
 
 const { Option } = Select;
 
 export default function AllInvoice() {
+  const basePath = useBasePath();
   const { invoices, refetch, loading } = useInvoices();
   const [searchText, setSearchText] = useState<string>("");
   const [filterStatus, setFilterStatus] = useState<
@@ -79,7 +81,7 @@ export default function AllInvoice() {
       title: "Actions",
       key: "actions",
       render: (_: any, record: any) => (
-        <ActionButton viewUrl={`/admin/invoice/view/${record.id}`} />
+        <ActionButton viewUrl={`${basePath}/invoice/view/${record.id}`} />
       ),
     },
   ];

@@ -27,7 +27,7 @@ import { PERMISSIONS } from "@/data/permissions";
 
 const P = PERMISSIONS;
 
-export const adminMenuItems: TMenuBlock[] = [
+export const getMenuItems = (basePath: string): TMenuBlock[] => [
     {
         title: "Main",
         menu: [
@@ -39,67 +39,30 @@ export const adminMenuItems: TMenuBlock[] = [
             {
                 label: "Dashboard",
                 icon: FiGrid,
-                href: "/admin/dashboard",
+                href: `${basePath}/dashboard`,
                 permission: P.VIEW_DASHBOARD,
             },
             {
                 label: "User Managment",
                 icon: FiUsers,
-                href: "/admin/user/all",
+                href: `${basePath}/user/all`,
                 permission: P.VIEW_USERS,
             },
             {
                 label: "Roles",
                 icon: FiUserCheck,
-                href: "/admin/access/roles",
+                href: `${basePath}/access/roles`,
                 permission: P.VIEW_ROLES,
             },
         ],
     },
-    // {
-    //   title: "security",
-    //   menu: [
-    //     {
-    //       label: "Access",
-    //       icon: FiBox,
-    //       submenu: [
-    //         {
-    //           label: "Roles",
-    //           icon: FiUserCheck,
-    //           href: "/admin/access/roles",
-    //         },
-    //         {
-    //           label: "Roles & Permissions",
-    //           icon: FiUserCheck,
-    //           href: "/admin/access/roles-and-permissions",
-    //         },
-    //       ],
-    //     },
-    //     {
-    //       label: "Stock",
-    //       icon: FiActivity,
-    //       submenu: [
-    //         {
-    //           label: "Low Stock",
-    //           icon: FiUsers,
-    //           href: "/admin/low-stock",
-    //         },
-    //         {
-    //           label: "Out of Stock",
-    //           icon: MdOutlineDirectionsOff,
-    //           href: "/admin/out-of-stock",
-    //         },
-    //       ],
-    //     },
-    //   ],
-    // },
     {
         title: "Inventory",
         menu: [
             {
                 label: "Category",
                 icon: FiBarChart2,
-                href: "/admin/category/all",
+                href: `${basePath}/category/all`,
                 permission: P.VIEW_CATEGORIES,
             },
             {
@@ -110,13 +73,13 @@ export const adminMenuItems: TMenuBlock[] = [
                     {
                         label: "All Supplier",
                         icon: FiUsers,
-                        href: "/admin/supplier/all",
+                        href: `${basePath}/supplier/all`,
                         permission: P.VIEW_SUPPLIERS,
                     },
                     {
                         label: "Create Supplier",
                         icon: FiEdit,
-                        href: "/admin/supplier/create",
+                        href: `${basePath}/supplier/create`,
                         permission: P.CREATE_SUPPLIERS,
                     },
                 ],
@@ -129,13 +92,13 @@ export const adminMenuItems: TMenuBlock[] = [
                     {
                         label: "All Products",
                         icon: FiFileText,
-                        href: "/admin/product/all",
+                        href: `${basePath}/product/all`,
                         permission: P.VIEW_PRODUCTS,
                     },
                     {
                         label: "Add Product",
                         icon: FiEdit,
-                        href: "/admin/product/create",
+                        href: `${basePath}/product/create`,
                         permission: P.CREATE_PRODUCTS,
                     },
                 ],
@@ -148,13 +111,13 @@ export const adminMenuItems: TMenuBlock[] = [
                     {
                         label: "Low Stock",
                         icon: FiUsers,
-                        href: "/admin/activity-products/low-stock",
+                        href: `${basePath}/activity-products/low-stock`,
                         permission: P.VIEW_STOCK,
                     },
                     {
                         label: "Out of Stock",
                         icon: MdOutlineDirectionsOff,
-                        href: "/admin/activity-products/out-of-stock",
+                        href: `${basePath}/activity-products/out-of-stock`,
                         permission: P.VIEW_STOCK,
                     },
                 ],
@@ -162,13 +125,13 @@ export const adminMenuItems: TMenuBlock[] = [
             {
                 label: "Expired Products",
                 icon: IoIosInformationCircleOutline,
-                href: "/admin/activity-products/expired-products",
+                href: `${basePath}/activity-products/expired-products`,
                 permission: P.VIEW_STOCK,
             },
             {
                 label: "Sellable Products",
                 icon: AiOutlineProduct,
-                href: "/admin/activity-products/sellable-products",
+                href: `${basePath}/activity-products/sellable-products`,
                 permission: P.VIEW_STOCK,
             },
         ],
@@ -179,19 +142,19 @@ export const adminMenuItems: TMenuBlock[] = [
             {
                 label: "purchase",
                 icon: FiShoppingCart,
-                href: "/admin/purchase/all",
+                href: `${basePath}/purchase/all`,
                 permission: P.VIEW_PURCHASES,
             },
             {
                 label: "Purchase Order",
                 icon: FiClipboard,
-                href: "/admin/purchase-order",
+                href: `${basePath}/purchase-order`,
                 permission: P.VIEW_PURCHASES,
             },
             {
                 label: "Purchase Return",
                 icon: FiRotateCcw,
-                href: "/admin/purchase-return",
+                href: `${basePath}/purchase-return`,
                 permission: P.VIEW_PURCHASE_RETURNS,
             },
         ],
@@ -202,13 +165,13 @@ export const adminMenuItems: TMenuBlock[] = [
             {
                 label: "Sales Records",
                 icon: FaDolly,
-                href: "/admin/sales/all",
+                href: `${basePath}/sales/all`,
                 permission: P.VIEW_SALES,
             },
             {
                 label: "POS (Point of Sale)",
                 icon: MdOutlineLaptopChromebook,
-                href: "/admin/pos/create",
+                href: `${basePath}/pos/create`,
                 permission: P.CREATE_POS,
             },
         ],
@@ -219,13 +182,13 @@ export const adminMenuItems: TMenuBlock[] = [
             {
                 label: "Customers",
                 icon: FiUsers,
-                href: "/admin/customer/all",
+                href: `${basePath}/customer/all`,
                 permission: P.VIEW_CUSTOMERS,
             },
             {
                 label: "Invoice",
                 icon: MdLineAxis,
-                href: "/admin/invoice/all",
+                href: `${basePath}/invoice/all`,
                 permission: P.VIEW_INVOICES,
             },
         ],

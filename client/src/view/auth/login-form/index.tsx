@@ -51,7 +51,9 @@ export default function LoginForm() {
             Cookies.set("user", JSON.stringify(userData), { expires: 7 });
             setUser(userData);
 
-            navigate("/admin");
+            // Navigate to role-based path (e.g. /admin, /manager, /cashier)
+            const roleSlug = (userData.role || "admin").toLowerCase().replace(/\\s+/g, "-");
+            navigate(`/${roleSlug}`);
         } catch (error: any) {
             message.error(
                 error?.response?.data?.message || error?.message || "Login failed"

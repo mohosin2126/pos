@@ -16,9 +16,11 @@ import {
 } from "@/hooks/admin/purchase-return";
 import Loader from "@/components/re-useable/loader";
 import { TPurchaseReturn } from "@/interface/common";
+import { useBasePath } from "@/hooks/common/use-base-path";
 const { Option } = Select;
 
 export default function PurchaseReturnPage() {
+  const basePath = useBasePath();
   const { returns, refetch, loading } = usePurchaseReturns();
   const { deleteReturn } = useDeleteReturn();
   const { approveReturn, loading: approveLoading } = useApproveReturn();
@@ -223,7 +225,7 @@ export default function PurchaseReturnPage() {
         />
         <div className="flex items-center gap-x-3">
           <ToolbarButton onRefreshClick={() => refetch()} />
-          <Link to="/admin/purchase/all">
+          <Link to={`${basePath}/purchase/all`}>
             <Button
               type="primary"
               icon={<MdAddCircleOutline />}

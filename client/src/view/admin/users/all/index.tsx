@@ -24,8 +24,10 @@ import { useDeleteUser, useUsers } from "@/hooks/admin/user";
 import { useRoleOptions } from "@/hooks/admin/role";
 import { RiResetLeftFill } from "react-icons/ri";
 import Loader from "@/components/re-useable/loader";
+import { useBasePath } from "@/hooks/common/use-base-path";
 
 export default function AllUsers() {
+  const basePath = useBasePath();
   const { users, refetch, loading }: TUseUsersResult = useUsers();
   const [searchText, setSearchText] = useState<string>("");
   const [filterStatus, setFilterStatus] = useState<
@@ -137,8 +139,8 @@ export default function AllUsers() {
       key: "actions",
       render: (_: any, record: any) => (
         <ActionButton
-          viewUrl={`/admin/user/view/${record?.id}`}
-          editUrl={`/admin/user/update/${record?.id}`}
+          viewUrl={`${basePath}/user/view/${record?.id}`}
+          editUrl={`${basePath}/user/update/${record?.id}`}
           onDelete={() => handleDelete(record)}
         />
       ),
@@ -192,7 +194,7 @@ export default function AllUsers() {
         />
         <div className="flex items-center gap-x-3">
           <ToolbarButton onRefreshClick={() => refetch()} />
-          <Link to="/admin/user/add">
+          <Link to={`${basePath}/user/add`}>
             <Button
               type="primary"
               className="btn hover:!text-[#69feb0]"

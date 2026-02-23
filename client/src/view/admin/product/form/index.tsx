@@ -16,11 +16,13 @@ import {
   FileUpload,
 } from "@/components/form";
 import { formatTagsForInput, normalizeTags } from "@/utils/tag-utils";
+import { useBasePath } from "@/hooks/common/use-base-path";
 
 export default function ProductForm() {
   const [form] = Form.useForm();
   const navigate = useNavigate();
   const { id } = useParams();
+  const basePath = useBasePath();
   const isUpdate = Boolean(id);
   const { product } = useProduct(id);
 
@@ -59,7 +61,7 @@ export default function ProductForm() {
         form.resetFields();
       }
 
-      navigate("/admin/product/all");
+      navigate(`${basePath}/product/all`);
     } catch (error: any) {
       console.error(error);
       message.error(

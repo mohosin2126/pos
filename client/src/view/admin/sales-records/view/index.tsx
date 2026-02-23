@@ -34,6 +34,7 @@ import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { DashboardTitle } from "@/components/re-useable/dashboard-titile";
 import { useSale } from "@/hooks/admin/sales";
+import { useBasePath } from "@/hooks/common/use-base-path";
 
 dayjs.extend(relativeTime);
 
@@ -42,6 +43,7 @@ const { Title, Text, Paragraph } = Typography;
 export default function SalesDetails() {
   const { id } = useParams();
   const { sale } = useSale(id);
+  const basePath = useBasePath();
 
   // console.log("sales data :", sale);
 
@@ -138,7 +140,7 @@ export default function SalesDetails() {
           >
             Print
           </Button>
-          <Link to="/admin/sales-records">
+          <Link to={`${basePath}/sales-records`}>
             <Button
               icon={<ArrowLeftOutlined />}
               className="!border-[#005555] !text-[#005555] hover:!bg-[#005555] hover:!text-white"

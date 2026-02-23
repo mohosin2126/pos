@@ -11,8 +11,10 @@ const { Option } = Select;
 import { MdAddCircleOutline } from "react-icons/md";
 import { useDeletePurchase, usePurchases } from "@/hooks/admin/purchase";
 import Loader from "@/components/re-useable/loader";
+import { useBasePath } from "@/hooks/common/use-base-path";
 
 export default function Purchases() {
+  const basePath = useBasePath();
   const { purchases, refetch, loading } = usePurchases();
   const [searchText, setSearchText] = useState<string>("");
   const [filterStatus, setFilterStatus] = useState<
@@ -106,8 +108,8 @@ export default function Purchases() {
       key: "actions",
       render: (_: any, record: any) => (
         <ActionButton
-          viewUrl={`/admin/purchase/view/${record?.id}`}
-          editUrl={`/admin/purchase/update/${record?.id}`}
+          viewUrl={`${basePath}/purchase/view/${record?.id}`}
+          editUrl={`${basePath}/purchase/update/${record?.id}`}
           onDelete={() => handleDelete(record)}
         />
       ),
@@ -132,7 +134,7 @@ export default function Purchases() {
         />
         <div className="flex items-center gap-x-3">
           <ToolbarButton onRefreshClick={() => refetch()} />
-          <Link to="/admin/purchase/add">
+          <Link to={`${basePath}/purchase/add`}>
             <Button
               type="primary"
               icon={<MdAddCircleOutline />}

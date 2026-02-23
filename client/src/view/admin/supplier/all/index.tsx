@@ -18,10 +18,12 @@ import type { TSupplierPayload } from "@/interface/common";
 import { useSuppliers, useDeleteSupplier } from "@/hooks/admin/supplier";
 import { DashboardTitle } from "@/components/re-useable/dashboard-titile";
 import ToolbarButton from "@/components/re-useable/toolbar-button";
+import { useBasePath } from "@/hooks/common/use-base-path";
 
 const { Option } = Select;
 
 export default function AllSupplier() {
+    const basePath = useBasePath();
     const [searchText, setSearchText] = useState<string>("");
     const [filterStatus, setFilterStatus] = useState<"all" | "active" | "inactive">("all");
 
@@ -116,8 +118,8 @@ export default function AllSupplier() {
             key: "actions",
             render: (_: any, record: TSupplierPayload) => (
                 <ActionButton
-                    viewUrl={`/admin/supplier/view/${record.id}`}
-                    editUrl={`/admin/supplier/update/${record.id}`}
+                    viewUrl={`${basePath}/supplier/view/${record.id}`}
+                    editUrl={`${basePath}/supplier/update/${record.id}`}
                     onDelete={() => handleDelete(record)}
                 />
             ),
@@ -143,7 +145,7 @@ export default function AllSupplier() {
                 />
                 <div className="flex items-center gap-x-3">
                     <ToolbarButton onRefreshClick={() => refetch()} />
-                    <Link to="/admin/supplier/create">
+                    <Link to={`${basePath}/supplier/create`}>
                         <Button
                             type="primary"
                             icon={<MdAddCircleOutline />}

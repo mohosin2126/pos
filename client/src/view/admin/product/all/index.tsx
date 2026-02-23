@@ -21,10 +21,12 @@ import { useDeleteProduct, useProducts } from "@/hooks/admin/products";
 import { RiResetLeftFill } from "react-icons/ri";
 import Loader from "@/components/re-useable/loader";
 import { normalizeTags } from "@/utils/tag-utils";
+import { useBasePath } from "@/hooks/common/use-base-path";
 
 const { Option } = Select;
 
 export default function AllProducts() {
+  const basePath = useBasePath();
   const [searchText, setSearchText] = useState<string>("");
   const [filterStatus, setFilterStatus] = useState<
     "all" | "active" | "inactive"
@@ -121,8 +123,8 @@ export default function AllProducts() {
       key: "actions",
       render: (_: any, record: TProductPayload) => (
         <ActionButton
-          viewUrl={`/admin/product/view/${record.id}`}
-          editUrl={`/admin/product/update/${record.id}`}
+          viewUrl={`${basePath}/product/view/${record.id}`}
+          editUrl={`${basePath}/product/update/${record.id}`}
           onDelete={() => handleDelete(record)}
         />
       ),
@@ -149,7 +151,7 @@ export default function AllProducts() {
         />
         <div className="flex items-center gap-x-3">
           <ToolbarButton onRefreshClick={() => refetch()} />
-          <Link to="/admin/product/create">
+          <Link to={`${basePath}/product/create`}>
             <Button
               type="primary"
               icon={<MdAddCircleOutline />}

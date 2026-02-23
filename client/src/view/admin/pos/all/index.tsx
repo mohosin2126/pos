@@ -24,10 +24,12 @@ import { generateReferenceNo } from "@/utils/generate-ref";
 import { CartItem } from "@/interface/common";
 import {useSellableProducts} from "@/hooks/admin/sellable";
 import { calculatePOSTotals, POSSettings } from "@/utils/pos-calculations";
+import { useBasePath } from "@/hooks/common/use-base-path";
 
 const { Search } = Input;
 
 export default function AllPos() {
+    const basePath = useBasePath();
     const [loading, setLoading] = useState<boolean>(false);
     const [cartItems, setCartItems] = useState<CartItem[]>([]);
     const [customerName, setCustomerName] = useState<string>("");
@@ -308,7 +310,7 @@ export default function AllPos() {
                                             <div>
                                                 <Link
                                                     className="!w-max"
-                                                    to={`/admin/product/view/${baseProduct?.id}`}
+                                                    to={`${basePath}/product/view/${baseProduct?.id}`}
                                                 >
                                                     <div className="font-medium text-sm !w-max">
                                                         {baseProduct?.name}

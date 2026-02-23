@@ -30,12 +30,14 @@ import dayjs from "dayjs";
 import { IoReceiptOutline, IoPersonOutline } from "react-icons/io5";
 import { DashboardTitle } from "@/components/re-useable/dashboard-titile";
 import { useSale } from "@/hooks/admin/sales";
+import { useBasePath } from "@/hooks/common/use-base-path";
 
 const { Title, Text, Paragraph } = Typography;
 
 export default function POSDetails() {
   const { id } = useParams();
   const { sale: posData } = useSale(id);
+  const basePath = useBasePath();
 
 
   const productNames = {
@@ -251,7 +253,7 @@ export default function POSDetails() {
           >
             Print Receipt
           </Button>
-          <Link to="/admin/pos/all">
+          <Link to={`${basePath}/pos/all`}>
             <Button
               icon={<ArrowLeftOutlined />}
               className="!border-[#005555] !text-[#005555] hover:!bg-[#005555] hover:!text-white"

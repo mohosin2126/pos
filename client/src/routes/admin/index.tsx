@@ -41,7 +41,7 @@ const P = PERMISSIONS;
 const adminRoutes = [
   { path: "/unauthorized", element: <Unauthorized /> },
   {
-    path: "/admin",
+    path: "/:role",
     element: <AdminGuard />,
     children: [
       {
@@ -50,7 +50,7 @@ const adminRoutes = [
           {
             index: true,
             element: (
-              <PermissionGuard requires={[P.VIEW_DASHBOARD]}>
+              <PermissionGuard requires={[]}>
                 <Dashboard />
               </PermissionGuard>
             ),
@@ -58,7 +58,7 @@ const adminRoutes = [
           {
             path: "dashboard",
             element: (
-              <PermissionGuard requires={[P.VIEW_DASHBOARD]}>
+              <PermissionGuard requires={[]}>
                 <Dashboard />
               </PermissionGuard>
             ),
@@ -69,7 +69,7 @@ const adminRoutes = [
               {
                 path: "view-profile",
                 element: (
-                  <PermissionGuard requires={[P.EDIT_PROFILE]}>
+                  <PermissionGuard requires={[]}>
                     <ViewProfile />
                   </PermissionGuard>
                 ),

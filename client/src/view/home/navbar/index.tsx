@@ -4,10 +4,12 @@ import { RiCloseLargeFill, RiMenu3Fill } from "react-icons/ri";
 import { BsDot } from "react-icons/bs";
 import type { TNavLinkItem } from "@/interface/menu-and-common";
 import logoFull from "@/assets/logo/logo-full.svg";
+import { useBasePath } from "@/hooks/common/use-base-path";
 
 export default function Navbar() {
   const [isScroll, setIsScroll] = useState<boolean>(false);
   const [menuOpen, setMenuOpen] = useState<boolean>(false);
+  const basePath = useBasePath();
   const closeBtnRef = useRef<HTMLButtonElement | null>(null);
 
   const toggleMenu = () => setMenuOpen((prev) => !prev);
@@ -72,7 +74,7 @@ export default function Navbar() {
           </nav>
 
           <div className="hidden md:flex items-center gap-3 xl:gap-4">
-            <Link to="/admin/dashboard" className="button" aria-label="Go to dashboard">
+            <Link to={`${basePath}/dashboard`} className="button" aria-label="Go to dashboard">
               Dashboard
             </Link>
           </div>
@@ -135,7 +137,7 @@ export default function Navbar() {
 
         <div className="mt-6 flex flex-col gap-3">
           <Link
-            to="/admin/dashboard"
+            to={`${basePath}/dashboard`}
             className="button w-full text-center"
             onClick={() => setMenuOpen(false)}
             aria-label="Go to dashboard"
