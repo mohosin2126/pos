@@ -1,15 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="c173760a-de52-4178-b7b3-e7a3d2e304ad" name="Changes" comment="" />
+    <list default="true" id="c173760a-de52-4178-b7b3-e7a3d2e304ad" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/server/controllers/purchase/index.js" beforeDir="false" afterPath="$PROJECT_DIR$/server/controllers/purchase/index.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/controllers/purchase/validation.js" beforeDir="false" afterPath="$PROJECT_DIR$/server/controllers/purchase/validation.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/database/migrations/20250220101700-update-purchase-status-enum.js" beforeDir="false" afterPath="$PROJECT_DIR$/server/database/migrations/20250220101700-update-purchase-status-enum.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/database/migrations/20250819100831-create-purchase.js" beforeDir="false" afterPath="$PROJECT_DIR$/server/database/migrations/20250819100831-create-purchase.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/database/models/purchase.js" beforeDir="false" afterPath="$PROJECT_DIR$/server/database/models/purchase.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/utils/price-calculator.js" beforeDir="false" afterPath="$PROJECT_DIR$/server/utils/price-calculator.js" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "associatedIndex": 4
-}]]></component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 4
+}</component>
   <component name="ProjectId" id="32SJExx0iPSI5fxp1BMdGTTggMy" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
@@ -17,13 +27,20 @@
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
-    "RunOnceActivity.ShowReadmeOnStart": "true"
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "git-widget-placeholder": "admin",
+    "ignore.virus.scanning.warn.message": "true",
+    "nodejs_package_manager_path": "npm",
+    "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-js-predefined-d6986cc7102b-e03c56caf84a-JavaScript-WS-252.23892.411" />
+        <option value="bundled-js-predefined-d6986cc7102b-9b0f141eb926-JavaScript-WS-253.31033.133" />
       </set>
     </attachedChunks>
   </component>
@@ -34,6 +51,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1757407933050</updated>
+      <workItem from="1771838208833" duration="15000" />
     </task>
     <servers />
   </component>

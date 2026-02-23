@@ -134,7 +134,7 @@ const getAll = async (req, res) => {
         const { page, limit, offset } = parsePagination(req.query, { page: 1, limit: 20, maxLimit: 100 });
         const { rows, count } = await Purchase.findAndCountAll({
             include: [
-                { model: Supplier, as: "supplier", attributes: ["id", "name", "contactEmail"] },
+                { model: Supplier, as: "supplier", attributes: ["id", "companyName", "email"] },
                 { model: PurchaseItem, as: "items", include: { model: Product, as: "product" } },
             ],
             order: [["createdAt", "DESC"]],
@@ -150,7 +150,7 @@ const getOne = async (req, res) => {
     try {
         const purchase = await Purchase.findByPk(req.params.id, {
             include: [
-                { model: Supplier, as: "supplier", attributes: ["id", "name", "contactEmail", "contactPhone"] },
+                { model: Supplier, as: "supplier", attributes: ["id", "companyName", "email", "phone"] },
                 { model: PurchaseItem, as: "items", include: { model: Product, as: "product" } },
                 { model: PurchaseReturn, as: "returns" },
             ],

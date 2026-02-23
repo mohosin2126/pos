@@ -152,7 +152,7 @@ export default function ProductForm() {
             rules={[
               { required: true, message: "Selling price is required" },
               { pattern: /^[0-9]*\.?[0-9]*$/, message: "Invalid price format" },
-              { min: 0, message: "Price cannot be negative" }
+              { type: 'number', min: 0, message: "Price cannot be negative" }
             ]}
           />
 
