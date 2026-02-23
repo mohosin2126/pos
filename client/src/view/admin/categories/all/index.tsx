@@ -193,7 +193,7 @@ export default function CategoriesAll() {
                   <Dropdown
                     menu={{
                       items: menuItems,
-                      onClick: (e) => handleMenuClick(e, cat), // pass cat explicitly
+                      onClick: (e) => handleMenuClick(e, cat),
                     }}
                     trigger={["click"]}
                     placement="bottomRight"

@@ -146,7 +146,7 @@ export default function Roles() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border p-1">
+      <div className="bg-white rounded-xl p-4">
         <Table
           dataSource={roles}
           columns={columns}
