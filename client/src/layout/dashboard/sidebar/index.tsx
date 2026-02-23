@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { NavIconbar } from "../side-nav-icon-bar";
 import { useLocation } from "react-router-dom";
 import { TSidebarProps } from "@/interface/menu-and-common";
@@ -6,6 +6,8 @@ import { adminMenuItems } from "@/data";
 import NavItem from "@/layout/dashboard/nav-item";
 import logoFull from "@/assets/logo/logo-full.svg";
 import logoIcon from "@/assets/logo/logo-icon.svg";
+import { useUser } from "@/context-api";
+import { filterMenuByPermissions } from "@/utils/menu-filter";
 
 export default function Sidebar({
   navOpened,
@@ -15,6 +17,12 @@ export default function Sidebar({
 }: TSidebarProps) {
   const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
   const location = useLocation();
+  const { user } = useUser();
+
+  const filteredMenuItems = useMemo(
+    () => filterMenuByPermissions(adminMenuItems, user),
+    [user]
+  );
 
   const handleSubmenuToggle = (label: string) =>
     setOpenSubmenu((prev) => (prev === label ? null : label));
@@ -85,7 +93,7 @@ export default function Sidebar({
             </div>
 
             <nav className="lg:pt-6 lg:pb-0 pb-4 pt-20">
-              {adminMenuItems.map((block, blockIndex) => {
+              {filteredMenuItems.map((block, blockIndex) => {
                 const menus = Array.isArray(block.menu)
                   ? block.menu
                   : [block.menu];
@@ -108,7 +116,7 @@ export default function Sidebar({
                         setIsCollapsed={setIsCollapsed}
                         showBorder={
                           menuIndex === menus.length - 1 &&
-                          blockIndex !== adminMenuItems.length - 1
+                          blockIndex !== filteredMenuItems.length - 1
                         }
                       />
                     ))}
@@ -128,7 +136,7 @@ export default function Sidebar({
               className={`z-40 h-full flex-1 sidebar lg:pt-6  
                                          ${navOpened && "max-h-screen h-full"}
                                          `}
-              iconLinks={adminMenuItems.flatMap((block) => block.menu)}
+              iconLinks={filteredMenuItems.flatMap((block) => block.menu)}
               currentPath={location.pathname}
             />
           </div>

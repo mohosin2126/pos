@@ -21,6 +21,7 @@ import ToolbarButton from "@/components/re-useable/toolbar-button";
 import type { TableProps } from "antd";
 import type { TUserPayload, TUseUsersResult } from "@/interface/common";
 import { useDeleteUser, useUsers } from "@/hooks/admin/user";
+import { useRoleOptions } from "@/hooks/admin/role";
 import { RiResetLeftFill } from "react-icons/ri";
 import Loader from "@/components/re-useable/loader";
 
@@ -30,14 +31,13 @@ export default function AllUsers() {
   const [filterStatus, setFilterStatus] = useState<
     "all" | "active" | "inactive"
   >("all");
-  const [filterRole, setFilterRole] = useState<
-    "all" | "admin" | "user" | "moderator"
-  >("all");
+  const [filterRole, setFilterRole] = useState<string>("all");
   const [filterBlood, setFilterBlood] = useState<
     "all" | "A+" | "A-" | "B+" | "B-" | "AB+" | "AB-" | "O+" | "O-"
   >("all");
 
   const { deleteItem } = useDeleteUser();
+  const { options: roleOptions } = useRoleOptions();
 
   const handleDelete = (record: any) => {
     const fullName = `${record?.firstName ?? ""} ${
@@ -112,13 +112,16 @@ export default function AllUsers() {
     },
     {
       title: "Role",
-      dataIndex: "role",
+      dataIndex: "roleData",
       key: "role",
-      render: (role: string) => (
-        <Tag color={role === "admin" ? "purple" : "blue"}>
-          {role.toUpperCase()}
-        </Tag>
-      ),
+      render: (_: any, record: TUserPayload) => {
+        const roleName = record.roleData?.name || "N/A";
+        return (
+          <Tag color={roleName === "admin" ? "purple" : "blue"}>
+            {roleName.toUpperCase()}
+          </Tag>
+        );
+      },
     },
     {
       title: "Status",
@@ -165,7 +168,7 @@ export default function AllUsers() {
         ? user.isActive
         : !user.isActive;
 
-    const matchesRole = filterRole === "all" ? true : user.role === filterRole;
+    const matchesRole = filterRole === "all" ? true : user.roleData?.name === filterRole;
 
     const matchesBlood =
       filterBlood === "all" ? true : user.bloodGroup === filterBlood;
@@ -228,9 +231,11 @@ export default function AllUsers() {
               className="md:!w-40 w-full "
             >
               <Option value="all">All Role</Option>
-              <Option value="admin">Admin</Option>
-              <Option value="manager">Manager</Option>
-              <Option value="user">User</Option>
+              {roleOptions.map((opt) => (
+                <Option key={opt.value} value={opt.label.toLowerCase()}>
+                  {opt.label}
+                </Option>
+              ))}
             </Select>
 
             <Select

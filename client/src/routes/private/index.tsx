@@ -12,6 +12,7 @@ function FullscreenSpinner() {
   );
 }
 
+
 export default function AdminGuard() {
   const token = useMemo(() => Cookies.get("token") || "", []);
   const location = useLocation();
@@ -30,7 +31,11 @@ export default function AdminGuard() {
       }
       try {
         if (user) {
-          setAuthorized(user.role === "admin");
+        
+          const isAuthorized =
+            user.role === "admin" ||
+            (Array.isArray(user.permissions) && user.permissions.length > 0);
+          setAuthorized(isAuthorized);
           return;
         }
         const res = await useApi.get("/v1/auth/profile", {
@@ -41,7 +46,11 @@ export default function AdminGuard() {
         if (!ok || !profile) throw new Error("Failed to fetch profile");
         if (!cancelled) {
           setUser(profile);
-          setAuthorized(profile.role === "admin");
+          const isAuthorized =
+            profile.role === "admin" ||
+            (Array.isArray(profile.permissions) &&
+              profile.permissions.length > 0);
+          setAuthorized(isAuthorized);
         }
       } catch {
         Cookies.remove("token");

@@ -5,6 +5,7 @@ import dayjs from "dayjs";
 import { useNavigate, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useCreateUser, useUpdateUser, useUser } from "@/hooks/admin/user";
+import { useRoleOptions } from "@/hooks/admin/role";
 import {
   CustomCheckbox,
   CustomDate,
@@ -23,6 +24,7 @@ export default function UserForm() {
   const { createUser } = useCreateUser();
   const { updateUser } = useUpdateUser();
   const { user } = useUser(id);
+  const { options: roleOptions } = useRoleOptions();
 
   const [loading, setLoading] = useState(false);
 
@@ -81,11 +83,11 @@ export default function UserForm() {
         initialValues={
           isUpdate
             ? {
-                // ...defaultUserData,
+              
                 ...user,
                 dateOfBirth: user?.dateOfBirth ? dayjs(user.dateOfBirth) : null,
               }
-            : {} // create mode -> empty
+            : {} 
         }
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4">
@@ -174,14 +176,10 @@ export default function UserForm() {
           />
           <CustomSelect
             label="Role"
-            name="role"
+            name="roleId"
             mode="single"
             placeholder="Select Role"
-            options={[
-              { label: "Admin", value: "admin" },
-              { label: "User", value: "user" },
-              { label: "Supplier", value: "supplier" },
-            ]}
+            options={roleOptions}
             rules={[{ required: true, message: "Role is required" }]}
           />
           <CustomSelect

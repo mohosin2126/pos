@@ -6,6 +6,7 @@ export type TMenuItem = {
   href?: string;
   submenu?: TMenuItem[];
   title?: string;
+  permission?: string | string[];
 };
 
 export type TMenuBlock = {

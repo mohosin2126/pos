@@ -12,7 +12,7 @@ export interface TUseOptionResult<T extends TOption> {
   refetch: () => Promise<void>;
 }
 
-// for user management
+
 
 // Payload for creating/updating a user
 export interface TUserPayload {
@@ -25,6 +25,13 @@ export interface TUserPayload {
   username: string;
   password?: string;
   role: string;
+  roleId: number;
+  permissions: string[];
+  roleData?: {
+    id: number;
+    name: string;
+    permissions?: string[];
+  };
   dateOfBirth?: string;
   gender?: string;
   maritalStatus?: string;

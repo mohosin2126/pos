@@ -23,6 +23,9 @@ import { AiOutlineProduct } from "react-icons/ai";
 import type { TMenuBlock } from "@/interface/menu-and-common";
 import type { TPOSOrderPayload, TNotifications } from "@/interface/common";
 import { IoIosInformationCircleOutline } from "react-icons/io";
+import { PERMISSIONS } from "@/data/permissions";
+
+const P = PERMISSIONS;
 
 export const adminMenuItems: TMenuBlock[] = [
     {
@@ -37,16 +40,19 @@ export const adminMenuItems: TMenuBlock[] = [
                 label: "Dashboard",
                 icon: FiGrid,
                 href: "/admin/dashboard",
+                permission: P.VIEW_DASHBOARD,
             },
             {
                 label: "User Managment",
                 icon: FiUsers,
                 href: "/admin/user/all",
+                permission: P.VIEW_USERS,
             },
             {
                 label: "Roles",
                 icon: FiUserCheck,
                 href: "/admin/access/roles",
+                permission: P.VIEW_ROLES,
             },
         ],
     },
@@ -94,52 +100,62 @@ export const adminMenuItems: TMenuBlock[] = [
                 label: "Category",
                 icon: FiBarChart2,
                 href: "/admin/category/all",
+                permission: P.VIEW_CATEGORIES,
             },
             {
                 label: "Supplier",
                 icon: FiTruck,
+                permission: P.VIEW_SUPPLIERS,
                 submenu: [
                     {
                         label: "All Supplier",
                         icon: FiUsers,
                         href: "/admin/supplier/all",
+                        permission: P.VIEW_SUPPLIERS,
                     },
                     {
                         label: "Create Supplier",
                         icon: FiEdit,
                         href: "/admin/supplier/create",
+                        permission: P.CREATE_SUPPLIERS,
                     },
                 ],
             },
             {
                 label: "Product",
                 icon: FiBox,
+                permission: P.VIEW_PRODUCTS,
                 submenu: [
                     {
                         label: "All Products",
                         icon: FiFileText,
                         href: "/admin/product/all",
+                        permission: P.VIEW_PRODUCTS,
                     },
                     {
                         label: "Add Product",
                         icon: FiEdit,
                         href: "/admin/product/create",
+                        permission: P.CREATE_PRODUCTS,
                     },
                 ],
             },
             {
                 label: "Stock",
                 icon: FiActivity,
+                permission: P.VIEW_STOCK,
                 submenu: [
                     {
                         label: "Low Stock",
                         icon: FiUsers,
                         href: "/admin/activity-products/low-stock",
+                        permission: P.VIEW_STOCK,
                     },
                     {
                         label: "Out of Stock",
                         icon: MdOutlineDirectionsOff,
                         href: "/admin/activity-products/out-of-stock",
+                        permission: P.VIEW_STOCK,
                     },
                 ],
             },
@@ -147,11 +163,13 @@ export const adminMenuItems: TMenuBlock[] = [
                 label: "Expired Products",
                 icon: IoIosInformationCircleOutline,
                 href: "/admin/activity-products/expired-products",
+                permission: P.VIEW_STOCK,
             },
             {
                 label: "Sellable Products",
                 icon: AiOutlineProduct,
                 href: "/admin/activity-products/sellable-products",
+                permission: P.VIEW_STOCK,
             },
         ],
     },
@@ -162,16 +180,19 @@ export const adminMenuItems: TMenuBlock[] = [
                 label: "purchase",
                 icon: FiShoppingCart,
                 href: "/admin/purchase/all",
+                permission: P.VIEW_PURCHASES,
             },
             {
                 label: "Purchase Order",
                 icon: FiClipboard,
                 href: "/admin/purchase-order",
+                permission: P.VIEW_PURCHASES,
             },
             {
                 label: "Purchase Return",
                 icon: FiRotateCcw,
                 href: "/admin/purchase-return",
+                permission: P.VIEW_PURCHASE_RETURNS,
             },
         ],
     },
@@ -182,11 +203,13 @@ export const adminMenuItems: TMenuBlock[] = [
                 label: "Sales Records",
                 icon: FaDolly,
                 href: "/admin/sales/all",
+                permission: P.VIEW_SALES,
             },
             {
                 label: "POS (Point of Sale)",
                 icon: MdOutlineLaptopChromebook,
                 href: "/admin/pos/create",
+                permission: P.CREATE_POS,
             },
         ],
     },
@@ -197,11 +220,13 @@ export const adminMenuItems: TMenuBlock[] = [
                 label: "Customers",
                 icon: FiUsers,
                 href: "/admin/customer/all",
+                permission: P.VIEW_CUSTOMERS,
             },
             {
                 label: "Invoice",
                 icon: MdLineAxis,
                 href: "/admin/invoice/all",
+                permission: P.VIEW_INVOICES,
             },
         ],
     },

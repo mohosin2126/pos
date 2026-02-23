@@ -49,8 +49,8 @@ export default function ViewUser() {
               </h2>
               <p className=" !m-0">john.doe@example.com</p>
               <div className="mt-1">
-                <Tag color={user?.role === "admin" ? "gold" : "blue"}>
-                  {user?.role.toUpperCase()}
+                <Tag color={user?.roleData?.name === "admin" ? "gold" : "blue"}>
+                  {(user?.roleData?.name || "N/A").toUpperCase()}
                 </Tag>
                 <Tag color={user?.isActive ? "green" : "red"}>
                   {user?.isActive ? "ACTIVE" : "INACTIVE"}

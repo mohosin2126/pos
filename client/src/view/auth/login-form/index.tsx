@@ -51,11 +51,7 @@ export default function LoginForm() {
             Cookies.set("user", JSON.stringify(userData), { expires: 7 });
             setUser(userData);
 
-            if (userData.role === "admin") {
-                navigate("/admin");
-            } else {
-                navigate("/");
-            }
+            navigate("/admin");
         } catch (error: any) {
             message.error(
                 error?.response?.data?.message || error?.message || "Login failed"

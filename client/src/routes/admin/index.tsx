@@ -33,6 +33,10 @@ import Unauthorized from "@/components/unauthorized";
 import AdminGuard from "@/routes/private";
 import ViewInvoice from "@/view/admin/invoices/view";
 import ViewProfile from "@/view/admin/settings/view-profile";
+import PermissionGuard from "@/routes/private/permission-guard";
+import { PERMISSIONS } from "@/data/permissions";
+
+const P = PERMISSIONS;
 
 const adminRoutes = [
   { path: "/unauthorized", element: <Unauthorized /> },
@@ -43,107 +47,368 @@ const adminRoutes = [
       {
         element: <Layout />,
         children: [
-          { index: true, element: <Dashboard /> },
-          { path: "dashboard", element: <Dashboard /> },
+          {
+            index: true,
+            element: (
+              <PermissionGuard requires={[P.VIEW_DASHBOARD]}>
+                <Dashboard />
+              </PermissionGuard>
+            ),
+          },
+          {
+            path: "dashboard",
+            element: (
+              <PermissionGuard requires={[P.VIEW_DASHBOARD]}>
+                <Dashboard />
+              </PermissionGuard>
+            ),
+          },
           {
             path: "settings",
             children: [
-              { path: "view-profile", element: <ViewProfile /> },
+              {
+                path: "view-profile",
+                element: (
+                  <PermissionGuard requires={[P.EDIT_PROFILE]}>
+                    <ViewProfile />
+                  </PermissionGuard>
+                ),
+              },
               {
                 path: "update-profile",
-                element: <div>Update Profile Page</div>,
+                element: (
+                  <PermissionGuard requires={[P.EDIT_PROFILE]}>
+                    <div>Update Profile Page</div>
+                  </PermissionGuard>
+                ),
               },
               {
                 path: "change-password",
-                element: <div>Change Password Page</div>,
+                element: (
+                  <PermissionGuard requires={[P.EDIT_PROFILE]}>
+                    <div>Change Password Page</div>
+                  </PermissionGuard>
+                ),
               },
             ],
           },
           {
             path: "access",
             children: [
-              { path: "roles", element: <Roles /> },
+              {
+                path: "roles",
+                element: (
+                  <PermissionGuard requires={[P.VIEW_ROLES]}>
+                    <Roles />
+                  </PermissionGuard>
+                ),
+              },
               {
                 path: "roles-and-permissions",
-                element: <RolesAndPermissions />,
+                element: (
+                  <PermissionGuard requires={[P.VIEW_ROLES]}>
+                    <RolesAndPermissions />
+                  </PermissionGuard>
+                ),
               },
             ],
           },
           {
             path: "user",
             children: [
-              { path: "all", element: <AllUsers /> },
-              { path: "add", element: <UserForm /> },
-              { path: "update/:id", element: <UserForm /> },
-              { path: "view/:id", element: <ViewUser /> },
+              {
+                path: "all",
+                element: (
+                  <PermissionGuard requires={[P.VIEW_USERS]}>
+                    <AllUsers />
+                  </PermissionGuard>
+                ),
+              },
+              {
+                path: "add",
+                element: (
+                  <PermissionGuard requires={[P.CREATE_USERS]}>
+                    <UserForm />
+                  </PermissionGuard>
+                ),
+              },
+              {
+                path: "update/:id",
+                element: (
+                  <PermissionGuard requires={[P.EDIT_USERS]}>
+                    <UserForm />
+                  </PermissionGuard>
+                ),
+              },
+              {
+                path: "view/:id",
+                element: (
+                  <PermissionGuard requires={[P.VIEW_USERS]}>
+                    <ViewUser />
+                  </PermissionGuard>
+                ),
+              },
             ],
           },
           {
             path: "supplier",
             children: [
-              { path: "all", element: <AllSupplier /> },
-              { path: "create", element: <SupplierForm /> },
-              { path: "update/:id", element: <SupplierForm /> },
-              { path: "view/:id", element: <SupplierDetails /> },
+              {
+                path: "all",
+                element: (
+                  <PermissionGuard requires={[P.VIEW_SUPPLIERS]}>
+                    <AllSupplier />
+                  </PermissionGuard>
+                ),
+              },
+              {
+                path: "create",
+                element: (
+                  <PermissionGuard requires={[P.CREATE_SUPPLIERS]}>
+                    <SupplierForm />
+                  </PermissionGuard>
+                ),
+              },
+              {
+                path: "update/:id",
+                element: (
+                  <PermissionGuard requires={[P.EDIT_SUPPLIERS]}>
+                    <SupplierForm />
+                  </PermissionGuard>
+                ),
+              },
+              {
+                path: "view/:id",
+                element: (
+                  <PermissionGuard requires={[P.VIEW_SUPPLIERS]}>
+                    <SupplierDetails />
+                  </PermissionGuard>
+                ),
+              },
             ],
           },
           {
             path: "product",
             children: [
-              { path: "all", element: <AllProducts /> },
-              { path: "create", element: <ProductForm /> },
-              { path: "update/:id", element: <ProductForm /> },
-              { path: "view/:id", element: <ProductDetails /> },
+              {
+                path: "all",
+                element: (
+                  <PermissionGuard requires={[P.VIEW_PRODUCTS]}>
+                    <AllProducts />
+                  </PermissionGuard>
+                ),
+              },
+              {
+                path: "create",
+                element: (
+                  <PermissionGuard requires={[P.CREATE_PRODUCTS]}>
+                    <ProductForm />
+                  </PermissionGuard>
+                ),
+              },
+              {
+                path: "update/:id",
+                element: (
+                  <PermissionGuard requires={[P.EDIT_PRODUCTS]}>
+                    <ProductForm />
+                  </PermissionGuard>
+                ),
+              },
+              {
+                path: "view/:id",
+                element: (
+                  <PermissionGuard requires={[P.VIEW_PRODUCTS]}>
+                    <ProductDetails />
+                  </PermissionGuard>
+                ),
+              },
             ],
           },
           {
             path: "category",
-            children: [{ path: "all", element: <CategoriesAll /> }],
+            children: [
+              {
+                path: "all",
+                element: (
+                  <PermissionGuard requires={[P.VIEW_CATEGORIES]}>
+                    <CategoriesAll />
+                  </PermissionGuard>
+                ),
+              },
+            ],
           },
           {
             path: "purchase",
             children: [
-              { path: "all", element: <Purchases /> },
-              { path: "add", element: <PurchaseForm /> },
-              { path: "update/:id", element: <PurchaseForm /> },
-              { path: "view/:id", element: <PurchaseDetails /> },
+              {
+                path: "all",
+                element: (
+                  <PermissionGuard requires={[P.VIEW_PURCHASES]}>
+                    <Purchases />
+                  </PermissionGuard>
+                ),
+              },
+              {
+                path: "add",
+                element: (
+                  <PermissionGuard requires={[P.CREATE_PURCHASES]}>
+                    <PurchaseForm />
+                  </PermissionGuard>
+                ),
+              },
+              {
+                path: "update/:id",
+                element: (
+                  <PermissionGuard requires={[P.EDIT_PURCHASES]}>
+                    <PurchaseForm />
+                  </PermissionGuard>
+                ),
+              },
+              {
+                path: "view/:id",
+                element: (
+                  <PermissionGuard requires={[P.VIEW_PURCHASES]}>
+                    <PurchaseDetails />
+                  </PermissionGuard>
+                ),
+              },
             ],
           },
-          { path: "purchase-order", element: <PurchaseOrder /> },
-          { path: "purchase-return", element: <PurchaseReturn /> },
+          {
+            path: "purchase-order",
+            element: (
+              <PermissionGuard requires={[P.VIEW_PURCHASES]}>
+                <PurchaseOrder />
+              </PermissionGuard>
+            ),
+          },
+          {
+            path: "purchase-return",
+            element: (
+              <PermissionGuard requires={[P.VIEW_PURCHASE_RETURNS]}>
+                <PurchaseReturn />
+              </PermissionGuard>
+            ),
+          },
           {
             path: "pos",
             children: [
-              { path: "create", element: <AllPos /> },
-              { path: "view/:id", element: <POSDetails /> },
+              {
+                path: "create",
+                element: (
+                  <PermissionGuard requires={[P.CREATE_POS]}>
+                    <AllPos />
+                  </PermissionGuard>
+                ),
+              },
+              {
+                path: "view/:id",
+                element: (
+                  <PermissionGuard requires={[P.VIEW_POS]}>
+                    <POSDetails />
+                  </PermissionGuard>
+                ),
+              },
             ],
           },
           {
             path: "sales",
             children: [
-              { path: "all", element: <SalesRecords /> },
-              { path: "view/:id", element: <SalesDetails /> },
+              {
+                path: "all",
+                element: (
+                  <PermissionGuard requires={[P.VIEW_SALES]}>
+                    <SalesRecords />
+                  </PermissionGuard>
+                ),
+              },
+              {
+                path: "view/:id",
+                element: (
+                  <PermissionGuard requires={[P.VIEW_SALES]}>
+                    <SalesDetails />
+                  </PermissionGuard>
+                ),
+              },
             ],
           },
           {
             path: "activity-products",
             children: [
-              { path: "low-stock", element: <LowStock /> },
-              { path: "out-of-stock", element: <OutOfStock /> },
-              { path: "expired-products", element: <ExpiredProducts /> },
-              { path: "sellable-products", element: <SellableProducts /> },
+              {
+                path: "low-stock",
+                element: (
+                  <PermissionGuard requires={[P.VIEW_STOCK]}>
+                    <LowStock />
+                  </PermissionGuard>
+                ),
+              },
+              {
+                path: "out-of-stock",
+                element: (
+                  <PermissionGuard requires={[P.VIEW_STOCK]}>
+                    <OutOfStock />
+                  </PermissionGuard>
+                ),
+              },
+              {
+                path: "expired-products",
+                element: (
+                  <PermissionGuard requires={[P.VIEW_STOCK]}>
+                    <ExpiredProducts />
+                  </PermissionGuard>
+                ),
+              },
+              {
+                path: "sellable-products",
+                element: (
+                  <PermissionGuard requires={[P.VIEW_STOCK]}>
+                    <SellableProducts />
+                  </PermissionGuard>
+                ),
+              },
             ],
           },
-          { path: "stock", element: <Stock /> },
+          {
+            path: "stock",
+            element: (
+              <PermissionGuard requires={[P.VIEW_STOCK]}>
+                <Stock />
+              </PermissionGuard>
+            ),
+          },
           {
             path: "customer",
-            children: [{ path: "all", element: <AllCustomer /> }],
+            children: [
+              {
+                path: "all",
+                element: (
+                  <PermissionGuard requires={[P.VIEW_CUSTOMERS]}>
+                    <AllCustomer />
+                  </PermissionGuard>
+                ),
+              },
+            ],
           },
           {
             path: "invoice",
             children: [
-              { path: "all", element: <AllInvoice /> },
-              { path: "view/:id", element: <ViewInvoice /> },
+              {
+                path: "all",
+                element: (
+                  <PermissionGuard requires={[P.VIEW_INVOICES]}>
+                    <AllInvoice />
+                  </PermissionGuard>
+                ),
+              },
+              {
+                path: "view/:id",
+                element: (
+                  <PermissionGuard requires={[P.VIEW_INVOICES]}>
+                    <ViewInvoice />
+                  </PermissionGuard>
+                ),
+              },
             ],
           },
         ],
