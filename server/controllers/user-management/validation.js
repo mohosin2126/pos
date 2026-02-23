@@ -8,7 +8,7 @@ const createUserValidation = Joi.object({
     allowLogin: Joi.boolean().default(false),
     username: Joi.string().trim().min(3).max(50),
     password: Joi.string().min(6).max(255).required(),
-    role: Joi.string().trim().min(2).max(50).required(),
+    roleId: Joi.number().integer().positive().required(),
 
     dateOfBirth: Joi.date().iso().allow(null),
     gender: Joi.string().allow(null, ""),

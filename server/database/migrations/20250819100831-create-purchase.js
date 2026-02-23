@@ -16,18 +16,21 @@ module.exports = {
 
             referenceNo: { type: Sequelize.STRING(64), allowNull: true, unique: true },
             purchaseDate: { type: Sequelize.DATE, allowNull: false },
-            status: {
-                type: Sequelize.ENUM("draft", "ordered", "received", "partial", "cancelled"),
-                allowNull: false,
-                defaultValue: "ordered",
-            },
 
-            productId: {
-                type: Sequelize.INTEGER,
-                allowNull: true,
-                references: { model: "products", key: "id" },
-                onUpdate: "CASCADE",
-                onDelete: "RESTRICT",
+            status: {
+                type: Sequelize.ENUM(
+                    "draft",
+                    "po",
+                    "ordered",
+                    "purchase",
+                    "received",
+                    "partial",
+                    "partial_return",
+                    "full_return",
+                    "cancelled"
+                ),
+                allowNull: false,
+                defaultValue: "draft",
             },
 
             payTermValue: { type: Sequelize.INTEGER, allowNull: true },
@@ -61,7 +64,6 @@ module.exports = {
         });
 
         await queryInterface.addIndex("purchases", ["supplierId"]);
-        await queryInterface.addIndex("purchases", ["productId"]);
         await queryInterface.addIndex("purchases", ["status"]);
         await queryInterface.addIndex("purchases", ["purchaseDate"]);
         await queryInterface.addIndex("purchases", ["expiryDate"]);
@@ -71,7 +73,6 @@ module.exports = {
         await queryInterface.removeIndex("purchases", ["expiryDate"]);
         await queryInterface.removeIndex("purchases", ["purchaseDate"]);
         await queryInterface.removeIndex("purchases", ["status"]);
-        await queryInterface.removeIndex("purchases", ["productId"]);
         await queryInterface.removeIndex("purchases", ["supplierId"]);
         await queryInterface.dropTable("purchases");
 

@@ -2,7 +2,7 @@
 
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
-const { User } = require("../../database/models");
+const { User, Role } = require("../../database/models");
 
 const {
 
@@ -33,9 +33,15 @@ const login = async (req, res) => {
             ]);
         }
 
-        let user = await User.findOne({ where: { email: email } });
+        let user = await User.findOne({
+            where: { email: email },
+            include: [{ model: Role, as: "roleData", attributes: ["id", "name", "permissions"] }],
+        });
         if (!user) {
-            user = await User.findOne({ where: { username: email } });
+            user = await User.findOne({
+                where: { username: email },
+                include: [{ model: Role, as: "roleData", attributes: ["id", "name", "permissions"] }],
+            });
         }
         if (!user) {
             return unauthorized(res, "Invalid credentials");
@@ -53,10 +59,14 @@ const login = async (req, res) => {
             return unauthorized(res, "Invalid credentials");
         }
 
+        const roleName = user.roleData?.name || "unknown";
+        const permissions = user.roleData?.permissions || [];
+
         const token = jwt.sign(
             {
                 id: user.id,
-                role: user.role,
+                role: roleName,
+                permissions: permissions,
                 email: user.email,
                 username: user.username,
             },
@@ -78,10 +88,16 @@ const getProfile = async (req, res) => {
 
         const user = await User.findByPk(userId, {
             attributes: { exclude: ["password"] },
+            include: [{ model: Role, as: "roleData", attributes: ["id", "name", "permissions"] }],
         });
         if (!user) return notFound(res, "User not found.");
 
-        return success(res, "Profile fetched successfully", user);
+        const userData = user.toJSON();
+        userData.role = userData.roleData?.name || "unknown";
+        userData.permissions = userData.roleData?.permissions || [];
+        delete userData.roleData;
+
+        return success(res, "Profile fetched successfully", userData);
     } catch (err) {
         return serverError(res, "Failed to fetch profile.", err);
     }

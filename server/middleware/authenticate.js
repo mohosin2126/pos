@@ -21,6 +21,7 @@ module.exports = function requireAuth(req, res, next) {
         req.user = {
             id: payload.id,
             role: payload.role,
+            permissions: payload.permissions || [],
             email: payload.email,
             username: payload.username,
         };

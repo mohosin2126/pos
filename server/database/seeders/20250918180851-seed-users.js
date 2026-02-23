@@ -8,6 +8,24 @@ module.exports = {
         const PASSWORD = '12345678';
         const hash = bcrypt.hashSync(PASSWORD, 10);
 
+     
+        const [adminRole] = await queryInterface.sequelize.query(
+            `SELECT id FROM roles WHERE name = 'admin'`,
+            { type: queryInterface.sequelize.constructor.QueryTypes.SELECT }
+        );
+        const [managerRole] = await queryInterface.sequelize.query(
+            `SELECT id FROM roles WHERE name = 'manager'`,
+            { type: queryInterface.sequelize.constructor.QueryTypes.SELECT }
+        );
+        const [employeeRole] = await queryInterface.sequelize.query(
+            `SELECT id FROM roles WHERE name = 'employee'`,
+            { type: queryInterface.sequelize.constructor.QueryTypes.SELECT }
+        );
+
+        if (!adminRole || !managerRole || !employeeRole) {
+            throw new Error('Roles must be seeded before users. Run role seeder first.');
+        }
+
         await queryInterface.bulkInsert('users', [
             {
                 firstName: 'Admin',
@@ -17,7 +35,7 @@ module.exports = {
                 allowLogin: true,
                 username: 'admin',
                 password: hash,
-                role: 'admin',
+                roleId: adminRole.id,
 
                 dateOfBirth: '1988-03-15',
                 gender: 'Other',
@@ -48,7 +66,7 @@ module.exports = {
                 allowLogin: true,
                 username: 'jane.manager',
                 password: hash,
-                role: 'manager',
+                roleId: managerRole.id,
 
                 dateOfBirth: '1990-07-22',
                 gender: 'Female',
@@ -78,8 +96,8 @@ module.exports = {
                 isActive: false,
                 allowLogin: false,
                 username: 'john.employee',
-                password: hash,               // 12345678 (hashed)
-                role: 'employee',
+                password: hash,               
+                roleId: employeeRole.id,
 
                 dateOfBirth: '1995-11-05',
                 gender: 'Male',

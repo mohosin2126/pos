@@ -15,6 +15,9 @@ const createPurchaseOrderValidation = Joi.object({
     referenceNo: Joi.string().max(64).allow(null, ""),
     purchaseDate: Joi.date().iso().required(),
     items: Joi.array().items(purchaseItemSchema).min(1).required(),
+    totalItems: Joi.forbidden().messages({
+        'any.unknown': '"totalItems" is calculated server-side and should not be included in the request'
+    }),
 
     payTermValue: Joi.number().integer().min(0).allow(null),
     payTermUnit: Joi.string().valid("days", "months").allow(null),
@@ -35,6 +38,10 @@ const createPurchaseOrderValidation = Joi.object({
 
     warrantyValue: Joi.number().integer().min(0).allow(null),
     warrantyUnit: Joi.string().valid("months", "years").allow(null),
+}).external(async (value) => {
+    if (value.discountType === "none" && value.discountAmount && value.discountAmount !== 0) {
+        throw new Error("Discount amount must be 0 when discount type is 'none'");
+    }
 });
 
 const updatePurchaseValidation = Joi.object({
@@ -44,6 +51,9 @@ const updatePurchaseValidation = Joi.object({
     purchaseDate: Joi.date().iso(),
     status: Joi.string().valid("draft", "po", "ordered", "purchase", "received", "partial", "partial_return", "full_return", "cancelled"),
     items: Joi.array().items(purchaseItemSchema).min(1),
+    totalItems: Joi.forbidden().messages({
+        'any.unknown': '"totalItems" is calculated server-side and should not be included in the request'
+    }),
 
     payTermValue: Joi.number().integer().min(0).allow(null),
     payTermUnit: Joi.string().valid("days", "months").allow(null),
@@ -64,6 +74,10 @@ const updatePurchaseValidation = Joi.object({
 
     warrantyValue: Joi.number().integer().min(0).allow(null),
     warrantyUnit: Joi.string().valid("months", "years").allow(null),
+}).external(async (value) => {
+    if (value.discountType === "none" && value.discountAmount && value.discountAmount !== 0) {
+        throw new Error("Discount amount must be 0 when discount type is 'none'");
+    }
 });
 
 const createPurchaseReturnValidation = Joi.object({

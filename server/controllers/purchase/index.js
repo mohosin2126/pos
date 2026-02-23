@@ -18,8 +18,12 @@ const {
 
 const create = async (req, res) => {
     try {
-        const { error, value } = createPurchaseOrderValidation.validate(req.body);
-        if (error) return badRequest(res, error.details[0].message);
+        let value;
+        try {
+            value = await createPurchaseOrderValidation.validateAsync(req.body);
+        } catch (error) {
+            return badRequest(res, error.message);
+        }
 
         const { items, supplierId } = value;
 
@@ -51,9 +55,12 @@ const create = async (req, res) => {
             });
         }
 
+    
+        const discountAmount = value.discountType === "none" ? 0 : (value.discountAmount || 0);
+
         const orderCalc = calculateOrderTotal(
             calculatedItems,
-            { type: value.discountType || "none", amount: value.discountAmount || 0 },
+            { type: value.discountType || "none", amount: discountAmount },
             value.orderTaxPercent || 0,
             value.shippingCharge || 0
         );
@@ -88,7 +95,6 @@ const create = async (req, res) => {
                     shippingDetails: value.shippingDetails,
                     warrantyValue: value.warrantyValue,
                     warrantyUnit: value.warrantyUnit,
-                    productId: null,
                 },
                 { transaction: t }
             );
@@ -118,6 +124,7 @@ const create = async (req, res) => {
 
         return created(res, "Purchase Order created successfully", purchase);
     } catch (error) {
+        console.error("Error in create purchase:", error);
         return serverError(res, "Error creating purchase order", error);
     }
 };
@@ -128,7 +135,6 @@ const getAll = async (req, res) => {
         const { rows, count } = await Purchase.findAndCountAll({
             include: [
                 { model: Supplier, as: "supplier", attributes: ["id", "name", "contactEmail"] },
-                { model: Product, as: "product" },
                 { model: PurchaseItem, as: "items", include: { model: Product, as: "product" } },
             ],
             order: [["createdAt", "DESC"]],
@@ -145,7 +151,6 @@ const getOne = async (req, res) => {
         const purchase = await Purchase.findByPk(req.params.id, {
             include: [
                 { model: Supplier, as: "supplier", attributes: ["id", "name", "contactEmail", "contactPhone"] },
-                { model: Product, as: "product" },
                 { model: PurchaseItem, as: "items", include: { model: Product, as: "product" } },
                 { model: PurchaseReturn, as: "returns" },
             ],
@@ -167,8 +172,12 @@ const update = async (req, res) => {
             return badRequest(res, "Can only update purchases in draft or po status");
         }
 
-        const { error, value } = updatePurchaseValidation.validate(req.body);
-        if (error) return badRequest(res, error.details[0].message);
+        let value;
+        try {
+            value = await updatePurchaseValidation.validateAsync(req.body);
+        } catch (error) {
+            return badRequest(res, error.message);
+        }
 
         let calculatedItems = value.items;
         if (value.items && value.items.length > 0) {
@@ -195,9 +204,12 @@ const update = async (req, res) => {
 
         let orderCalc = null;
         if (calculatedItems && calculatedItems.length > 0) {
+            const discountType = value.discountType ?? purchase.discountType ?? "none";
+            const discountAmount = discountType === "none" ? 0 : (value.discountAmount ?? purchase.discountAmount ?? 0);
+            
             orderCalc = calculateOrderTotal(
                 calculatedItems,
-                { type: value.discountType ?? purchase.discountType ?? "none", amount: value.discountAmount ?? purchase.discountAmount ?? 0 },
+                { type: discountType, amount: discountAmount },
                 value.orderTaxPercent ?? purchase.orderTaxPercent ?? 0,
                 value.shippingCharge ?? purchase.shippingCharge ?? 0
             );
@@ -217,7 +229,7 @@ const update = async (req, res) => {
                 payTermValue: value.payTermValue ?? purchase.payTermValue,
                 payTermUnit: value.payTermUnit ?? purchase.payTermUnit,
                 discountType: value.discountType ?? purchase.discountType,
-                discountAmount: value.discountAmount ?? purchase.discountAmount,
+                discountAmount: (value.discountType === "none" || (value.discountType ?? purchase.discountType) === "none") ? 0 : (value.discountAmount ?? purchase.discountAmount),
                 orderTaxPercent: value.orderTaxPercent ?? purchase.orderTaxPercent,
                 orderTaxAmount: value.orderTaxAmount ?? purchase.orderTaxAmount,
                 shippingCharge: value.shippingCharge ?? purchase.shippingCharge,

@@ -5,7 +5,6 @@ module.exports = (sequelize, DataTypes) => {
     class Purchase extends Model {
         static associate(models) {
             Purchase.belongsTo(models.Supplier, { foreignKey: "supplierId", as: "supplier" });
-            Purchase.belongsTo(models.Product,  { foreignKey: "productId",  as: "product"  });
             Purchase.hasMany(models.PurchaseItem, { foreignKey: "purchaseId", as: "items" });
             Purchase.hasMany(models.PurchaseReturn, { foreignKey: "purchaseId", as: "returns" });
         }
@@ -33,8 +32,6 @@ module.exports = (sequelize, DataTypes) => {
                 allowNull: false,
                 defaultValue: "draft",
             },
-
-            productId: { type: DataTypes.INTEGER, allowNull: true },
 
             payTermValue: { type: DataTypes.INTEGER, allowNull: true },
             payTermUnit: { type: DataTypes.ENUM("days", "months"), allowNull: true },

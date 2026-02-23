@@ -62,7 +62,8 @@ const calculateItemTotal = (item) => {
             }
         }
 
-        const taxable = base.minus(discount).max(0);
+        const afterDiscountCalc = base.minus(discount);
+        const taxable = afterDiscountCalc.lessThan(0) ? new Decimal(0) : afterDiscountCalc;
         const taxPercVal = new Decimal(taxPercent);
         if (taxPercVal.lessThan(0) || taxPercVal.greaterThan(100)) {
             return { isValid: false, error: "Tax percent must be between 0 and 100" };
@@ -110,7 +111,8 @@ const calculateOrderTotal = (items = [], orderDiscount = { type: "none", amount:
             }
         }
 
-        const afterDiscount = subtotal.minus(orderDiscountAmount).max(0);
+        const afterDiscountCalc = subtotal.minus(orderDiscountAmount);
+        const afterDiscount = afterDiscountCalc.lessThan(0) ? new Decimal(0) : afterDiscountCalc;
 
         const taxPercVal = new Decimal(orderTaxPercent);
         if (taxPercVal.lessThan(0) || taxPercVal.greaterThan(100)) {

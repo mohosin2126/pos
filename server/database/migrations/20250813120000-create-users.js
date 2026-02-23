@@ -12,7 +12,13 @@ module.exports = {
             allowLogin: {type: Sequelize.BOOLEAN, defaultValue: false},
             username: {type: Sequelize.STRING, unique: true},
             password: {type: Sequelize.STRING, allowNull: false},
-            role: {type: Sequelize.STRING, allowNull: false},
+            roleId: {
+                type: Sequelize.INTEGER,
+                allowNull: false,
+                references: {model: 'roles', key: 'id'},
+                onDelete: 'RESTRICT',
+                onUpdate: 'CASCADE'
+            },
 
             dateOfBirth: Sequelize.DATEONLY,
             gender: Sequelize.STRING,

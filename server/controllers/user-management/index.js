@@ -1,6 +1,6 @@
 "use strict";
 
-const { User } = require("../../database/models");
+const { User, Role } = require("../../database/models");
 const bcrypt = require("bcrypt");
 const { createUserValidation } = require("./validation");
 
@@ -31,6 +31,12 @@ const create = async (req, res) => {
             return unprocessable(res, "Validation failed.", error.details.map((d) => d.message));
         }
 
+       
+        const role = await Role.findByPk(value.roleId);
+        if (!role) {
+            return unprocessable(res, "Validation failed.", ["Invalid role. Role does not exist."]);
+        }
+
         if (value.password) value.password = await hashIfPresent(value.password);
 
         const user = await User.create(value);
@@ -55,6 +61,7 @@ const getAll = async (req, res) => {
             limit,
             offset,
             order: [["createdAt", "DESC"]],
+            include: [{ model: Role, as: "roleData", attributes: ["id", "name"] }],
         });
 
         return paginated(res, { rows, count }, { page, limit }, "Fetched successfully");
@@ -66,7 +73,9 @@ const getAll = async (req, res) => {
 const getOne = async (req, res) => {
     try {
         const { id } = req.params;
-        const user = await User.findByPk(id);
+        const user = await User.findByPk(id, {
+            include: [{ model: Role, as: "roleData", attributes: ["id", "name", "permissions"] }],
+        });
         if (!user) return notFound(res, "User not found.");
         return success(res, "Success", user);
     } catch (err) {
@@ -79,13 +88,23 @@ const update = async (req, res) => {
         const { id } = req.params;
         const data = { ...req.body };
 
+      
+        if (data.roleId) {
+            const role = await Role.findByPk(data.roleId);
+            if (!role) {
+                return unprocessable(res, "Validation failed.", ["Invalid role. Role does not exist."]);
+            }
+        }
+
         if (data.password) data.password = await hashIfPresent(data.password);
         else delete data.password;
 
         const [count] = await User.update(data, { where: { id } });
         if (!count) return notFound(res, "User not found.");
 
-        const updated = await User.findByPk(id);
+        const updated = await User.findByPk(id, {
+            include: [{ model: Role, as: "roleData", attributes: ["id", "name"] }],
+        });
         return success(res, "User updated successfully", updated);
     } catch (err) {
         if (err.name === "SequelizeUniqueConstraintError") {
