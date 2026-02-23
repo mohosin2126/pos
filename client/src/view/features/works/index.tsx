@@ -1,11 +1,8 @@
-import {
-  HiClipboardCheck,
-  HiCube,
-  HiShoppingCart,
-  HiCash,
-  HiOutlineCheckCircle,
-  HiOutlineArrowRight,
-} from "react-icons/hi";
+import productManagementImg from "@/assets/illustrations/product-management.svg";
+import reportsAnalyticsImg from "@/assets/illustrations/reports-analytics.svg";
+import inventoryTrackingImg from "@/assets/illustrations/inventory-tracking.svg";
+import paymentsBillingImg from "@/assets/illustrations/payments-billing.svg";
+import { HiOutlineCheckCircle, HiOutlineArrowRight } from "react-icons/hi";
 
 const HowItWorks = () => {
    const steps = [
@@ -14,7 +11,7 @@ const HowItWorks = () => {
       title: "Set up your catalog",
       description:
         "Add products, prices, and tax rules in minutes. Import from a spreadsheet, organize categories, and set variants like size or color. Build a clean catalog once, then reuse it across every register and location.",
-      icon: <HiCube />,
+      icon: productManagementImg,
       accentColor: "#69fec1",
     },
     {
@@ -22,7 +19,7 @@ const HowItWorks = () => {
       title: "Connect your store",
       description:
         "Link users, registers, and inventory locations. Assign roles and permissions, connect barcode scanners and printers, and configure receipts. Your team can sign in instantly and every device stays synced in real time.",
-      icon: <HiClipboardCheck />,
+      icon: reportsAnalyticsImg,
       accentColor: "#4fe7c4",
     },
     {
@@ -30,7 +27,7 @@ const HowItWorks = () => {
       title: "Start selling",
       description:
         "Scan items, apply discounts, and take payments fast. Support split tenders, refunds, and custom fees with a couple taps. The checkout flow stays smooth even during rush hours—so lines move and customers stay happy.",
-      icon: <HiShoppingCart />,
+      icon: inventoryTrackingImg,
       accentColor: "#7ff6d0",
     },
     {
@@ -38,7 +35,7 @@ const HowItWorks = () => {
       title: "Track results",
       description:
         "Monitor revenue, stock, and performance in real time. See best-sellers, low-stock alerts, and daily summaries across locations. Export reports for accounting and make confident decisions using live store insights.",
-      icon: <HiCash />,
+      icon: paymentsBillingImg,
       accentColor: "#46d4b5",
     },
   ];
@@ -96,8 +93,8 @@ const HowItWorks = () => {
                   <div className="absolute -left-10 top-6 flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-[#0b1321] text-xs font-semibold text-white transition-all duration-300 group-hover:border-[#7ff6d0] group-hover:shadow-lg group-hover:shadow-[#7ff6d0]/50">
                     0{step.id}
                   </div>
-                  <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-[#0b1321] transition-all duration-300 group-hover:border-[#7ff6d0] group-hover:shadow-md group-hover:shadow-[#7ff6d0]/30" style={{ color: step.accentColor }}>
-                    <span className="text-2xl group-hover:[animation:bounce_0.6s_ease-in-out_infinite]">{step.icon}</span>
+                  <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-[#0b1321] transition-all duration-300 group-hover:border-[#7ff6d0] group-hover:shadow-md group-hover:shadow-[#7ff6d0]/30">
+                    <img src={step.icon} alt={step.title} className="w-8 h-8 group-hover:[animation:bounce_0.6s_ease-in-out_infinite]" />
                   </div>
                   <h3 className="text-lg font-semibold text-white transition-colors duration-300 group-hover:text-[#7ff6d0]">
                     {step.title}

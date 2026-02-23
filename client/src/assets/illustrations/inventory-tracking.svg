@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Inventory Tracking illustration -->
+  <!-- Clipboard -->
+  <rect x="12" y="10" width="32" height="44" rx="3" fill="#0f2322" stroke="#4fe7c4" stroke-width="1.5"/>
+  <rect x="22" y="7" width="12" height="6" rx="2" fill="#144443" stroke="#4fe7c4" stroke-width="1"/>
+  <!-- Checklist items -->
+  <rect x="17" y="20" width="5" height="5" rx="1" fill="#4fe7c4" opacity="0.8"/>
+  <polyline points="18,23 19.5,24.5 21.5,21" stroke="#0f2322" stroke-width="1" fill="none" stroke-linecap="round"/>
+  <line x1="25" y1="22.5" x2="38" y2="22.5" stroke="#4fe7c4" stroke-width="1" opacity="0.5"/>
+  <rect x="17" y="29" width="5" height="5" rx="1" fill="#4fe7c4" opacity="0.6"/>
+  <polyline points="18,32 19.5,33.5 21.5,30" stroke="#0f2322" stroke-width="1" fill="none" stroke-linecap="round"/>
+  <line x1="25" y1="31.5" x2="36" y2="31.5" stroke="#4fe7c4" stroke-width="1" opacity="0.4"/>
+  <rect x="17" y="38" width="5" height="5" rx="1" stroke="#4fe7c4" stroke-width="1" fill="none" opacity="0.5"/>
+  <line x1="25" y1="40.5" x2="34" y2="40.5" stroke="#4fe7c4" stroke-width="1" opacity="0.3"/>
+  <!-- Alert bell -->
+  <g transform="translate(42, 12)">
+    <path d="M8 0C8 0 12 4 12 8c0 2-1 3-4 3H0c-3 0-4-1-4-3 0-4 4-8 4-8" fill="#144443" stroke="#4fe7c4" stroke-width="1.2" transform="translate(4,4)"/>
+    <circle cx="12" cy="4" r="3" fill="#4fe7c4" opacity="0.9"/>
+    <text x="10.5" y="6" font-size="5" fill="#0f2322" font-weight="bold">!</text>
+  </g>
+  <!-- Package boxes stacked -->
+  <rect x="44" y="34" width="14" height="12" rx="2" fill="#144443" stroke="#4fe7c4" stroke-width="1"/>
+  <line x1="51" y1="34" x2="51" y2="46" stroke="#4fe7c4" stroke-width="0.8" opacity="0.5"/>
+  <line x1="44" y1="40" x2="58" y2="40" stroke="#4fe7c4" stroke-width="0.8" opacity="0.5"/>
+  <rect x="47" y="48" width="14" height="8" rx="2" fill="#144443" stroke="#4fe7c4" stroke-width="1" opacity="0.6"/>
+</svg>

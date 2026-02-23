@@ -7,6 +7,7 @@ import handImg from "./hand.png";
 import filgerImg from "./finger.png";
 import { GoDotFill } from "react-icons/go";
 import { RiStarSFill } from "react-icons/ri";
+import heroPattern from "@/assets/backgrounds/hero-pattern.svg";
 
 
 const Banner = () => {
@@ -35,7 +36,9 @@ const Banner = () => {
     const progress = reduceMotion ? 1 : Math.min(scrollY / 200, 1);
 
     return (
-        <section className="w-full px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20 overflow-hidden">
+        <section className="w-full px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20 overflow-hidden relative">
+            {/* Background pattern */}
+            <div className="absolute inset-0 opacity-40 pointer-events-none" style={{ backgroundImage: `url(${heroPattern})`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
             {/* title */}
             <div className="flex flex-col items-center gap-y-2 text-center max-w-7xl mx-auto">
                 <h1 className="font-bold leading-tight text-2xl md:text-4xl lg:text-6xl">

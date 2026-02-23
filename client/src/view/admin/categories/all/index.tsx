@@ -30,13 +30,12 @@ export default function CategoriesAll() {
   const { deleteItem } = useDeleteCategory();
   const { categories, refetch, loading } = useCategories();
 
-  // Add Category
+
   const handleAdd = () => {
     setUpdateData(null);
     setIsOpen(true);
   };
 
-  // Close Modal and reset updateData
   const handleClose = () => {
     setIsOpen(false);
     setUpdateData(null);
@@ -69,7 +68,7 @@ export default function CategoriesAll() {
 
   const handleMenuClick = (e: any, cat: any) => {
     if (e.key === "edit") {
-      // open edit modal or navigate
+
       setUpdateData(cat);
       setIsOpen(true);
     }

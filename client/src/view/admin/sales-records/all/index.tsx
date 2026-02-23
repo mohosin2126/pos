@@ -118,7 +118,7 @@ export default function SalesRecords() {
     const referenceNo = item?.referenceNo ?? "";
     const customerId = item?.customerId?.toString() ?? "";
     const customerName = item?.customer?.name ?? "";
-    const invoice = item.invoice; // could be "" or TInvoice
+    const invoice = item.invoice; 
 
     const search = searchText.toLowerCase();
 

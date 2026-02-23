@@ -2,11 +2,20 @@ import { FaTwitter, FaFacebookF } from "react-icons/fa";
 import { FiMail } from "react-icons/fi";
 import { Link } from "react-router-dom";
 import { IoArrowRedo } from "react-icons/io5";
+import logoFull from "@/assets/logo/logo-full.svg";
 
 const Footer = () => {
   return (
     <footer className="container mx-auto mt-16 border-t border-[#223041]">
       <div className="py-12">
+        {/* Brand logo + tagline */}
+        <div className="mb-10">
+          <Link to="/">
+            <img src={logoFull} alt="POS" className="h-10 w-auto" />
+          </Link>
+          <p className="text-[#93a3b5] text-sm mt-3 max-w-xs">Simplify your business with our modern point of sale system.</p>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10 md:gap-8 text-[#c9d2df]">
           {/* Links */}
           <div className="border-y md:border-y-0 md:border-r border-[#223041] py-6 md:py-0 md:pr-8">

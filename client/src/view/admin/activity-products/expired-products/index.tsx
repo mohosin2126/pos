@@ -24,7 +24,7 @@ export default function ExpiredProducts() {
       console.log("Selected Rows: ", selectedRows);
     },
   };
-  // Table columns
+
   const columns = [
     {
       title: "Product",
@@ -119,7 +119,7 @@ export default function ExpiredProducts() {
     },
   ];
 
-  // Filtered data
+
   const filteredData = products?.filter((item) => {
     const matchesSearch =
       (item?.product?.name ?? "")

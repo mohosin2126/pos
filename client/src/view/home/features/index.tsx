@@ -1,14 +1,12 @@
 import Title from "@/components/title";
-import {
-  HiShoppingCart,
-  HiChartBar,
-  HiReceiptRefund,
-  HiUserGroup,
-  HiCash,
-  HiCube,
-  HiClipboardCheck,
-  HiSpeakerphone,
-} from "react-icons/hi";
+import salesDashboardImg from "@/assets/illustrations/sales-dashboard.svg";
+import productManagementImg from "@/assets/illustrations/product-management.svg";
+import inventoryTrackingImg from "@/assets/illustrations/inventory-tracking.svg";
+import customerManagementImg from "@/assets/illustrations/customer-management.svg";
+import paymentsBillingImg from "@/assets/illustrations/payments-billing.svg";
+import ordersReturnsImg from "@/assets/illustrations/orders-returns.svg";
+import reportsAnalyticsImg from "@/assets/illustrations/reports-analytics.svg";
+import promotionsMarketingImg from "@/assets/illustrations/promotions-marketing.svg";
 
 const Features = () => {
   const FeaturesData = [
@@ -17,53 +15,53 @@ const Features = () => {
       title: "Sales Dashboard",
       description:
         "Track daily, weekly, and monthly sales in a single dashboard.",
-      icon: <HiChartBar />,
+      icon: salesDashboardImg,
     },
     {
       id: 2,
       title: "Product Management",
       description: "Add, edit, remove products and manage stock levels.",
-      icon: <HiCube />,
+      icon: productManagementImg,
     },
     {
       id: 3,
       title: "Inventory Tracking",
       description:
         "Monitor stock, receive low-stock alerts, prevent stockouts.",
-      icon: <HiShoppingCart />,
+      icon: inventoryTrackingImg,
     },
     {
       id: 4,
       title: "Customer Management",
       description:
         "Manage customer profiles, purchase history, and loyalty points.",
-      icon: <HiUserGroup />,
+      icon: customerManagementImg,
     },
     {
       id: 5,
       title: "Payments & Billing",
       description:
         "Generate invoices, process payments, and track transactions.",
-      icon: <HiCash />,
+      icon: paymentsBillingImg,
     },
     {
       id: 6,
       title: "Orders & Returns",
       description: "Handle customer orders, returns, and refunds efficiently.",
-      icon: <HiReceiptRefund />,
+      icon: ordersReturnsImg,
     },
     {
       id: 7,
       title: "Reports & Analytics",
       description:
         "Analyze sales trends, best-selling products, and revenue growth.",
-      icon: <HiClipboardCheck />,
+      icon: reportsAnalyticsImg,
     },
     {
       id: 8,
       title: "Promotions & Marketing",
       description: "Create offers, discounts, and promotional campaigns.",
-      icon: <HiSpeakerphone />,
+      icon: promotionsMarketingImg,
     },
   ];
 
@@ -92,10 +90,8 @@ const Features = () => {
                 <span className="absolute -bottom-1 -right-1 w-3 h-3 bg-[#214a44] group-hover:bg-[#4fe7c4] rounded-sm opacity-60 duration-200"></span>
 
                 {/* Icon pill */}
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full border border-[#284b49] bg-[#0f2322] text-[#69fec1] mb-4">
-                  <span className="text-xl lg:text-3xl text-[#69fec1]">
-                    {features.icon}
-                  </span>
+                <div className="inline-flex items-center justify-center w-14 h-14 rounded-full border border-[#284b49] bg-[#0f2322] mb-4">
+                  <img src={features.icon} alt={features.title} className="w-9 h-9" />
                 </div>
 
                 <h3 className="text-lg font-semibold text-white mb-2 group-hover:text-[#69fec1] transition-colors">

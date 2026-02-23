@@ -3,6 +3,7 @@ import { Link, NavLink } from "react-router-dom";
 import { RiCloseLargeFill, RiMenu3Fill } from "react-icons/ri";
 import { BsDot } from "react-icons/bs";
 import type { TNavLinkItem } from "@/interface/menu-and-common";
+import logoFull from "@/assets/logo/logo-full.svg";
 
 export default function Navbar() {
   const [isScroll, setIsScroll] = useState<boolean>(false);
@@ -47,9 +48,9 @@ export default function Navbar() {
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between">
-          <div className="flex items-center text-xl sm:text-2xl lg:text-3xl font-semibold tracking-wide select-none">
-            POS
-          </div>
+          <Link to="/" className="flex items-center select-none">
+            <img src={logoFull} alt="POS" className="h-8 sm:h-9 lg:h-10 w-auto" />
+          </Link>
 
           <nav className="hidden md:flex items-center gap-4 xl:gap-8" aria-label="Primary">
             {navLinks.map((link, index) => (

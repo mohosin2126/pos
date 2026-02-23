@@ -55,7 +55,7 @@ export default function AllProducts() {
       console.log("Selected Rows: ", selectedRows);
     },
   };
-  // Table columns
+
   const columns = [
     {
       title: "Product",
@@ -129,7 +129,7 @@ export default function AllProducts() {
     },
   ];
 
-  // Filtered data
+
   const filteredData = (products as TProductPayload[])?.filter((item) => {
     const matchesSearch =
       (item?.name ?? "").toLowerCase().includes(searchText.toLowerCase()) ||

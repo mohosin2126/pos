@@ -67,7 +67,7 @@ export default function ProductDetails() {
     if (!product?.isTrackStock)
       return { color: "default", text: "Not Tracked" };
 
-    const stockQty = product.stockQuantity ?? 0; // fallback to 0 if undefined
+    const stockQty = product.stockQuantity ?? 0; 
     const reorderLevel = product.reorderLevel ?? 0;
 
     if (stockQty <= 0) return { color: "error", text: "Out of Stock" };

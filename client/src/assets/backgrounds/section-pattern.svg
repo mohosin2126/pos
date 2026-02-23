@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600" fill="none">
+  <!-- Section pattern: Subtle geometric mesh for feature/pricing sections -->
+  <defs>
+    <pattern id="dots" width="40" height="40" patternUnits="userSpaceOnUse">
+      <circle cx="20" cy="20" r="1" fill="#4fe7c4" opacity="0.1"/>
+    </pattern>
+    <linearGradient id="sectionFade" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="white" stop-opacity="0"/>
+      <stop offset="30%" stop-color="white" stop-opacity="1"/>
+      <stop offset="70%" stop-color="white" stop-opacity="1"/>
+      <stop offset="100%" stop-color="white" stop-opacity="0"/>
+    </linearGradient>
+    <mask id="sectionMask">
+      <rect width="600" height="600" fill="url(#sectionFade)"/>
+    </mask>
+  </defs>
+
+  <!-- Dot grid -->
+  <rect width="600" height="600" fill="url(#dots)" mask="url(#sectionMask)"/>
+
+  <!-- Diamond mesh -->
+  <g stroke="#4fe7c4" stroke-width="0.4" fill="none" opacity="0.06">
+    <path d="M0 300L150 150L300 300L150 450Z"/>
+    <path d="M300 300L450 150L600 300L450 450Z"/>
+    <path d="M150 150L300 0L450 150L300 300Z"/>
+    <path d="M150 450L300 300L450 450L300 600Z"/>
+  </g>
+
+  <!-- Accent circles -->
+  <circle cx="300" cy="300" r="120" stroke="#4fe7c4" stroke-width="0.5" fill="none" opacity="0.04"/>
+  <circle cx="300" cy="300" r="200" stroke="#4fe7c4" stroke-width="0.3" fill="none" opacity="0.03"/>
+  
+  <!-- Corner accents -->
+  <path d="M0 0L80 0L0 80Z" fill="#4fe7c4" opacity="0.03"/>
+  <path d="M600 600L520 600L600 520Z" fill="#4fe7c4" opacity="0.03"/>
+</svg>

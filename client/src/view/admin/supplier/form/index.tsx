@@ -46,7 +46,7 @@ export default function SupplierForm() {
       let payload: TSupplierPayload;
 
       if (isUpdate) {
-        // Exclude supplierCode during update
+  
         const { supplierCode, ...rest } = values;
         payload = rest as TSupplierPayload;
         console.log("update for value:", supplierCode);
@@ -54,7 +54,7 @@ export default function SupplierForm() {
         message.success("Supplier updated successfully!");
         navigate("/admin/supplier/all");
       } else {
-        // Include supplierCode during create
+      
         payload = values;
         await createSupplier(payload);
         message.success("Supplier added successfully!");

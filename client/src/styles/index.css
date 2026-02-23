@@ -17,9 +17,6 @@ body {
   width: 6px;
 }
 
-/* .sidebar::-webkit-scrollbar-track {
-  background: #1f1f1f;
-} */
 
 .sidebar::-webkit-scrollbar-thumb {
   background: #b8bbbb;
@@ -30,38 +27,16 @@ body {
   @apply bg-[#134843] text-[#49dcbb] px-6 py-2 font-semibold border border-[#49dcbb] rounded-md cursor-pointer;
 }
 
-/* drop down custom css for set all dropdown use one  */
-
-/* .ant-dropdown-menu-item {
-  transition: background-color 0.2s, color 0.2s;
-}
-
-
-.ant-dropdown-menu-item:hover {
-  background-color: #186566 !important; 
-  color: #69fec1 !important; 
-}
-
-.ant-dropdown-menu-item-active {
-  background-color: #186566 !important; 
-  color: #69fec1 !important; 
-}
-
-
-.ant-dropdown-menu-item-only-child {
-  padding: 0.5rem 1rem; 
-} */
 
 .apexcharts-legend {
-  /* flex-wrap: nowrap !important; */
+ 
   justify-content: center !important;
   width: 100% !important;
   bottom: 0px !important;
   height: 60px !important;
 }
 
-/* for input field  */
-/* Input & Textarea */
+
 .ant-input:hover,
 .ant-input:focus,
 .ant-input-affix-wrapper:hover,

@@ -1,4 +1,4 @@
-// hooks/admin/sellable.ts (or wherever your hook lives)
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import useApi from "../../use-api";
 
@@ -21,7 +21,7 @@ export function useSellableProducts(params?: QueryParams) {
                 { params: memoizedParams }
             );
 
-            // Keep the server response shape: { product, unexpiredQty }
+          
             setProducts(data?.data ?? []);
         } catch (err: any) {
             const message =

@@ -4,6 +4,8 @@ import { useLocation } from "react-router-dom";
 import { TSidebarProps } from "@/interface/menu-and-common";
 import { adminMenuItems } from "@/data";
 import NavItem from "@/layout/dashboard/nav-item";
+import logoFull from "@/assets/logo/logo-full.svg";
+import logoIcon from "@/assets/logo/logo-icon.svg";
 
 export default function Sidebar({
   navOpened,
@@ -37,7 +39,6 @@ export default function Sidebar({
     return () => mediaQuery.removeEventListener("change", handleMediaChange);
   }, [setNavOpened]);
 
-  //  for track dashboard content disable scroll when sidebar open in mobile and enable scroll when sidebar close
   useEffect(() => {
     const body = document.body;
     if (isCollapsed) {
@@ -75,12 +76,12 @@ export default function Sidebar({
                          }
                          `}
       >
-        {/* for dextop  */}
+        {/* for desktop  */}
         {!navOpened ? (
           <>
             {/* logo  */}
             <div className="hidden lg:flex items-center justify-center border-b border-b-[#69fec1]/50 py-3">
-              <div className="mx-auto w-24 h-10 text-4xl text-white">logo</div>
+              <img src={logoFull} alt="POS" className="mx-auto h-10 w-auto" />
             </div>
 
             <nav className="lg:pt-6 lg:pb-0 pb-4 pt-20">
@@ -106,7 +107,6 @@ export default function Sidebar({
                         closeAllSubmenus={closeAllSubmenus}
                         setIsCollapsed={setIsCollapsed}
                         showBorder={
-                          // show border after last menu in block, except for last block
                           menuIndex === menus.length - 1 &&
                           blockIndex !== adminMenuItems.length - 1
                         }
@@ -120,8 +120,8 @@ export default function Sidebar({
         ) : (
           <div className="hidden lg:block">
             <div className="border-b border-b-[#69fec1]/50 p-3 w-full">
-              <div className="flex items-center justify-center h-10 text-2xl text-white ">
-                Lo
+              <div className="flex items-center justify-center h-10">
+                <img src={logoIcon} alt="POS" className="h-8 w-auto" />
               </div>
             </div>
             <NavIconbar

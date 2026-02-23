@@ -26,7 +26,6 @@ const { Option } = Select;
 
 export default function AllCustomer() {
   const { customers, refetch, loading } = useCustomers();
-  // console.log("customers data :", customers);
   const [searchText, setSearchText] = useState<string>("");
   const [filterStatus, setFilterStatus] = useState<
     "all" | "active" | "inactive"

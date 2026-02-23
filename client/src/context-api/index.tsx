@@ -8,7 +8,6 @@ import React, {
 import Cookies from "js-cookie";
 import { TUserPayload } from "@/interface/common";
 
-// export type User = Record<string, unknown>;
 
 type UserContextValue = {
   user: TUserPayload | null;
