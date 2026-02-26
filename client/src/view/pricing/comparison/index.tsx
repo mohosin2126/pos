@@ -1,8 +1,7 @@
 import React from "react";
 import { HiOutlineCheck, HiOutlineX } from "react-icons/hi";
 import Title from "@/components/title";
-
-const ComparisonTable = () => {
+export default function ComparisonTable() {
   const features = [
     { name: "Basic POS features", weekly: true, monthly: true, lifetime: true },
     { name: "Transactions per month", weekly: false, monthly: true, lifetime: true },
@@ -126,5 +125,3 @@ const ComparisonTable = () => {
     </section>
   );
 };
-
-export default ComparisonTable;

@@ -7,9 +7,7 @@ import {
     HiOutlineUserGroup,
 } from "react-icons/hi";
 import { MdOutlineDoubleArrow } from "react-icons/md";
-
-
-const DeliveryProcess = () => {
+export default function DeliveryProcess() {
 
     const processSteps = [
         {
@@ -124,5 +122,3 @@ const DeliveryProcess = () => {
         </section>
     );
 };
-
-export default DeliveryProcess;

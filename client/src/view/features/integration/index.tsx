@@ -8,8 +8,7 @@ import {
   HiOutlineCheckCircle,
   HiOutlineLockClosed,
 } from "react-icons/hi";
-
-const Integrations = () => {
+export default function Integrations() {
   const items = [
     {
       id: 1,
@@ -194,5 +193,3 @@ const Integrations = () => {
     </section>
   );
 };
-
-export default Integrations;

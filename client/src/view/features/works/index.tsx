@@ -3,8 +3,7 @@ import reportsAnalyticsImg from "@/assets/illustrations/reports-analytics.svg";
 import inventoryTrackingImg from "@/assets/illustrations/inventory-tracking.svg";
 import paymentsBillingImg from "@/assets/illustrations/payments-billing.svg";
 import { HiOutlineCheckCircle, HiOutlineArrowRight } from "react-icons/hi";
-
-const HowItWorks = () => {
+export default function HowItWorks() {
    const steps = [
     {
       id: 1,
@@ -111,5 +110,3 @@ const HowItWorks = () => {
     </section>
   );
 };
-
-export default HowItWorks;

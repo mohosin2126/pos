@@ -1,8 +1,7 @@
 import React, { useState } from "react";
 import { HiOutlineChevronDown } from "react-icons/hi";
 import Title from "@/components/title";
-
-const FAQ = () => {
+export default function FAQ() {
   const [activeIndex, setActiveIndex] = useState<number | null>(0);
 
   const faqs = [
@@ -109,5 +108,3 @@ const FAQ = () => {
     </section>
   );
 };
-
-export default FAQ;

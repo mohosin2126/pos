@@ -2,8 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import ctaBg from "@/assets/backgrounds/cta-bg.svg";
 import { useBasePath } from "@/hooks/common/use-base-path";
-
-const Connect = () => {
+export default function Connect() {
     const basePath = useBasePath();
     return (
         <div
@@ -23,5 +22,3 @@ const Connect = () => {
         </div>
     );
 };
-
-export default Connect;

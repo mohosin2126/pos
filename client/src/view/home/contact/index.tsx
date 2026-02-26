@@ -25,9 +25,7 @@ interface InfoItem {
     title: string;
     lines: string[];
 }
-
-
-const Contact: React.FC = () => {
+export default function Contact() {
     const [form, setForm] = useState<FormState>({
         name: "",
         email: "",
@@ -59,7 +57,6 @@ const Contact: React.FC = () => {
             lines: ["Chirirbandar", "Dinajpur 5200"],
         },
     ];
-
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         setForm((f) => ({ ...f, [name]: value } as FormState));
@@ -258,5 +255,3 @@ const Contact: React.FC = () => {
         </section>
     );
 };
-
-export default Contact;

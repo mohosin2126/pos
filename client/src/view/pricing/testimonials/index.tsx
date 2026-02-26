@@ -1,8 +1,7 @@
 import React from "react";
 import { HiOutlineStar } from "react-icons/hi";
 import Title from "@/components/title";
-
-const Testimonials = () => {
+export default function Testimonials() {
   const testimonials = [
     {
       name: "Sarah Johnson",
@@ -110,5 +109,3 @@ const Testimonials = () => {
     </section>
   );
 };
-
-export default Testimonials;

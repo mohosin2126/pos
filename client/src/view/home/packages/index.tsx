@@ -2,8 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { HiOutlineCash, HiOutlineCalendar, HiOutlineShieldCheck } from "react-icons/hi";
 import { useBasePath } from "@/hooks/common/use-base-path";
-
-const Packages = () => {
+export default function Packages() {
     const basePath = useBasePath();
     const packagesData = [
         {
@@ -47,7 +46,6 @@ const Packages = () => {
             ],
         },
     ];
-
     const themeClasses = (theme: "primary" | "dim") => {
         if (theme === "primary") {
             return {
@@ -172,5 +170,3 @@ const Packages = () => {
         </section>
     );
 };
-
-export default Packages;

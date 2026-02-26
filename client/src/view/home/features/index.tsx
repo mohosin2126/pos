@@ -7,8 +7,7 @@ import paymentsBillingImg from "@/assets/illustrations/payments-billing.svg";
 import ordersReturnsImg from "@/assets/illustrations/orders-returns.svg";
 import reportsAnalyticsImg from "@/assets/illustrations/reports-analytics.svg";
 import promotionsMarketingImg from "@/assets/illustrations/promotions-marketing.svg";
-
-const Features = () => {
+export default function Features() {
   const FeaturesData = [
     {
       id: 1,
@@ -108,5 +107,3 @@ const Features = () => {
       </section>
   );
 };
-
-export default Features;

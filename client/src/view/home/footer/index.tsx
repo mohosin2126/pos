@@ -3,8 +3,7 @@ import { FiMail } from "react-icons/fi";
 import { Link } from "react-router-dom";
 import { IoArrowRedo } from "react-icons/io5";
 import logoFull from "@/assets/logo/logo-full.svg";
-
-const Footer = () => {
+export default function Footer() {
   return (
       <footer className="mt-16 border-t border-[#223041] px-4 md:px-6 lg:px-10">
         <div className="py-12 mx-auto max-w-7xl">
@@ -110,5 +109,3 @@ const Footer = () => {
       </footer>
   );
 };
-
-export default Footer;

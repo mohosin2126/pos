@@ -59,8 +59,7 @@ const featureItems = [
     icon: <HiSpeakerphone />,
   },
 ];
-
-const FeaturesShowcase = () => {
+export default function FeaturesShowcase() {
   return (
     <section className="relative overflow-hidden py-2 lg:py-4">
       <div className="pointer-events-none absolute -left-20 top-0 h-72 w-72 rounded-full bg-[radial-gradient(circle,_rgba(79,231,196,0.16),_transparent_70%)] blur-2xl"></div>
@@ -283,5 +282,3 @@ const FeaturesShowcase = () => {
     </section>
   );
 };
-
-export default FeaturesShowcase;

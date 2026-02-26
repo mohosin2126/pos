@@ -8,8 +8,7 @@ import {
 } from "react-icons/hi";
 import {Link} from "react-router-dom";
 import { useBasePath } from "@/hooks/common/use-base-path";
-
-const Services = () => {
+export default function Services() {
     const basePath = useBasePath();
     const servicesData = [
         {
@@ -96,5 +95,3 @@ const Services = () => {
         </section>
     );
 };
-
-export default Services;

@@ -8,9 +8,7 @@ import filgerImg from "./finger.png";
 import { GoDotFill } from "react-icons/go";
 import { RiStarSFill } from "react-icons/ri";
 import heroPattern from "@/assets/backgrounds/hero-pattern.svg";
-
-
-const Banner = () => {
+export default function Banner() {
     const navigate = useNavigate();
     const [scrollY, setScrollY] = useState(0);
     const [reduceMotion, setReduceMotion] = useState(false);
@@ -152,5 +150,3 @@ const Banner = () => {
         </section>
     );
 };
-
-export default Banner;
