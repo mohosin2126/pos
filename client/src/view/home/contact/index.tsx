@@ -124,29 +124,34 @@ const Contact: React.FC = () => {
         <section className="p-4 lg:p-12 bg-[#0b111a] rounded-md">
             <div id="contact">
                 {/* top contact info */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-10">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8 mb-10">
                     {info.map((item, idx) => (
-                        <div key={idx} className="text-center">
-                            <div className="mx-auto w-14 h-14 rounded-full bg-[#0e1b1a] border border-[#1f524b] flex items-center justify-center text-2xl text-[#69fec1] shadow-[0_0_20px_rgba(105,254,193,0.08)]">
+                        <div
+                            key={idx}
+                            className="flex items-start gap-4 text-left rounded-md border border-[#223041] bg-[#0f1620]/60 p-4 md:block md:text-center md:bg-transparent md:border-0 md:p-0"
+                        >
+                            <div className="mx-0 w-14 h-14 rounded-full bg-[#0e1b1a] border border-[#1f524b] flex items-center justify-center text-2xl text-[#69fec1] shadow-[0_0_20px_rgba(105,254,193,0.08)] md:mx-auto">
                                 <span>{item.icon}</span>
                             </div>
-                            <div className="mt-3 text-[#69fec1] font-semibold">{item.title}</div>
-                            <div className="mt-1 text-[#c9d2df] text-sm leading-relaxed">
-                                {item.lines.map((l, i) => (
-                                    <div key={i}>
-                                        {item.title === "Mail ID" ? (
-                                            <a href={`mailto:${l}`} className="hover:underline">
-                                                {l}
-                                            </a>
-                                        ) : item.title === "Contact No." ? (
-                                            <a href={`tel:${l.replace(/\s+/g, "")}`} className="hover:underline">
-                                                {l}
-                                            </a>
-                                        ) : (
-                                            l
-                                        )}
-                                    </div>
-                                ))}
+                            <div className="min-w-0">
+                                <div className="mt-0 md:mt-3 text-[#69fec1] font-semibold">{item.title}</div>
+                                <div className="mt-1 text-[#c9d2df] text-sm leading-relaxed break-words">
+                                    {item.lines.map((l, i) => (
+                                        <div key={i}>
+                                            {item.title === "Mail ID" ? (
+                                                <a href={`mailto:${l}`} className="hover:underline">
+                                                    {l}
+                                                </a>
+                                            ) : item.title === "Contact No." ? (
+                                                <a href={`tel:${l.replace(/\s+/g, "")}`} className="hover:underline">
+                                                    {l}
+                                                </a>
+                                            ) : (
+                                                l
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         </div>
                     ))}

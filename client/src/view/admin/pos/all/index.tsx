@@ -103,7 +103,7 @@ export default function AllPos() {
         const stock = productAvailableQty(product);
 
         if (existingItem) {
-        
+
             if (existingItem.quantity + 1 > stock && stock > 0) {
                 message.warning("Not enough stock for this item");
                 return;
@@ -257,9 +257,9 @@ export default function AllPos() {
                 description="Manage and track all POS sales in one place"
             />
             <Card bodyStyle={{ padding: "0px 14px 14px" }}>
-                <div className="flex-1 flex overflow-hidden">
-                
-                    <div className="w-1/3 bg-white border-r border-gray-200 flex flex-col">
+                <div className="flex flex-col xl:flex-row min-h-[70vh]">
+
+                    <div className="w-full xl:w-1/3 bg-white xl:border-r border-gray-200 flex flex-col min-h-[320px] xl:min-h-0">
                         <div className="p-4 border-b border-gray-200">
                             <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
                                 <FaBarcode />
@@ -300,40 +300,40 @@ export default function AllPos() {
                                     const availableQty = productAvailableQty(product);
 
                                     return (
-                                    <Card
-                                        key={baseProduct?.id}
-                                        size="small"
-                                        className="cursor-pointer hover:shadow-md transition-shadow !mb-3"
-                                        onClick={() => addProductToCart(product)}
-                                    >
-                                        <div className="flex products-center justify-between">
-                                            <div>
-                                                <Link
-                                                    className="!w-max"
-                                                    to={`${basePath}/product/view/${baseProduct?.id}`}
-                                                >
-                                                    <div className="font-medium text-sm !w-max">
-                                                        {baseProduct?.name}
-                                                    </div>
-                                                </Link>
+                                        <Card
+                                            key={baseProduct?.id}
+                                            size="small"
+                                            className="cursor-pointer hover:shadow-md transition-shadow !mb-3"
+                                            onClick={() => addProductToCart(product)}
+                                        >
+                                            <div className="flex items-center justify-between gap-3">
+                                                <div className="min-w-0">
+                                                    <Link
+                                                        className="block"
+                                                        to={`${basePath}/product/view/${baseProduct?.id}`}
+                                                    >
+                                                        <div className="font-medium text-sm truncate">
+                                                            {baseProduct?.name}
+                                                        </div>
+                                                    </Link>
 
-                                                <div className="text-xs text-gray-500">
-                                                    {productCategoryName(baseProduct)}
+                                                    <div className="text-xs text-gray-500">
+                                                        {productCategoryName(baseProduct)}
+                                                    </div>
+                                                    <div className="text-xs text-gray-400">
+                                                        Stock: {availableQty}
+                                                    </div>
                                                 </div>
-                                                <div className="text-xs text-gray-400">
-                                                    Stock: {availableQty}
+                                                <div className="text-right shrink-0">
+                                                    <div className="font-bold text-green-600">
+                                                        ৳{productUnitPrice(baseProduct)}
+                                                    </div>
+                                                    <div className="text-xs text-gray-400">
+                                                        {baseProduct?.barcode}
+                                                    </div>
                                                 </div>
                                             </div>
-                                            <div className="text-right">
-                                                <div className="font-bold text-green-600">
-                                                    ৳{productUnitPrice(baseProduct)}
-                                                </div>
-                                                <div className="text-xs text-gray-400">
-                                                    {baseProduct?.barcode}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </Card>
+                                        </Card>
                                     );
                                 })}
                                 {!productsLoading && filteredProducts?.length === 0 && (
@@ -346,7 +346,7 @@ export default function AllPos() {
                     </div>
 
                     {/* Middle Column: Cart */}
-                    <div className="w-1/3 bg-white border-r border-gray-200 flex flex-col">
+                    <div className="w-full xl:w-1/3 bg-white xl:border-r border-gray-200 border-t xl:border-t-0 flex flex-col min-h-[320px] xl:min-h-0">
                         <div className="p-4 border-b border-gray-200">
                             <h3 className="font-semibold text-gray-900 flex items-center gap-2">
                                 <FaShoppingCart />
@@ -365,8 +365,8 @@ export default function AllPos() {
                                 <div className="space-y-3">
                                     {cartItems.map((item) => (
                                         <Card key={item.id} size="small" className="!mb-3">
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex-1">
+                                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                                                <div className="flex-1 min-w-0">
                                                     <div className="font-medium">{item.name}</div>
                                                     <div className="text-sm text-gray-500">
                                                         {item.category}
@@ -396,7 +396,7 @@ export default function AllPos() {
                                                     />
                                                 </div>
 
-                                                <div className="text-right ml-4">
+                                                <div className="text-right sm:ml-4">
                                                     <div className="font-bold">
                                                         ৳{(item.price * item.quantity).toFixed(2)}
                                                     </div>
@@ -416,7 +416,7 @@ export default function AllPos() {
                     </div>
 
                     {/* Right Column: Customer + Summary */}
-                    <div className="w-1/3 bg-white flex flex-col">
+                    <div className="w-full xl:w-1/3 bg-white border-t xl:border-t-0 flex flex-col min-h-[320px] xl:min-h-0">
                         <div className="p-4 border-b border-gray-200">
                             <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
                                 <FaUser />
@@ -455,7 +455,7 @@ export default function AllPos() {
                                 <FaCreditCard />
                                 Payment Method
                             </h3>
-                            <div className="grid grid-cols-3 gap-2">
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                                 <Button
                                     type={paymentMethod === "cash" ? "primary" : "default"}
                                     icon={<FaMoneyBillWave />}
@@ -507,42 +507,42 @@ export default function AllPos() {
                                     <span className="text-gray-600">Subtotal:</span>
                                     <span className="font-medium">৳{totals.subtotal.toFixed(2)}</span>
                                 </div>
-                                
+
                                 {totals.itemDiscounts > 0 && (
                                     <div className="flex justify-between text-red-600">
                                         <span>Item Discounts:</span>
                                         <span>-৳{totals.itemDiscounts.toFixed(2)}</span>
                                     </div>
                                 )}
-                                
+
                                 {totals.orderDiscount > 0 && (
                                     <div className="flex justify-between text-red-600">
                                         <span>Order Discount ({posAddress?.discountType === "percent" ? "%":"৳"}):</span>
                                         <span>-৳{totals.orderDiscount.toFixed(2)}</span>
                                     </div>
                                 )}
-                                
+
                                 {totals.itemTaxes > 0 && (
                                     <div className="flex justify-between text-blue-600">
                                         <span>Item Taxes:</span>
                                         <span>+৳{totals.itemTaxes.toFixed(2)}</span>
                                     </div>
                                 )}
-                                
+
                                 {totals.orderTax > 0 && (
                                     <div className="flex justify-between text-blue-600">
                                         <span>Order Tax ({posAddress?.orderTaxPercent || 0}%):</span>
                                         <span>+৳{totals.orderTax.toFixed(2)}</span>
                                     </div>
                                 )}
-                                
+
                                 {totals.shipping > 0 && (
                                     <div className="flex justify-between text-orange-600">
                                         <span>Shipping Charge:</span>
                                         <span>+৳{totals.shipping.toFixed(2)}</span>
                                     </div>
                                 )}
-                                
+
                                 <Divider className="my-2" />
                                 <div className="flex justify-between font-bold text-lg text-green-700 bg-green-50 p-2 rounded">
                                     <span>Total Amount:</span>
@@ -573,7 +573,7 @@ export default function AllPos() {
                     setIsOpen={() => setIsOpen(false)}
                     title="Add Your Information"
                     description="Add a new category to organize and manage your items effectively."
-                    width="560px"
+                    width="min(560px, calc(100vw - 24px))"
                 >
                     <POSForm setPosAddress={setPosAddress} setIsOpen={setIsOpen} />
                 </CustomModal>
@@ -591,7 +591,7 @@ export default function AllPos() {
                             Close
                         </Button>,
                     ]}
-                    width={600}
+                    width="min(600px, calc(100vw - 24px))"
                 >
                     <div className="invoice-content">
                         <div className="text-center mb-6">

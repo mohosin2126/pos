@@ -72,13 +72,13 @@ const DeliveryProcess = () => {
                 {/* Process Timeline */}
                 <div className="relative">
 
-                    <div className="grid grid-cols-1 lg:grid-cols-5 relative z-10">
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4 relative z-10 items-stretch">
                         {processSteps.map((step, index) => (
-                            <div key={step.id} className="relative group">
+                            <div key={step.id} className="relative group h-full">
 
 
-                                <div className="flex items-center">
-                                    <div className="bg-[#1a2332] rounded-xl p-4 border border-[#2a3441] hover:border-[#4fe7c4] transition-all duration-300 hover:shadow-lg hover:shadow-[#4fe7c4]/20 group-hover:transform group-hover:scale-105 h-full flex flex-col">
+                                <div className="flex items-stretch h-full">
+                                    <div className="bg-[#1a2332] rounded-xl p-4 border border-[#2a3441] hover:border-[#4fe7c4] transition-all duration-300 hover:shadow-lg hover:shadow-[#4fe7c4]/20 group-hover:transform group-hover:scale-105 h-full w-full flex flex-col">
                                         {/* Step Number */}
                                         <div className="absolute -top-3 -left-3 w-8 h-8 bg-[#4fe7c4] rounded-full flex items-center justify-center text-black font-bold text-sm">
                                             {step.id}
@@ -111,7 +111,7 @@ const DeliveryProcess = () => {
                                             </div>
                                         </div>
                                     </div>
-                                    <div className={`${index == 4 ? "opacity-0" : "opacity-100"} text-2xl text-[#4fe7c4] mx-2`}>
+                                    <div className={`${index == 4 ? "opacity-0" : "opacity-100"} hidden xl:flex items-center text-2xl text-[#4fe7c4] mx-2`}>
                                         <MdOutlineDoubleArrow />
                                     </div>
                                 </div>

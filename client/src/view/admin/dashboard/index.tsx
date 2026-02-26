@@ -89,144 +89,144 @@ export default function Dashboard() {
 
   // Filter cards based on role permissions
   const visibleSummary = allSummary.filter(
-    (item) => isAdmin || hasPermission(item.permission)
+      (item) => isAdmin || hasPermission(item.permission)
   );
   const visibleStats = statsData.filter(
-    (item) => isAdmin || hasPermission(item.permission)
+      (item) => isAdmin || hasPermission(item.permission)
   );
 
   return (
-    <div>
-      {visibleSummary.length > 0 && (
-      <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-${Math.min(visibleSummary.length, 4)} gap-6`}>
-        {visibleSummary.map((item, index) => {
-          const Icon = item.icon;
-          return (
-            <Card
-              bodyStyle={{ padding: "15px" }}
-              key={item.id}
-              className={`!text-white ${
-                index === 0
-                  ? "!bg-[#005555] "
-                  : index === 1
-                  ? "!bg-blue-900"
-                  : index === 2
-                  ? "!bg-green-900"
-                  : index === 3
-                  ? "!bg-yellow-900"
-                  : "!bg-primary"
-              }`}
-            >
-              <div className="flex items-center gap-4 ">
-                <div
-                  className={`text-3xl ${
-                    index === 0
-                      ? "text-[#005555] "
-                      : index === 1
-                      ? "text-blue-900"
-                      : index === 2
-                      ? "text-green-900"
-                      : index === 3
-                      ? "text-yellow-900"
-                      : "text-primary"
-                  } w-12 h-12 rounded flex items-center justify-center bg-white`}
-                >
-                  <Icon />
-                </div>
-                <div>
-                  <p className="text-sm text-white !m-0">{item.title}</p>
-                  <h3 className="text-xl font-semibold flex items-center gap-2 !m-0">
-                    ${item.value}
-                    <Tag
-                      color={
-                        item.percentage.startsWith("+") ? "success" : "error"
-                      }
-                      className="text-sm flex items-center gap-1"
+      <div>
+        {visibleSummary.length > 0 && (
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-6">
+              {visibleSummary.map((item, index) => {
+                const Icon = item.icon;
+                return (
+                    <Card
+                        bodyStyle={{ padding: "15px" }}
+                        key={item.id}
+                        className={`!text-white ${
+                            index === 0
+                                ? "!bg-[#005555] "
+                                : index === 1
+                                    ? "!bg-blue-900"
+                                    : index === 2
+                                        ? "!bg-green-900"
+                                        : index === 3
+                                            ? "!bg-yellow-900"
+                                            : "!bg-primary"
+                        }`}
                     >
-                      {item.percentage.startsWith("+") ? (
-                        <ArrowUpOutlined />
-                      ) : (
-                        <ArrowDownOutlined />
-                      )}
-                      {item.percentage}
-                    </Tag>
-                  </h3>
-                </div>
-              </div>
-            </Card>
-          );
-        })}
-      </div>
-      )}
+                      <div className="flex items-center gap-4 ">
+                        <div
+                            className={`text-3xl ${
+                                index === 0
+                                    ? "text-[#005555] "
+                                    : index === 1
+                                        ? "text-blue-900"
+                                        : index === 2
+                                            ? "text-green-900"
+                                            : index === 3
+                                                ? "text-yellow-900"
+                                                : "text-primary"
+                            } w-12 h-12 rounded flex items-center justify-center bg-white`}
+                        >
+                          <Icon />
+                        </div>
+                        <div>
+                          <p className="text-sm text-white !m-0">{item.title}</p>
+                          <h3 className="text-xl font-semibold flex items-center gap-2 !m-0">
+                            ${item.value}
+                            <Tag
+                                color={
+                                  item.percentage.startsWith("+") ? "success" : "error"
+                                }
+                                className="text-sm flex items-center gap-1"
+                            >
+                              {item.percentage.startsWith("+") ? (
+                                  <ArrowUpOutlined />
+                              ) : (
+                                  <ArrowDownOutlined />
+                              )}
+                              {item.percentage}
+                            </Tag>
+                          </h3>
+                        </div>
+                      </div>
+                    </Card>
+                );
+              })}
+            </div>
+        )}
 
-      {visibleStats.length > 0 && (
-      <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-${Math.min(visibleStats.length, 4)} gap-6 my-6`}>
-        {visibleStats.map((item, index) => {
-          const IconComponent = item.icon;
-          return (
-            <Card
-              bodyStyle={{ padding: "15px" }}
-              headStyle={{ padding: "15px" }}
-              title={
-                <div className="flex items-center justify-between gap-1">
-                  <div>
-                    <div
-                      className={`text-3xl font-bold ${
-                        index === 0
-                          ? "text-indigo-800 "
-                          : index === 1
-                          ? "text-pink-800"
-                          : index === 2
-                          ? "text-teal-800"
-                          : index === 3
-                          ? "text-orange-800"
-                          : "text-gray-800"
-                      }`}
+        {visibleStats.length > 0 && (
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-6 my-6">
+              {visibleStats.map((item, index) => {
+                const IconComponent = item.icon;
+                return (
+                    <Card
+                        bodyStyle={{ padding: "15px" }}
+                        headStyle={{ padding: "15px" }}
+                        title={
+                          <div className="flex items-center justify-between gap-1">
+                            <div>
+                              <div
+                                  className={`text-3xl font-bold ${
+                                      index === 0
+                                          ? "text-indigo-800 "
+                                          : index === 1
+                                              ? "text-pink-800"
+                                              : index === 2
+                                                  ? "text-teal-800"
+                                                  : index === 3
+                                                      ? "text-orange-800"
+                                                      : "text-gray-800"
+                                  }`}
+                              >
+                                {item?.value}
+                              </div>
+                              <div className="text-gray-500">{item?.title}</div>
+                            </div>
+                            <div
+                                className={` w-10 h-10 rounded flex items-center justify-center ${
+                                    index === 0
+                                        ? "text-indigo-800 bg-indigo-100"
+                                        : index === 1
+                                            ? "text-pink-800 bg-pink-100"
+                                            : index === 2
+                                                ? "text-teal-800 bg-teal-100"
+                                                : index === 3
+                                                    ? "text-orange-800 bg-orange-100"
+                                                    : "text-gray-800 bg-gray-100"
+                                }`}
+                            >
+                              <IconComponent size={22} />
+                            </div>
+                          </div>
+                        }
                     >
-                      {item?.value}
-                    </div>
-                    <div className="text-gray-500">{item?.title}</div>
-                  </div>
-                  <div
-                    className={` w-10 h-10 rounded flex items-center justify-center ${
-                      index === 0
-                        ? "text-indigo-800 bg-indigo-100"
-                        : index === 1
-                        ? "text-pink-800 bg-pink-100"
-                        : index === 2
-                        ? "text-teal-800 bg-teal-100"
-                        : index === 3
-                        ? "text-orange-800 bg-orange-100"
-                        : "text-gray-800 bg-gray-100"
-                    }`}
-                  >
-                    <IconComponent size={22} />
-                  </div>
-                </div>
-              }
-            >
-              <div className="flex items-center justify-between">
-                <p className="!m-0">
+                      <div className="flex items-center justify-between">
+                        <p className="!m-0">
                   <span className="text-purple-500 pr-1">
                     {item?.percentage}
                   </span>
-                  vs Last Month
-                </p>
-                <p className="text-blue-500 hover:underline cursor-pointer !m-0">
-                  View All
-                </p>
-              </div>
-            </Card>
-          );
-        })}
-      </div>
-      )}
+                          vs Last Month
+                        </p>
+                        <p className="text-blue-500 hover:underline cursor-pointer !m-0">
+                          View All
+                        </p>
+                      </div>
+                    </Card>
+                );
+              })}
+            </div>
+        )}
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        <GraphChart />
-        <DonutChart />
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+          <GraphChart />
+          <DonutChart />
+        </div>
+        <SummaryTable />
       </div>
-      <SummaryTable />
-    </div>
   );
 }

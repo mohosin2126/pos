@@ -136,3 +136,4 @@ export default function Header({ setNavOpened, navOpened, setIsCollapsed }: TSid
         </header>
     );
 }
+

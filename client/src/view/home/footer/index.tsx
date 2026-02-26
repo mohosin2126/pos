@@ -6,108 +6,108 @@ import logoFull from "@/assets/logo/logo-full.svg";
 
 const Footer = () => {
   return (
-    <footer className="container mx-auto mt-16 border-t border-[#223041]">
-      <div className="py-12">
-        {/* Brand logo + tagline */}
-        <div className="mb-10">
-          <Link to="/">
-            <img src={logoFull} alt="POS" className="h-10 w-auto" />
-          </Link>
-          <p className="text-[#93a3b5] text-sm mt-3 max-w-xs">Simplify your business with our modern point of sale system.</p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-10 md:gap-8 text-[#c9d2df]">
-          {/* Links */}
-          <div className="border-y md:border-y-0 md:border-r border-[#223041] py-6 md:py-0 md:pr-8">
-            <h3 className="text-2xl font-semibold text-white">Links</h3>
-            <ul className="mt-6 space-y-3">
-              <li>
-                <Link
-                  to={"/features"}
-                  className="text-[#46d4b5] hover:underline flex items-center gap-2"
-                >
-                  <IoArrowRedo size={20} />
-                  Features
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to={"/pricing"}
-                  className="text-[#46d4b5] hover:underline flex items-center gap-2"
-                >
-                  <IoArrowRedo size={20} />
-                  Pricing
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to={"/contact"}
-                  className="text-[#46d4b5] hover:underline flex items-center gap-2"
-                >
-                  <IoArrowRedo size={20} />
-                  Contact
-                </Link>
-              </li>
-            </ul>
+      <footer className="mt-16 border-t border-[#223041] px-4 md:px-6 lg:px-10">
+        <div className="py-12 mx-auto max-w-7xl">
+          {/* Brand logo + tagline */}
+          <div className="mb-10">
+            <Link to="/">
+              <img src={logoFull} alt="POS" className="h-10 w-auto" />
+            </Link>
+            <p className="text-[#93a3b5] text-sm mt-3 max-w-xs">Simplify your business with our modern point of sale system.</p>
           </div>
 
-          {/* Stay tuned */}
-          <div className="border-y md:border-y-0 md:border-r border-[#223041] py-6 md:py-0 md:px-8">
-            <h3 className="text-2xl font-semibold text-white">Stay tuned</h3>
-            <p className="text-[#93a3b5] leading-relaxed mt-4 max-w-xs">
-              Connect with us and stay in the loop.
-            </p>
-            <div className="flex items-center gap-4 mt-6">
-              <a href="https://twitter.com" aria-label="Twitter" className="button !p-3" target="_blank" rel="noopener noreferrer">
-                <FaTwitter size={22} />
-              </a>
-              <a href="https://facebook.com" aria-label="Facebook" className="button !p-3" target="_blank" rel="noopener noreferrer">
-                <FaFacebookF size={22} />
-              </a>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-10 md:gap-8 text-[#c9d2df]">
+            {/* Links */}
+            <div className="border-y md:border-y-0 md:border-r border-[#223041] py-6 md:py-0 md:pr-8">
+              <h3 className="text-2xl font-semibold text-white">Links</h3>
+              <ul className="mt-6 space-y-3">
+                <li>
+                  <Link
+                      to={"/features"}
+                      className="text-[#46d4b5] hover:underline flex items-center gap-2"
+                  >
+                    <IoArrowRedo size={20} />
+                    Features
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                      to={"/pricing"}
+                      className="text-[#46d4b5] hover:underline flex items-center gap-2"
+                  >
+                    <IoArrowRedo size={20} />
+                    Pricing
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                      to={"/contact"}
+                      className="text-[#46d4b5] hover:underline flex items-center gap-2"
+                  >
+                    <IoArrowRedo size={20} />
+                    Contact
+                  </Link>
+                </li>
+              </ul>
             </div>
-          </div>
 
-          {/* Email updates */}
-          <div className="border-y md:border-y-0 md:border-r border-[#223041] py-6 md:py-0 md:px-8">
-            <h3 className="text-2xl font-semibold text-white">Email updates</h3>
-            <p className="text-[#93a3b5] leading-relaxed mt-4 max-w-md">
-              Be the first to hear about our offers and announcements.
-            </p>
-            <div className="mt-6">
-              <div className="flex items-center gap-3 border border-[#223041] bg-[#0f141a] rounded-md px-4 h-14 max-w-xl">
-                <FiMail size={22} className="text-[#c9d2df]" />
-                <input
-                  type="email"
-                  placeholder="email"
-                  className="bg-transparent flex-1 outline-none placeholder:text-[#93a3b5] text-white"
-                />
+            {/* Stay tuned */}
+            <div className="border-y md:border-y-0 md:border-r border-[#223041] py-6 md:py-0 md:px-8">
+              <h3 className="text-2xl font-semibold text-white">Stay tuned</h3>
+              <p className="text-[#93a3b5] leading-relaxed mt-4 max-w-xs">
+                Connect with us and stay in the loop.
+              </p>
+              <div className="flex items-center gap-4 mt-6">
+                <a href="https://twitter.com" aria-label="Twitter" className="button !p-3" target="_blank" rel="noopener noreferrer">
+                  <FaTwitter size={22} />
+                </a>
+                <a href="https://facebook.com" aria-label="Facebook" className="button !p-3" target="_blank" rel="noopener noreferrer">
+                  <FaFacebookF size={22} />
+                </a>
+              </div>
+            </div>
+
+            {/* Email updates */}
+            <div className="border-y md:border-y-0 md:border-r border-[#223041] py-6 md:py-0 md:px-8">
+              <h3 className="text-2xl font-semibold text-white">Email updates</h3>
+              <p className="text-[#93a3b5] leading-relaxed mt-4 max-w-md">
+                Be the first to hear about our offers and announcements.
+              </p>
+              <div className="mt-6">
+                <div className="flex items-center gap-3 border border-[#223041] bg-[#0f141a] rounded-md px-4 h-14 max-w-xl">
+                  <FiMail size={22} className="text-[#c9d2df]" />
+                  <input
+                      type="email"
+                      placeholder="email"
+                      className="bg-transparent flex-1 outline-none placeholder:text-[#93a3b5] text-white"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Contact us */}
+            <div className="py-6 md:py-0 md:pl-8">
+              <h3 className="text-2xl font-semibold text-white">Contact us</h3>
+              <p className="text-[#93a3b5] leading-relaxed mt-4 max-w-xs">
+                Questions? We've got answers. Try us.
+              </p>
+              <div className="mt-6">
+                <Link to="/contact" className="button inline-block">EMAIL US</Link>
               </div>
             </div>
           </div>
 
-          {/* Contact us */}
-          <div className="py-6 md:py-0 md:pl-8">
-            <h3 className="text-2xl font-semibold text-white">Contact us</h3>
-            <p className="text-[#93a3b5] leading-relaxed mt-4 max-w-xs">
-              Questions? We've got answers. Try us.
+          {/* Bottom copyright bar */}
+          <div className="border-t border-[#223041] mt-10 pt-6 text-[#93a3b5]">
+            <p className="text-center text-sm">
+              Copyright 2026 © —{" "}
+              <Link to="#" className="text-[#46d4b5]">
+                MAS Dev
+              </Link>
             </p>
-            <div className="mt-6">
-              <Link to="/contact" className="button inline-block">EMAIL US</Link>
-            </div>
           </div>
         </div>
-
-        {/* Bottom copyright bar */}
-        <div className="border-t border-[#223041] mt-10 pt-6 text-[#93a3b5]">
-          <p className="text-center text-sm">
-            Copyright 2026 © —{" "}
-            <Link to="#" className="text-[#46d4b5]">
-              MAS Dev
-            </Link>
-          </p>
-        </div>
-      </div>
-    </footer>
+      </footer>
   );
 };
 
