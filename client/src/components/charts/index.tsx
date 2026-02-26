@@ -84,7 +84,7 @@ export const GraphChart: React.FC = () => {
     <Card
       className="w-full h-[450px] overflow-hidden"
       title={
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="!text-base md:!text-lg font-semibold flex items-center !m-0">
             <Tag className="!py-1 !border-none" color="cyan">
               <HiOutlineShoppingCart size={20} />
@@ -138,7 +138,6 @@ export const DonutChart: React.FC = () => {
   const options: ApexCharts.ApexOptions = {
     chart: {
       type: "donut",
-      width: 380,
       events: {
         dataPointSelection: (_event, _chartContext, config) => {
           setActiveIndex(config.dataPointIndex);
@@ -199,7 +198,7 @@ export const DonutChart: React.FC = () => {
   return (
     <Card
       title={
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center !m-0">
             <Tag className="!py-1 !border-none" color="error">
               <GrOverview size={20} />
@@ -232,12 +231,20 @@ export const DonutChart: React.FC = () => {
         </div>
       }
     >
-      <div className="flex justify-center overflow-hidden">
+      <div className="mx-auto w-full max-w-[360px] overflow-hidden">
         <ReactApexChart
           key={activeIndex ?? "total"}
           options={{
             ...options,
             responsive: [
+              {
+                breakpoint: 1280,
+                options: {
+                  chart: {
+                    width: 320,
+                  },
+                },
+              },
               {
                 breakpoint: 768,
                 options: {
@@ -250,9 +257,10 @@ export const DonutChart: React.FC = () => {
           }}
           series={values}
           type="donut"
-          width={420}
+          width="100%"
         />
       </div>
     </Card>
   );
 };
+
