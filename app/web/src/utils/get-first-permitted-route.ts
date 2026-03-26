@@ -24,6 +24,7 @@ const ROUTE_PRIORITY: PermittedRoute[] = [
     path: "/purchase-return",
   },
   { permission: PERMISSIONS.VIEW_SALES, path: "/sales/all" },
+  { permission: PERMISSIONS.VIEW_SALE_RETURNS, path: "/sale-return" },
   { permission: PERMISSIONS.CREATE_POS, path: "/pos/create" },
   { permission: PERMISSIONS.VIEW_CUSTOMERS, path: "/customer/all" },
   { permission: PERMISSIONS.VIEW_INVOICES, path: "/invoice/all" },

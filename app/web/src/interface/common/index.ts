@@ -255,6 +255,7 @@ export interface TInvoice {
   notes: string | null;
   createdAt: string;
   updatedAt: string;
+  returns?: TSaleReturn[];
 }
 
 export interface TCustomer {
@@ -320,6 +321,56 @@ export interface TSaleProps {
   items?: TSaleItem[];
   customer?: TCustomer;
   invoice?: TInvoice;
+  returns?: TSaleReturn[];
+}
+
+export interface TSaleReturnItem {
+  saleItemId: number;
+  productId: number;
+  quantity: number;
+  taxAmount: number;
+  lineTotal: number;
+  allocations?: TAllocation[];
+}
+
+export interface TSaleReturnRequestItem {
+  saleItemId: number;
+  quantity: number;
+}
+
+export interface TSaleReturn {
+  id?: number;
+  saleId: number;
+  invoiceId?: number;
+  referenceNo?: string;
+  returnDate: string;
+  returnReason:
+    | "defective"
+    | "overstock"
+    | "expired"
+    | "quality_issue"
+    | "wrong_item"
+    | "customer_request"
+    | "other";
+  returnItems: TSaleReturnItem[];
+  totalReturnAmount: number;
+  refundAmount?: number;
+  refundStatus?: "pending" | "approved" | "refunded" | "rejected";
+  restockingDisposition?: "restock" | "scrap" | "donate" | "pending";
+  notes?: string;
+  sale?: TSaleProps;
+  invoice?: TInvoice;
+}
+
+export interface TSaleReturnCreatePayload {
+  saleId: number;
+  referenceNo?: string;
+  returnDate: string;
+  returnReason: TSaleReturn["returnReason"];
+  returnItems: TSaleReturnRequestItem[];
+  refundAmount?: number;
+  restockingDisposition?: TSaleReturn["restockingDisposition"];
+  notes?: string;
 }
 
 export interface TActivityProduct {
@@ -413,6 +464,13 @@ export interface TPurchaseReturnsApiResponse {
   success: boolean;
   message: string;
   data: TPurchaseReturn[];
+  pagination: TPagination;
+}
+
+export interface TSaleReturnsApiResponse {
+  success: boolean;
+  message: string;
+  data: TSaleReturn[];
   pagination: TPagination;
 }
 

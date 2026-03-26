@@ -274,6 +274,7 @@ const create = async (req, res) => {
                 { model: SaleItem, as: "items", include: [{ model: sequelize.models.Product, as: "product" }] },
                 { model: sequelize.models.Customer, as: "customer" },
                 { model: sequelize.models.Invoice, as: "invoice" },
+                { model: sequelize.models.SaleReturn, as: "returns" },
             ],
         });
 
@@ -341,6 +342,7 @@ const getOne = async (req, res) => {
                 { model: SaleItem, as: "items", include: [{ model: sequelize.models.Product, as: "product" }] },
                 { model: sequelize.models.Customer, as: "customer" },
                 { model: sequelize.models.Invoice, as: "invoice" },
+                { model: sequelize.models.SaleReturn, as: "returns" },
             ],
         });
         if (!sale) return notFound(res, "Sale not found");

@@ -163,6 +163,32 @@ const SALE_SEEDS = [
     },
 ];
 
+const SALE_RETURN_SEEDS = [
+    {
+        referenceNo: "SRET-DEMO-4001",
+        saleReferenceNo: "SALE-DEMO-3003",
+        returnDate: "2026-03-25T10:15:00.000Z",
+        returnReason: "customer_request",
+        refundStatus: "refunded",
+        restockingDisposition: "restock",
+        notes: "Customer exchanged two apparel items.",
+        items: [
+            { sku: "CLOT-TSH-005", quantity: 2 },
+            { sku: "HOME-MUG-006", quantity: 1 },
+        ],
+    },
+    {
+        referenceNo: "SRET-DEMO-4002",
+        saleReferenceNo: "SALE-DEMO-3004",
+        returnDate: "2026-03-26T12:20:00.000Z",
+        returnReason: "quality_issue",
+        refundStatus: "pending",
+        restockingDisposition: "pending",
+        notes: "Customer reported damaged cleaning bottle.",
+        items: [{ sku: "HOME-CLN-007", quantity: 1 }],
+    },
+];
+
 function roundMoney(value) {
     return Number(new Decimal(value || 0).toDecimalPlaces(2, Decimal.ROUND_HALF_UP).toString());
 }
@@ -201,6 +227,18 @@ function normalizeSaleItems(items, productBySku) {
             allocations: item.allocations || null,
         };
     });
+}
+
+function parseJsonArray(value) {
+    if (Array.isArray(value)) return value;
+    if (!value) return [];
+
+    try {
+        const parsed = JSON.parse(value);
+        return Array.isArray(parsed) ? parsed : [];
+    } catch (_error) {
+        return [];
+    }
 }
 
 function computeSaleTotals(seed, normalizedItems) {
@@ -546,6 +584,114 @@ module.exports = {
             }
         }
 
+        const saleByReference = toMap(
+            await fetchRows(
+                queryInterface,
+                Sequelize,
+                "SELECT id, referenceNo FROM sales WHERE referenceNo IN (:referenceNos)",
+                { referenceNos: SALE_SEEDS.map((sale) => sale.referenceNo) }
+            ),
+            "referenceNo"
+        );
+        const invoiceBySaleId = toMap(
+            await fetchRows(
+                queryInterface,
+                Sequelize,
+                "SELECT id, saleId FROM invoices WHERE saleId IN (:saleIds)",
+                { saleIds: [...saleByReference.values()].map((sale) => sale.id) }
+            ),
+            "saleId"
+        );
+        const saleItemsBySaleId = await fetchRows(
+            queryInterface,
+            Sequelize,
+            `SELECT si.id, si.saleId, si.productId, si.quantity, si.taxAmount, si.lineTotal, si.allocations, p.sku
+             FROM sale_items si
+             JOIN products p ON p.id = si.productId
+             WHERE si.saleId IN (:saleIds)`,
+            { saleIds: [...saleByReference.values()].map((sale) => sale.id) }
+        );
+
+        const existingSaleReturnByReference = toMap(
+            await fetchRows(
+                queryInterface,
+                Sequelize,
+                "SELECT id, referenceNo FROM sale_returns WHERE referenceNo IN (:referenceNos)",
+                { referenceNos: SALE_RETURN_SEEDS.map((saleReturn) => saleReturn.referenceNo) }
+            ),
+            "referenceNo"
+        );
+
+        const saleReturnsToInsert = SALE_RETURN_SEEDS
+            .filter((saleReturn) => !existingSaleReturnByReference.has(saleReturn.referenceNo))
+            .map((saleReturn) => {
+                const sale = saleByReference.get(saleReturn.saleReferenceNo);
+                if (!sale) throw new Error(`Missing sale for sales return ${saleReturn.referenceNo}`);
+
+                const saleItems = saleItemsBySaleId.filter((item) => Number(item.saleId) === Number(sale.id));
+                const returnItems = saleReturn.items.map((item) => {
+                    const saleItem = saleItems.find((row) => row.sku === item.sku);
+                    if (!saleItem) {
+                        throw new Error(`Missing sale item for SKU ${item.sku} in ${saleReturn.referenceNo}`);
+                    }
+
+                    const quantity = Number(item.quantity || 0);
+                    const originalQty = Number(saleItem.quantity || 0);
+                    const originalLineTotal = Number(saleItem.lineTotal || 0);
+                    const originalTaxAmount = Number(saleItem.taxAmount || 0);
+                    const originalAllocations = parseJsonArray(saleItem.allocations);
+                    let remaining = quantity;
+                    const allocations = [];
+
+                    for (const allocation of originalAllocations) {
+                        if (remaining <= 0) break;
+                        const qty = Math.min(Number(allocation.qty || 0), remaining);
+                        allocations.push({
+                            expiryDate: allocation.expiryDate || null,
+                            qty,
+                        });
+                        remaining -= qty;
+                    }
+
+                    if (remaining > 0) {
+                        throw new Error(`Insufficient allocations for ${saleReturn.referenceNo}`);
+                    }
+
+                    return {
+                        saleItemId: saleItem.id,
+                        productId: saleItem.productId,
+                        quantity,
+                        taxAmount: roundMoney(originalTaxAmount * quantity / originalQty),
+                        lineTotal: roundMoney(originalLineTotal * quantity / originalQty),
+                        allocations,
+                    };
+                });
+
+                const totalReturnAmount = roundMoney(
+                    returnItems.reduce((sum, item) => sum + Number(item.lineTotal || 0), 0)
+                );
+
+                return {
+                    saleId: sale.id,
+                    invoiceId: invoiceBySaleId.get(sale.id)?.id || null,
+                    referenceNo: saleReturn.referenceNo,
+                    returnDate: new Date(saleReturn.returnDate),
+                    returnReason: saleReturn.returnReason,
+                    returnItems: JSON.stringify(returnItems),
+                    totalReturnAmount,
+                    refundAmount: totalReturnAmount,
+                    refundStatus: saleReturn.refundStatus,
+                    restockingDisposition: saleReturn.restockingDisposition,
+                    notes: saleReturn.notes || null,
+                    createdAt: now,
+                    updatedAt: now,
+                };
+            });
+
+        if (saleReturnsToInsert.length > 0) {
+            await queryInterface.bulkInsert("sale_returns", saleReturnsToInsert, {});
+        }
+
         await recomputeForProducts([...productBySku.values()].map((product) => Number(product.id)).filter(Boolean));
     },
 
@@ -553,8 +699,13 @@ module.exports = {
         const saleReferenceNos = SALE_SEEDS.map((sale) => sale.referenceNo);
         const purchaseReferenceNos = PURCHASE_SEEDS.map((purchase) => purchase.referenceNo);
         const returnReferenceNos = PURCHASE_RETURN_SEEDS.map((purchaseReturn) => purchaseReturn.referenceNo);
+        const saleReturnReferenceNos = SALE_RETURN_SEEDS.map((saleReturn) => saleReturn.referenceNo);
         const invoiceNos = SALE_SEEDS.map((sale) => sale.referenceNo.replace("SALE", "INV"));
 
+        await queryInterface.sequelize.query(
+            "DELETE FROM sale_returns WHERE referenceNo IN (:referenceNos)",
+            { replacements: { referenceNos: saleReturnReferenceNos } }
+        );
         await queryInterface.sequelize.query(
             "DELETE FROM sale_items WHERE saleId IN (SELECT id FROM sales WHERE referenceNo IN (:referenceNos))",
             { replacements: { referenceNos: saleReferenceNos } }

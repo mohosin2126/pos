@@ -8,6 +8,7 @@ const productManagement = require("./product");
 const purchaseManagement = require("./purchase");
 const purchaseReturnManagement = require("./purchase-return");
 const saleManagement = require("./sale");
+const saleReturnManagement = require("./sale-return");
 const inventoryManagement = require("./inventory");
 const customerManagement = require("./customer");
 const invoiceManagement = require("./invoice");
@@ -37,6 +38,7 @@ module.exports = function registerRoutes(app) {
     app.use("/api/v1/admin/purchase", purchaseManagement);
     app.use("/api/v1/admin/purchase-return", purchaseReturnManagement);
     app.use("/api/v1/admin/sale", saleManagement);
+    app.use("/api/v1/admin/sale-return", saleReturnManagement);
     app.use("/api/v1/admin/inventory", inventoryManagement);
     app.use("/api/v1/admin/customer", customerManagement);
     app.use("/api/v1/admin/invoice",invoiceManagement);

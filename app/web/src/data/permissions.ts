@@ -48,6 +48,10 @@ export const PERMISSIONS = {
   // Sales
   VIEW_SALES: "view_sales",
   CREATE_SALES: "create_sales",
+  VIEW_SALE_RETURNS: "view_sale_returns",
+  CREATE_SALE_RETURNS: "create_sale_returns",
+  EDIT_SALE_RETURNS: "edit_sale_returns",
+  DELETE_SALE_RETURNS: "delete_sale_returns",
 
   // POS
   VIEW_POS: "view_pos",
@@ -147,7 +151,14 @@ export const PERMISSION_GROUPS: Record<string, PermissionGroupDef> = {
   },
   sales: {
     label: "Sales",
-    permissions: [PERMISSIONS.VIEW_SALES, PERMISSIONS.CREATE_SALES],
+    permissions: [
+      PERMISSIONS.VIEW_SALES,
+      PERMISSIONS.CREATE_SALES,
+      PERMISSIONS.VIEW_SALE_RETURNS,
+      PERMISSIONS.CREATE_SALE_RETURNS,
+      PERMISSIONS.EDIT_SALE_RETURNS,
+      PERMISSIONS.DELETE_SALE_RETURNS,
+    ],
   },
   pos: {
     label: "POS (Point of Sale)",

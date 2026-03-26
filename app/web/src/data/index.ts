@@ -180,6 +180,12 @@ export const getMenuItems = (basePath: string): TMenuBlock[] => [
                 permission: P.VIEW_SALES,
             },
             {
+                label: "Sales Return",
+                icon: FiRotateCcw,
+                href: `${basePath}/sale-return`,
+                permission: P.VIEW_SALE_RETURNS,
+            },
+            {
                 label: "POS (Point of Sale)",
                 icon: MdOutlineLaptopChromebook,
                 href: `${basePath}/pos/create`,

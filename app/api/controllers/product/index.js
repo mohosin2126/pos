@@ -35,6 +35,18 @@ const normalizeTags = (value) => {
     return [];
 };
 
+const parseJsonArray = (value) => {
+    if (Array.isArray(value)) return value;
+    if (!value) return [];
+
+    try {
+        const parsed = JSON.parse(value);
+        return Array.isArray(parsed) ? parsed : [];
+    } catch (_error) {
+        return [];
+    }
+};
+
 function resolveAnalyticsPeriod(periodRaw) {
     const period = typeof periodRaw === "string" ? periodRaw.toLowerCase() : "month";
     if (!["day", "month", "year", "all"].includes(period)) {
@@ -145,13 +157,55 @@ async function getProductAnalytics(productIds, periodConfig) {
         ])
     );
 
+    const returnReplacements = [];
+    const returnDateFilter =
+        periodConfig.start && periodConfig.end
+            ? "AND returnDate >= ? AND returnDate <= ?"
+            : "";
+
+    if (periodConfig.start && periodConfig.end) {
+        returnReplacements.push(periodConfig.start, periodConfig.end);
+    }
+
+    const returnRows = await sequelize.query(
+        `SELECT returnItems
+         FROM sale_returns
+         WHERE refundStatus IN ('approved', 'refunded')
+           ${returnDateFilter}`,
+        { replacements: returnReplacements, type: sequelize.QueryTypes.SELECT }
+    );
+
+    const returnedByProductId = new Map();
+    for (const row of returnRows) {
+        const returnItems = parseJsonArray(row.returnItems);
+
+        for (const item of returnItems) {
+            const productId = Number(item.productId);
+            if (!productIds.includes(productId)) continue;
+
+            const current = returnedByProductId.get(productId) || {
+                soldQuantity: 0,
+                revenue: 0,
+            };
+
+            current.soldQuantity += Number(item.quantity || 0);
+            current.revenue += Number(item.lineTotal || 0) - Number(item.taxAmount || 0);
+            returnedByProductId.set(productId, current);
+        }
+    }
+
     const avgCostByProductId = new Map(
         costRows.map((row) => [Number(row.productId), Number(row.avgCost || 0)])
     );
 
     const analyticsByProductId = new Map();
     for (const productId of productIds) {
-        const salesData = salesByProductId.get(Number(productId)) || { soldQuantity: 0, revenue: 0 };
+        const grossSalesData = salesByProductId.get(Number(productId)) || { soldQuantity: 0, revenue: 0 };
+        const returnedData = returnedByProductId.get(Number(productId)) || { soldQuantity: 0, revenue: 0 };
+        const salesData = {
+            soldQuantity: Math.max(0, grossSalesData.soldQuantity - returnedData.soldQuantity),
+            revenue: Math.max(0, grossSalesData.revenue - returnedData.revenue),
+        };
         const avgCost = avgCostByProductId.get(Number(productId)) || 0;
         const costOfGoodsSold = Number((salesData.soldQuantity * avgCost).toFixed(2));
         const revenue = Number(Number(salesData.revenue || 0).toFixed(2));

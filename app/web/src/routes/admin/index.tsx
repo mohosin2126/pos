@@ -18,6 +18,7 @@ import POSForm from "@/view/admin/pos/create";
 import PurchaseOrder from "@/view/admin/purchase-order";
 import PurchaseReturn from "@/view/admin/purchase-return";
 import SalesRecords from "@/view/admin/sales-records/all";
+import SaleReturnPage from "@/view/admin/sale-return";
 import RolesAndPermissions from "@/view/admin/roles-and-permissions";
 import Stock from "@/view/admin/stock";
 import OutOfStock from "@/view/admin/activity-products/out-of-stock";
@@ -345,6 +346,14 @@ const adminRoutes = [
                 ),
               },
             ],
+          },
+          {
+            path: "sale-return",
+            element: (
+              <PermissionGuard requires={[P.VIEW_SALE_RETURNS]}>
+                <SaleReturnPage />
+              </PermissionGuard>
+            ),
           },
           {
             path: "activity-products",

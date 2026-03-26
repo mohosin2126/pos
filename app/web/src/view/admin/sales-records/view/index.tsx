@@ -12,6 +12,12 @@ import {
   Table,
   Badge,
   Avatar,
+  Modal,
+  Form,
+  DatePicker,
+  Input,
+  InputNumber,
+  Select,
 } from "antd";
 import {
   FileTextOutlined,
@@ -30,11 +36,14 @@ import {
   InfoCircleOutlined,
 } from "@ant-design/icons";
 import { Link, useParams } from "react-router-dom";
+import { useState } from "react";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { DashboardTitle } from "@/components/re-useable/dashboard-titile";
 import { useSale } from "@/hooks/admin/sales";
+import { useCreateSaleReturn } from "@/hooks/admin/sale-return";
 import { useBasePath } from "@/hooks/common/use-base-path";
+import type { TSaleReturn } from "@/interface/common";
 
 dayjs.extend(relativeTime);
 
@@ -42,13 +51,47 @@ const { Title, Text, Paragraph } = Typography;
 
 export default function SalesDetails() {
   const { id } = useParams();
-  const { sale } = useSale(id);
+  const { sale, refetch } = useSale(id);
   const basePath = useBasePath();
+  const { createSaleReturn, loading: creatingReturn } = useCreateSaleReturn();
+  const [isReturnModalOpen, setIsReturnModalOpen] = useState(false);
+  const [returnQuantities, setReturnQuantities] = useState<Record<number, number>>({});
+  const [returnForm] = Form.useForm();
 
   // console.log("sales data :", sale);
 
   const detailsData = sale?.invoice;
   const customerData = sale?.customer;
+  const saleReturns = sale?.returns || [];
+  const activeReturns = saleReturns.filter(
+    (saleReturn) => saleReturn.refundStatus !== "rejected"
+  );
+  const existingReturnedQtyBySaleItem = activeReturns.reduce<Record<number, number>>(
+    (acc, saleReturn) => {
+      saleReturn.returnItems?.forEach((item) => {
+        acc[item.saleItemId] = (acc[item.saleItemId] || 0) + Number(item.quantity || 0);
+      });
+      return acc;
+    },
+    {}
+  );
+  const returnableItems = (sale?.items || []).map((item) => {
+    const returnedQty = existingReturnedQtyBySaleItem[item.id] || 0;
+    const availableQty = Math.max(0, Number(item.quantity || 0) - returnedQty);
+
+    return {
+      ...item,
+      returnedQty,
+      availableQty,
+    };
+  });
+  const totalReturnedAmount = activeReturns.reduce(
+    (sum, saleReturn) => sum + Number(saleReturn.totalReturnAmount || 0),
+    0
+  );
+  const refundedAmount = saleReturns
+    .filter((saleReturn) => saleReturn.refundStatus === "refunded")
+    .reduce((sum, saleReturn) => sum + Number(saleReturn.refundAmount || 0), 0);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -119,6 +162,56 @@ export default function SalesDetails() {
     }
   };
 
+  const openReturnModal = () => {
+    setReturnQuantities({});
+    returnForm.setFieldsValue({
+      returnDate: dayjs(),
+      returnReason: "customer_request",
+      restockingDisposition: "restock",
+      notes: "",
+    });
+    setIsReturnModalOpen(true);
+  };
+
+  const handleCreateReturn = async (values: {
+    returnDate: dayjs.Dayjs;
+    returnReason: TSaleReturn["returnReason"];
+    restockingDisposition: TSaleReturn["restockingDisposition"];
+    notes?: string;
+  }) => {
+    if (!sale?.id) return;
+
+    const returnItems = Object.entries(returnQuantities)
+      .map(([saleItemId, quantity]) => ({
+        saleItemId: Number(saleItemId),
+        quantity: Number(quantity || 0),
+      }))
+      .filter((item) => item.quantity > 0);
+
+    if (returnItems.length === 0) {
+      message.error("Select at least one item quantity to return");
+      return;
+    }
+
+    const result = await createSaleReturn({
+      saleId: sale.id,
+      referenceNo: `SRET-${Date.now()}`,
+      returnDate: values.returnDate.toISOString(),
+      returnReason: values.returnReason,
+      restockingDisposition: values.restockingDisposition,
+      notes: values.notes,
+      returnItems,
+    });
+
+    if (result) {
+      message.success("Sales return created successfully");
+      setIsReturnModalOpen(false);
+      setReturnQuantities({});
+      returnForm.resetFields();
+      refetch();
+    }
+  };
+
   return (
     <div className=" min-h-screen">
       {/* Header Section */}
@@ -129,6 +222,16 @@ export default function SalesDetails() {
         />
 
         <Space>
+          <Button
+            type="primary"
+            onClick={openReturnModal}
+            disabled={
+              sale?.status !== "completed" ||
+              returnableItems.every((item) => item.availableQty <= 0)
+            }
+          >
+            Create Return
+          </Button>
           <Button
             type="primary"
             icon={<DownloadOutlined />}
@@ -461,11 +564,29 @@ export default function SalesDetails() {
                     className="text-center border-l-4 border-l-orange-500"
                   >
                     <Statistic
-                      title="Balance Due"
-                      value={detailsData?.balanceDue}
+                      title="Returned Amount"
+                      value={totalReturnedAmount}
                       precision={2}
                       valueStyle={{
                         color: "#fa8c16",
+                        fontSize: "18px",
+                        fontWeight: "bold",
+                      }}
+                      prefix="$"
+                    />
+                  </Card>
+                </Col>
+                <Col xs={24} sm={12} md={8}>
+                  <Card
+                    size="small"
+                    className="text-center border-l-4 border-l-cyan-500"
+                  >
+                    <Statistic
+                      title="Refunded Amount"
+                      value={refundedAmount}
+                      precision={2}
+                      valueStyle={{
+                        color: "#08979c",
                         fontSize: "18px",
                         fontWeight: "bold",
                       }}
@@ -517,6 +638,93 @@ export default function SalesDetails() {
               </Row>
             </div>
             <Divider />
+
+            {saleReturns.length > 0 && (
+              <>
+                <div className="mb-6">
+                  <Title level={4} className="!mb-4 flex items-center">
+                    <InfoCircleOutlined className="mr-2 text-[#005555]" />
+                    Return History
+                  </Title>
+
+                  <Table
+                    dataSource={saleReturns}
+                    pagination={false}
+                    rowKey="id"
+                    size="small"
+                    scroll={{ x: 800 }}
+                    columns={[
+                      {
+                        title: "Return Ref",
+                        dataIndex: "referenceNo",
+                        key: "referenceNo",
+                        render: (value) => value || "N/A",
+                      },
+                      {
+                        title: "Date",
+                        dataIndex: "returnDate",
+                        key: "returnDate",
+                        render: (value) =>
+                          value ? dayjs(value).format("DD MMM YYYY") : "N/A",
+                      },
+                      {
+                        title: "Reason",
+                        dataIndex: "returnReason",
+                        key: "returnReason",
+                        render: (value) => (
+                          <Tag color="purple">
+                            {(value || "").replace(/_/g, " ").toUpperCase()}
+                          </Tag>
+                        ),
+                      },
+                      {
+                        title: "Items",
+                        key: "items",
+                        render: (_, record) =>
+                          record.returnItems?.reduce(
+                            (sum, item) => sum + Number(item.quantity || 0),
+                            0
+                          ) || 0,
+                      },
+                      {
+                        title: "Return Amount",
+                        dataIndex: "totalReturnAmount",
+                        key: "totalReturnAmount",
+                        render: (value) => `$${Number(value || 0).toFixed(2)}`,
+                      },
+                      {
+                        title: "Refund",
+                        dataIndex: "refundAmount",
+                        key: "refundAmount",
+                        render: (value) => `$${Number(value || 0).toFixed(2)}`,
+                      },
+                      {
+                        title: "Status",
+                        dataIndex: "refundStatus",
+                        key: "refundStatus",
+                        render: (value) => (
+                          <Tag
+                            color={
+                              value === "approved"
+                                ? "orange"
+                                : value === "refunded"
+                                ? "green"
+                                : value === "rejected"
+                                ? "red"
+                                : "blue"
+                            }
+                          >
+                            {(value || "pending").toUpperCase()}
+                          </Tag>
+                        ),
+                      },
+                    ]}
+                  />
+                </div>
+
+                <Divider />
+              </>
+            )}
 
             {/* Sales Metadata */}
             <div className="mb-6">
@@ -850,6 +1058,122 @@ export default function SalesDetails() {
           </Card>
         </div>
       )}
+
+      <Modal
+        title="Create Sales Return"
+        open={isReturnModalOpen}
+        onCancel={() => {
+          setIsReturnModalOpen(false);
+          setReturnQuantities({});
+          returnForm.resetFields();
+        }}
+        onOk={() => returnForm.submit()}
+        confirmLoading={creatingReturn}
+        width={900}
+      >
+        <Form form={returnForm} layout="vertical" onFinish={handleCreateReturn}>
+          <Row gutter={16}>
+            <Col xs={24} md={8}>
+              <Form.Item
+                label="Return Date"
+                name="returnDate"
+                rules={[{ required: true, message: "Return date is required" }]}
+              >
+                <DatePicker className="!w-full" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item
+                label="Reason"
+                name="returnReason"
+                rules={[{ required: true, message: "Reason is required" }]}
+              >
+                <Select>
+                  <Select.Option value="customer_request">Customer Request</Select.Option>
+                  <Select.Option value="wrong_item">Wrong Item</Select.Option>
+                  <Select.Option value="defective">Defective</Select.Option>
+                  <Select.Option value="quality_issue">Quality Issue</Select.Option>
+                  <Select.Option value="expired">Expired</Select.Option>
+                  <Select.Option value="other">Other</Select.Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item
+                label="Restocking"
+                name="restockingDisposition"
+                rules={[{ required: true, message: "Restocking disposition is required" }]}
+              >
+                <Select>
+                  <Select.Option value="restock">Restock</Select.Option>
+                  <Select.Option value="scrap">Scrap</Select.Option>
+                  <Select.Option value="donate">Donate</Select.Option>
+                  <Select.Option value="pending">Pending</Select.Option>
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Table
+            dataSource={returnableItems}
+            pagination={false}
+            rowKey="id"
+            size="small"
+            scroll={{ x: 800 }}
+            columns={[
+              {
+                title: "Product",
+                key: "product",
+                render: (_, record) => record.product?.name || `Product #${record.productId}`,
+              },
+              {
+                title: "Sold Qty",
+                dataIndex: "quantity",
+                key: "quantity",
+                render: (value) => Number(value || 0),
+              },
+              {
+                title: "Already Returned",
+                dataIndex: "returnedQty",
+                key: "returnedQty",
+              },
+              {
+                title: "Available",
+                dataIndex: "availableQty",
+                key: "availableQty",
+              },
+              {
+                title: "Unit Price",
+                dataIndex: "unitPrice",
+                key: "unitPrice",
+                render: (value) => `$${Number(value || 0).toFixed(2)}`,
+              },
+              {
+                title: "Return Qty",
+                key: "returnQty",
+                render: (_, record) => (
+                  <InputNumber
+                    min={0}
+                    max={record.availableQty}
+                    value={returnQuantities[record.id] || 0}
+                    disabled={record.availableQty <= 0}
+                    onChange={(value) =>
+                      setReturnQuantities((prev) => ({
+                        ...prev,
+                        [record.id]: Number(value || 0),
+                      }))
+                    }
+                  />
+                ),
+              },
+            ]}
+          />
+
+          <Form.Item label="Notes" name="notes" className="!mt-4">
+            <Input.TextArea rows={3} placeholder="Optional note for this return" />
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 }

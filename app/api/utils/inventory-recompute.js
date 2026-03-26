@@ -11,6 +11,7 @@ const STOCKED_PURCHASE_STATUSES = [
 ];
 
 const STOCK_REDUCING_RETURN_STATUSES = ["pending", "approved", "refunded"];
+const STOCK_RESTORING_SALE_RETURN_STATUSES = ["approved", "refunded"];
 
 function startOfToday() {
     return new Date(new Date().toDateString());
@@ -129,8 +130,9 @@ async function buildLotSnapshot(productIds, t) {
     }
 
     const soldByProductLot = new Map();
+    const saleIds = new Set();
     const [saleRows] = await sequelize.query(
-        `SELECT si.productId, si.allocations
+        `SELECT si.saleId, si.productId, si.allocations
          FROM sale_items si
          JOIN sales s ON s.id = si.saleId
          WHERE si.productId IN (${productPlaceholders})
@@ -139,12 +141,46 @@ async function buildLotSnapshot(productIds, t) {
     );
 
     for (const row of saleRows) {
+        saleIds.add(Number(row.saleId));
         const productId = Number(row.productId);
         const allocations = parseJsonArray(row.allocations);
 
         for (const allocation of allocations) {
             const key = `${productId}__${toDateKey(allocation.expiryDate)}`;
             soldByProductLot.set(key, (soldByProductLot.get(key) || 0) + Number(allocation.qty || 0));
+        }
+    }
+
+    if (saleIds.size > 0) {
+        const saleIdList = [...saleIds];
+        const saleIdPlaceholders = saleIdList.map(() => "?").join(",");
+        const saleReturnStatusPlaceholders = STOCK_RESTORING_SALE_RETURN_STATUSES.map(() => "?").join(",");
+
+        const [saleReturnRows] = await sequelize.query(
+            `SELECT returnItems
+             FROM sale_returns
+             WHERE saleId IN (${saleIdPlaceholders})
+               AND refundStatus IN (${saleReturnStatusPlaceholders})
+               AND restockingDisposition = 'restock'`,
+            {
+                replacements: [...saleIdList, ...STOCK_RESTORING_SALE_RETURN_STATUSES],
+                transaction: t,
+            }
+        );
+
+        for (const row of saleReturnRows) {
+            const returnItems = parseJsonArray(row.returnItems);
+
+            for (const item of returnItems) {
+                const productId = Number(item.productId);
+                if (!productIds.includes(productId)) continue;
+
+                const allocations = parseJsonArray(item.allocations);
+                for (const allocation of allocations) {
+                    const key = `${productId}__${toDateKey(allocation.expiryDate)}`;
+                    soldByProductLot.set(key, (soldByProductLot.get(key) || 0) - Number(allocation.qty || 0));
+                }
+            }
         }
     }
 
@@ -326,6 +362,7 @@ async function recomputeForProducts(productIds, t) {
 module.exports = {
     STOCKED_PURCHASE_STATUSES,
     STOCK_REDUCING_RETURN_STATUSES,
+    STOCK_RESTORING_SALE_RETURN_STATUSES,
     getRemainingLotsForProduct,
     recomputeForProducts,
 };
