@@ -2,6 +2,7 @@
 
 const { Op } = require("sequelize");
 const { Purchase, PurchaseItem, PurchaseReturn } = require("../database/models");
+const { prorateAmount, roundMoney } = require("./price-calculator");
 
 const BASE_PURCHASE_STATUSES = new Set(["purchase", "received", "partial"]);
 const RETURNABLE_PURCHASE_STATUSES = new Set([
@@ -21,10 +22,6 @@ function parseReturnItems(value) {
     } catch (_error) {
         return [];
     }
-}
-
-function roundMoney(value) {
-    return Math.round((Number(value || 0) + Number.EPSILON) * 100) / 100;
 }
 
 function getValidBasePurchaseStatus(status) {
@@ -65,13 +62,33 @@ async function getReturnAvailability(purchaseId, t, excludeReturnId = null) {
         transaction: t,
     });
 
+    const itemsById = new Map();
+    const itemsByProduct = new Map();
     const purchasedByProduct = new Map();
     const purchasedValueByProduct = new Map();
 
     for (const item of items) {
+        const itemId = Number(item.id);
         const productId = Number(item.productId);
         const quantity = Number(item.quantity || 0);
         const lineTotal = roundMoney(item.lineTotal || Number(item.unitPrice || 0) * quantity);
+        const availabilityEntry = {
+            purchaseItemId: itemId,
+            productId,
+            originalQty: quantity,
+            availableQty: quantity,
+            originalLineTotal: lineTotal,
+            availableLineTotal: lineTotal,
+            unitPrice: roundMoney(item.unitPrice || 0),
+            batchNo: item.batchNo || null,
+            expiryDate: item.expiryDate || null,
+        };
+
+        itemsById.set(itemId, availabilityEntry);
+        if (!itemsByProduct.has(productId)) {
+            itemsByProduct.set(productId, []);
+        }
+        itemsByProduct.get(productId).push(availabilityEntry);
 
         purchasedByProduct.set(productId, (purchasedByProduct.get(productId) || 0) + quantity);
         purchasedValueByProduct.set(
@@ -94,6 +111,56 @@ async function getReturnAvailability(purchaseId, t, excludeReturnId = null) {
                 productId,
                 roundMoney((returnedValueByProduct.get(productId) || 0) + lineTotal)
             );
+
+            const allocations = Array.isArray(item.allocations) ? item.allocations : [];
+            if (allocations.length > 0) {
+                for (const allocation of allocations) {
+                    const purchaseItemId = Number(allocation.purchaseItemId);
+                    const target = itemsById.get(purchaseItemId);
+                    if (!target) continue;
+
+                    const allocationQty = Number(allocation.qty || 0);
+                    const allocationLineTotal = roundMoney(
+                        allocation.lineTotal
+                            ?? (allocationQty >= target.availableQty
+                                ? target.availableLineTotal
+                                : prorateAmount(target.availableLineTotal, allocationQty, target.availableQty))
+                    );
+
+                    target.availableQty = Math.max(0, target.availableQty - allocationQty);
+                    target.availableLineTotal = roundMoney(
+                        Math.max(0, target.availableLineTotal - allocationLineTotal)
+                    );
+                }
+                continue;
+            }
+
+            let remainingQty = quantity;
+            let remainingLineTotal = lineTotal;
+            const productEntries = itemsByProduct.get(productId) || [];
+
+            for (const entry of productEntries) {
+                if (remainingQty <= 0) break;
+                if (entry.availableQty <= 0) continue;
+
+                const qtyToApply = Math.min(entry.availableQty, remainingQty);
+                const lineTotalToApply = qtyToApply >= entry.availableQty
+                    ? Math.min(entry.availableLineTotal, remainingLineTotal || entry.availableLineTotal)
+                    : Math.min(
+                        entry.availableLineTotal,
+                        remainingLineTotal > 0
+                            ? prorateAmount(remainingLineTotal, qtyToApply, remainingQty)
+                            : prorateAmount(entry.availableLineTotal, qtyToApply, entry.availableQty)
+                    );
+
+                entry.availableQty = Math.max(0, entry.availableQty - qtyToApply);
+                entry.availableLineTotal = roundMoney(
+                    Math.max(0, entry.availableLineTotal - lineTotalToApply)
+                );
+
+                remainingQty -= qtyToApply;
+                remainingLineTotal = roundMoney(Math.max(0, remainingLineTotal - lineTotalToApply));
+            }
         }
     }
 
@@ -113,12 +180,92 @@ async function getReturnAvailability(purchaseId, t, excludeReturnId = null) {
     return {
         existingReturns,
         items,
+        itemAvailability: [...itemsById.values()],
+        itemAvailabilityByProduct: itemsByProduct,
         availableByProduct,
         availableValueByProduct,
         purchasedByProduct,
         purchasedValueByProduct,
         returnedByProduct,
     };
+}
+
+function buildValidatedReturnItems(requestItems, availability) {
+    const requestedQtyByProduct = new Map();
+
+    for (const item of requestItems || []) {
+        const productId = Number(item.productId);
+        const quantity = Number(item.quantity || 0);
+        if (!productId) {
+            return { error: "Each return item must include a valid productId" };
+        }
+        requestedQtyByProduct.set(
+            productId,
+            (requestedQtyByProduct.get(productId) || 0) + quantity
+        );
+    }
+
+    const builtItems = [];
+
+    for (const [productId, quantity] of requestedQtyByProduct.entries()) {
+        const entries = (availability.itemAvailabilityByProduct.get(productId) || [])
+            .filter((entry) => entry.availableQty > 0);
+        const totalAvailableQty = entries.reduce((sum, entry) => sum + Number(entry.availableQty || 0), 0);
+
+        if (quantity <= 0) {
+            return { error: `Return quantity for product ${productId} must be greater than 0` };
+        }
+
+        if (quantity > totalAvailableQty) {
+            return {
+                error: `Cannot return ${quantity} units for product ${productId}; only ${totalAvailableQty} available to return`,
+            };
+        }
+
+        let remainingQty = quantity;
+        const allocations = [];
+        let lineTotal = 0;
+
+        for (const entry of entries) {
+            if (remainingQty <= 0) break;
+
+            const qtyToTake = Math.min(entry.availableQty, remainingQty);
+            if (qtyToTake <= 0) continue;
+
+            const lineTotalForAllocation = qtyToTake >= entry.availableQty
+                ? roundMoney(entry.availableLineTotal)
+                : roundMoney(prorateAmount(entry.availableLineTotal, qtyToTake, entry.availableQty));
+
+            allocations.push({
+                purchaseItemId: entry.purchaseItemId,
+                qty: qtyToTake,
+                unitPrice: entry.unitPrice,
+                lineTotal: lineTotalForAllocation,
+                batchNo: entry.batchNo || null,
+                expiryDate: entry.expiryDate || null,
+            });
+
+            lineTotal = roundMoney(lineTotal + lineTotalForAllocation);
+            remainingQty -= qtyToTake;
+        }
+
+        if (remainingQty > 0) {
+            return { error: `Unable to allocate return quantity for product ${productId}` };
+        }
+
+        if (lineTotal <= 0) {
+            return { error: `Return amount for product ${productId} must be greater than 0` };
+        }
+
+        builtItems.push({
+            productId,
+            quantity,
+            lineTotal,
+            allocations,
+        });
+    }
+
+    return { returnItems: builtItems };
 }
 
 function validateReturnRequest(purchase, returnItems, availability) {
@@ -151,6 +298,10 @@ function validateReturnRequest(purchase, returnItems, availability) {
             availability.availableValueByProduct.get(productId) || 0
         );
         const lineTotal = roundMoney(item.lineTotal);
+
+        if (lineTotal <= 0) {
+            return `Return amount for product ${productId} must be greater than 0`;
+        }
 
         if (lineTotal > maxLineTotal + 0.01) {
             return `Return line total for product ${productId} exceeds the purchased value`;
@@ -234,6 +385,7 @@ module.exports = {
     getFallbackPurchaseStatus,
     getReturnProductIds,
     getValidBasePurchaseStatus,
+    buildValidatedReturnItems,
     parseReturnItems,
     syncPurchaseReturnStatus,
     validateReturnRequest,

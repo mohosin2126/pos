@@ -12,9 +12,11 @@ const {
 } = require("../../utils/api-response");
 const {
     calculateItemTotal,
+    calculateSaleOrderTotals,
     calculateTotalItems,
-    Decimal,
+    validateSellingPrice,
 } = require("../../utils/price-calculator");
+const { getNetPurchaseCostSnapshots } = require("../../utils/costing");
 
 
 
@@ -98,6 +100,7 @@ const create = async (req, res) => {
 
         const sale = await sequelize.transaction(async (t) => {
             const saleStatus = req.body.status || "completed";
+            const costSnapshotsByProductId = await getNetPurchaseCostSnapshots(productIds, t);
             let resolvedCustomerId = null;
             try {
                 resolvedCustomerId = await resolveCustomerIdFromPayload(
@@ -130,6 +133,7 @@ const create = async (req, res) => {
             }, { transaction: t });
 
             const affected = new Set();
+            const calculatedItems = [];
 
             for (const item of items) {
                 const pid = Number(item.productId);
@@ -168,6 +172,18 @@ const create = async (req, res) => {
                     throw { _badRequest: `Item calculation error for product ${pid}: ${itemCalc.error}` };
                 }
 
+                const costSnapshot = costSnapshotsByProductId.get(pid) || null;
+                const buyingPrice = Number(costSnapshot?.avgCost || costSnapshot?.lastCost || 0);
+                const sellingPriceValidation = validateSellingPrice(
+                    itemCalc.unitPrice,
+                    buyingPrice
+                );
+                if (!sellingPriceValidation.isValid) {
+                    throw {
+                        _badRequest: `Selling price for product ${pid} is invalid: ${sellingPriceValidation.error}`,
+                    };
+                }
+
                 await SaleItem.create({
                     saleId: sale.id,
                     productId: pid,
@@ -181,59 +197,35 @@ const create = async (req, res) => {
                     allocations,
                 }, { transaction: t });
 
+                calculatedItems.push({
+                    ...itemCalc,
+                    productId: pid,
+                    discountType: item.discountType || "none",
+                    taxPercent: item.taxPercent || 0,
+                    allocations,
+                });
+
                 affected.add(pid);
             }
 
-            const [tot] = await sequelize.query(
-                `SELECT
-                     COALESCE(SUM(quantity),0) AS totalItems,
-                     COALESCE(SUM(lineTotal - taxAmount),0) AS netTotalAmount,
-                     COALESCE(SUM(lineTotal),0) AS totalAmount,
-                     COALESCE(SUM(taxAmount),0) AS totalTax
-                 FROM sale_items WHERE saleId = ?`,
-                { replacements: [sale.id], transaction: t }
+            const totals = calculateSaleOrderTotals(
+                calculatedItems,
+                { type: sale.discountType || "none", amount: sale.discountAmount || 0 },
+                sale.orderTaxPercent || 0,
+                sale.shippingCharge || 0
             );
-            const tr = Array.isArray(tot) ? tot[0] : tot;
-
-            const saleItems = await SaleItem.findAll({ where: { saleId: sale.id }, transaction: t });
-            const totalItemsCount = calculateTotalItems(saleItems);
-            const itemSubtotal = Number(tr.netTotalAmount || 0);
-            const itemTaxes = Number(tr.totalTax || 0);
-            let orderDiscount = new Decimal(0);
-
-            if (sale.discountType === "percent") {
-                orderDiscount = new Decimal(itemSubtotal)
-                    .times(new Decimal(sale.discountAmount || 0))
-                    .dividedBy(100)
-                    .toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
-            } else if (sale.discountType === "fixed") {
-                orderDiscount = new Decimal(sale.discountAmount || 0).toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
+            if (!totals.isValid) {
+                throw { _badRequest: totals.error };
             }
 
-            if (orderDiscount.greaterThan(new Decimal(itemSubtotal))) {
-                throw { _badRequest: "Order discount cannot exceed subtotal" };
-            }
-
-            const subtotalAfterOrderDiscount = new Decimal(itemSubtotal)
-                .minus(orderDiscount)
-                .toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
-            const orderTax = subtotalAfterOrderDiscount
-                .times(new Decimal(sale.orderTaxPercent || 0))
-                .dividedBy(100)
-                .toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
-            const shippingCharge = new Decimal(sale.shippingCharge || 0).toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
-            const totalAmount = subtotalAfterOrderDiscount
-                .plus(new Decimal(itemTaxes))
-                .plus(orderTax)
-                .plus(shippingCharge)
-                .toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
+            const totalItemsCount = calculateTotalItems(calculatedItems);
 
             await sale.update({
                 totalItems: totalItemsCount,
-                discountAmount: orderDiscount.toNumber(),
-                netTotalAmount: itemSubtotal,
-                totalAmount: totalAmount.toNumber(),
-                orderTaxAmount: orderTax.toNumber(),
+                discountAmount: totals.orderDiscount,
+                netTotalAmount: totals.netTotal,
+                totalAmount: totals.total,
+                orderTaxAmount: totals.orderTax,
             }, { transaction: t });
 
             if (saleStatus === "completed" && affected.size > 0) {
@@ -244,7 +236,7 @@ const create = async (req, res) => {
                 const invoiceNo = await generateInvoiceNo(t);
                 
                 const amountPaid = Number(sale.amountPaid || 0);
-                const balanceDue = Math.max(0, totalAmount.toNumber() - amountPaid);
+                const balanceDue = Math.max(0, totals.total - amountPaid);
                 const status = balanceDue <= 0 ? "paid" : "issued";
 
                 await Invoice.create({
@@ -253,11 +245,11 @@ const create = async (req, res) => {
                     invoiceNo,
                     invoiceDate: req.body.invoiceDate || new Date(),
                     dueDate: req.body.dueDate || null,
-                    subTotal: itemSubtotal,
-                    discountAmount: orderDiscount.toNumber(),
-                    orderTaxAmount: orderTax.toNumber(),
-                    shippingCharge: shippingCharge.toNumber(),
-                    totalAmount: totalAmount.toNumber(),
+                    subTotal: totals.subtotal,
+                    discountAmount: totals.orderDiscount,
+                    orderTaxAmount: totals.orderTax,
+                    shippingCharge: totals.shipping,
+                    totalAmount: totals.total,
                     amountPaid,
                     balanceDue,
                     status,

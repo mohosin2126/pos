@@ -12,7 +12,6 @@ import {
   CustomInput,
   CustomSelect,
   CustomTextArea,
-  CustomNumberInput,
   FileUpload,
 } from "@/components/form";
 import { formatTagsForInput, normalizeTags } from "@/utils/tag-utils";
@@ -25,8 +24,6 @@ export default function ProductForm() {
   const basePath = useBasePath();
   const isUpdate = Boolean(id);
   const { product } = useProduct(id);
-
-  console.log("product ", product);
 
   const { createProduct } = useCreateProduct();
   const { updateProduct } = useUpdateProduct();
@@ -50,6 +47,8 @@ export default function ProductForm() {
     try {
       const payload = {
         ...values,
+        price: undefined,
+        sellingPrice: undefined,
         tags: normalizeTags(values.tags),
       };
       if (isUpdate && product?.id !== undefined) {
@@ -78,6 +77,9 @@ export default function ProductForm() {
       <h2 className="text-xl font-semibold !mb-6">
         {isUpdate ? "Update Product" : "Add Product"}
       </h2>
+      <p className="text-sm text-gray-500 !mb-6">
+        Selling price is set from the purchase screen when you buy stock for this product.
+      </p>
       <Form
         layout="vertical"
         form={form}
@@ -143,19 +145,6 @@ export default function ProductForm() {
             type="number"
             placeholder="Enter reorder level"
             rules={[{ required: true, message: "Reorder Level is required" }]}
-          />
-
-          <CustomNumberInput
-            label="Selling Price"
-            name="price"
-            step={0.01}
-            min={0}
-            placeholder="Enter selling price"
-            rules={[
-              { required: true, message: "Selling price is required" },
-              { pattern: /^[0-9]*\.?[0-9]*$/, message: "Invalid price format" },
-              { type: 'number', min: 0, message: "Price cannot be negative" }
-            ]}
           />
 
           <CustomSelect

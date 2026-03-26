@@ -5,6 +5,7 @@ const { Purchase, Supplier, Product, PurchaseItem, PurchaseReturn, sequelize } =
 const { recomputeForProducts, STOCKED_PURCHASE_STATUSES } = require("../../utils/inventory-recompute");
 const {
     BASE_PURCHASE_STATUSES,
+    buildValidatedReturnItems,
     getReturnAvailability,
     getFallbackPurchaseStatus,
     getReturnProductIds,
@@ -21,11 +22,37 @@ const {
 } = require("./validation");
 const {
     validateLineTotal,
-    calculateOrderTotal,
+    calculatePurchaseOrderTotals,
     calculateTotalItems,
+    roundMoney,
+    validateSellingPrice,
 } = require("../../utils/price-calculator");
 
 const STOCK_AFFECTING_PURCHASE_STATUSES = new Set(STOCKED_PURCHASE_STATUSES);
+
+function buildSellingPriceByProduct(items = []) {
+    const sellingPriceByProduct = new Map();
+
+    for (const item of items) {
+        const productId = Number(item.productId);
+        const sellingPrice = roundMoney(item.sellingPrice || 0);
+        if (!productId) continue;
+
+        if (sellingPriceByProduct.has(productId)) {
+            const existing = sellingPriceByProduct.get(productId);
+            if (Math.abs(existing - sellingPrice) > 0.009) {
+                return {
+                    error: `Product ${productId} has conflicting selling prices in this purchase`,
+                };
+            }
+            continue;
+        }
+
+        sellingPriceByProduct.set(productId, sellingPrice);
+    }
+
+    return { sellingPriceByProduct };
+}
 
 const create = async (req, res) => {
     try {
@@ -52,6 +79,11 @@ const create = async (req, res) => {
                 return badRequest(res, `Product ${prod.id} is not active and cannot be purchased`);
             }
         }
+        const productById = new Map(products.map((product) => [Number(product.id), product]));
+        const sellingPriceResult = buildSellingPriceByProduct(items);
+        if (sellingPriceResult.error) {
+            return badRequest(res, sellingPriceResult.error);
+        }
 
         const calculatedItems = [];
         for (const item of items) {
@@ -59,10 +91,17 @@ const create = async (req, res) => {
             if (!validated.isValid) {
                 return badRequest(res, `Item validation error: ${validated.error}`);
             }
+            const sellingPrice = roundMoney(item.sellingPrice || 0);
+            const priceValidation = validateSellingPrice(sellingPrice, validated.unitPrice);
+            if (!priceValidation.isValid) {
+                const product = productById.get(Number(item.productId));
+                return badRequest(res, `Pricing error for product ${product?.name || item.productId}: ${priceValidation.error}`);
+            }
             calculatedItems.push({
                 ...item,
                 quantity: validated.quantity,
                 unitPrice: validated.unitPrice,
+                sellingPrice,
                 lineTotal: validated.lineTotal,
             });
         }
@@ -70,7 +109,7 @@ const create = async (req, res) => {
     
         const discountAmount = value.discountType === "none" ? 0 : (value.discountAmount || 0);
 
-        const orderCalc = calculateOrderTotal(
+        const orderCalc = calculatePurchaseOrderTotals(
             calculatedItems,
             { type: value.discountType || "none", amount: discountAmount },
             value.orderTaxPercent || 0,
@@ -101,7 +140,7 @@ const create = async (req, res) => {
                     shippingCharge: value.shippingCharge || 0,
                     additionalExpenses: value.additionalExpenses,
                     totalItems: totalItemsCount,
-                    netTotalAmount: orderCalc.subtotal,
+                    netTotalAmount: orderCalc.netTotal,
                     totalAmount: orderCalc.total,
                     amountPaid: value.amountPaid || 0,
                     notes: value.notes,
@@ -126,6 +165,13 @@ const create = async (req, res) => {
                     { transaction: t }
                 );
                 createdItems.push(lineItem);
+            }
+
+            for (const [productId, sellingPrice] of sellingPriceResult.sellingPriceByProduct.entries()) {
+                await Product.update(
+                    { price: sellingPrice },
+                    { where: { id: productId }, transaction: t }
+                );
             }
 
             if (STOCK_AFFECTING_PURCHASE_STATUSES.has(createdStatus)) {
@@ -229,6 +275,11 @@ const update = async (req, res) => {
             if (products.length !== uniqueProductIds.length) {
                 return badRequest(res, "One or more products not found");
             }
+            const productById = new Map(products.map((product) => [Number(product.id), product]));
+            const sellingPriceResult = buildSellingPriceByProduct(value.items);
+            if (sellingPriceResult.error) {
+                return badRequest(res, sellingPriceResult.error);
+            }
 
             calculatedItems = [];
             for (const item of value.items) {
@@ -236,10 +287,17 @@ const update = async (req, res) => {
                 if (!validated.isValid) {
                     return badRequest(res, `Item validation error: ${validated.error}`);
                 }
+                const sellingPrice = roundMoney(item.sellingPrice || 0);
+                const priceValidation = validateSellingPrice(sellingPrice, validated.unitPrice);
+                if (!priceValidation.isValid) {
+                    const product = productById.get(Number(item.productId));
+                    return badRequest(res, `Pricing error for product ${product?.name || item.productId}: ${priceValidation.error}`);
+                }
                 calculatedItems.push({
                     ...item,
                     quantity: validated.quantity,
                     unitPrice: validated.unitPrice,
+                    sellingPrice,
                     lineTotal: validated.lineTotal,
                 });
             }
@@ -250,7 +308,7 @@ const update = async (req, res) => {
             const discountType = value.discountType ?? purchase.discountType ?? "none";
             const discountAmount = discountType === "none" ? 0 : (value.discountAmount ?? purchase.discountAmount ?? 0);
             
-            orderCalc = calculateOrderTotal(
+            orderCalc = calculatePurchaseOrderTotals(
                 calculatedItems,
                 { type: discountType, amount: discountAmount },
                 value.orderTaxPercent ?? purchase.orderTaxPercent ?? 0,
@@ -288,7 +346,7 @@ const update = async (req, res) => {
                 updateData.discountAmount = orderCalc.orderDiscount;
                 updateData.orderTaxAmount = orderCalc.orderTax;
                 updateData.totalItems = calculateTotalItems(calculatedItems);
-                updateData.netTotalAmount = orderCalc.subtotal;
+                updateData.netTotalAmount = orderCalc.netTotal;
                 updateData.totalAmount = orderCalc.total;
             }
 
@@ -309,6 +367,17 @@ const update = async (req, res) => {
                             batchNo: item.batchNo,
                         },
                         { transaction: t }
+                    );
+                }
+
+                const sellingPriceResult = buildSellingPriceByProduct(calculatedItems);
+                if (sellingPriceResult.error) {
+                    throw { _badRequest: sellingPriceResult.error };
+                }
+                for (const [productId, sellingPrice] of sellingPriceResult.sellingPriceByProduct.entries()) {
+                    await Product.update(
+                        { price: sellingPrice },
+                        { where: { id: productId }, transaction: t }
                     );
                 }
             }
@@ -335,6 +404,7 @@ const update = async (req, res) => {
 
         return success(res, "Purchase updated successfully", updated);
     } catch (error) {
+        if (error && error._badRequest) return badRequest(res, error._badRequest);
         return serverError(res, "Error updating purchase", error);
     }
 };
@@ -429,18 +499,30 @@ const createReturn = async (req, res) => {
             return badRequest(res, "Cannot return items from a purchase with no items");
         }
 
-        const lineItemsTotal = Number(
-            value.returnItems.reduce((sum, item) => sum + Number(item.lineTotal || 0), 0).toFixed(2)
-        );
-        if (Math.abs(lineItemsTotal - Number(value.totalReturnAmount || 0)) > 0.01) {
-            return badRequest(res, "Total return amount must equal the sum of the return items");
-        }
-
         const purchaseReturn = await sequelize.transaction(async (t) => {
             const availability = await getReturnAvailability(purchaseId, t);
-            const validationMessage = validateReturnRequest(purchase, value.returnItems, availability);
+            const built = buildValidatedReturnItems(value.returnItems, availability);
+            if (built.error) {
+                throw { _badRequest: built.error };
+            }
+
+            const validationMessage = validateReturnRequest(purchase, built.returnItems, availability);
             if (validationMessage) {
                 throw { _badRequest: validationMessage };
+            }
+
+            const totalReturnAmount = roundMoney(
+                built.returnItems.reduce((sum, item) => sum + Number(item.lineTotal || 0), 0)
+            );
+            const requestedRefundAmount = value.refundAmount ?? totalReturnAmount;
+            const refundAmount = roundMoney(requestedRefundAmount);
+
+            if (refundAmount < 0) {
+                throw { _badRequest: "Refund amount cannot be negative" };
+            }
+
+            if (refundAmount > totalReturnAmount + 0.01) {
+                throw { _badRequest: "Refund amount cannot exceed the total return amount" };
             }
 
             const pr = await PurchaseReturn.create(
@@ -449,9 +531,9 @@ const createReturn = async (req, res) => {
                     referenceNo: value.referenceNo,
                     returnDate: value.returnDate,
                     returnReason: value.returnReason,
-                    returnItems: value.returnItems,
-                    totalReturnAmount: value.totalReturnAmount,
-                    refundAmount: value.refundAmount ?? value.totalReturnAmount,
+                    returnItems: built.returnItems,
+                    totalReturnAmount,
+                    refundAmount,
                     refundStatus: "pending",
                     restockingDisposition: value.restockingDisposition,
                     basePurchaseStatus: getFallbackPurchaseStatus(

@@ -64,8 +64,8 @@ export default function AllPos() {
 
     const normalizeProduct = (p: any) => p?.product ?? p;
 
-    const productUnitPrice = (p: any) =>
-        Number(p?.unitPrice ?? p?.price ?? 0);
+const productUnitPrice = (p: any) =>
+  Number(p?.unitPrice ?? p?.sellingPrice ?? p?.price ?? 0);
 
     const productStock = (p: any) =>
         Number(p?.stockQuantity ?? p?.stock ?? 0);

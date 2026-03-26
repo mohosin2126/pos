@@ -1,6 +1,14 @@
 "use strict";
 
-const { calculateItemTotal, calculateOrderTotal, Decimal } = require("../../utils/price-calculator");
+const {
+    calculateItemTotal,
+    calculateOrderTotal,
+    calculateSaleOrderTotals,
+    Decimal,
+    prorateAmount,
+    roundMoney,
+} = require("../../utils/price-calculator");
+const { getSaleReturnRevenueAmount } = require("../../utils/sale-returns");
 const { recomputeForProducts } = require("../../utils/inventory-recompute");
 
 const PURCHASE_SEEDS = [
@@ -189,10 +197,6 @@ const SALE_RETURN_SEEDS = [
     },
 ];
 
-function roundMoney(value) {
-    return Number(new Decimal(value || 0).toDecimalPlaces(2, Decimal.ROUND_HALF_UP).toString());
-}
-
 function fetchRows(queryInterface, Sequelize, sql, replacements) {
     return queryInterface.sequelize.query(sql, { replacements, type: Sequelize.QueryTypes.SELECT });
 }
@@ -242,36 +246,27 @@ function parseJsonArray(value) {
 }
 
 function computeSaleTotals(seed, normalizedItems) {
-    const itemSubtotal = normalizedItems.reduce(
-        (sum, item) => sum.plus(new Decimal(item.lineTotal).minus(new Decimal(item.taxAmount))),
-        new Decimal(0)
+    const totals = calculateSaleOrderTotals(
+        normalizedItems,
+        { type: seed.discountType || "none", amount: seed.discountAmount || 0 },
+        seed.orderTaxPercent || 0,
+        seed.shippingCharge || 0
     );
-    const itemTaxes = normalizedItems.reduce((sum, item) => sum.plus(new Decimal(item.taxAmount)), new Decimal(0));
-
-    let orderDiscount = new Decimal(0);
-    if (seed.discountType === "percent") {
-        orderDiscount = itemSubtotal.times(new Decimal(seed.discountAmount || 0)).dividedBy(100).toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
-    } else if (seed.discountType === "fixed") {
-        orderDiscount = new Decimal(seed.discountAmount || 0).toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
+    if (!totals.isValid) {
+        throw new Error(`Invalid sale totals for ${seed.referenceNo}: ${totals.error}`);
     }
-    if (orderDiscount.greaterThan(itemSubtotal)) {
-        throw new Error(`Order discount exceeds subtotal for ${seed.referenceNo}`);
-    }
-
-    const subtotalAfterDiscount = itemSubtotal.minus(orderDiscount).toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
-    const orderTax = subtotalAfterDiscount.times(new Decimal(seed.orderTaxPercent || 0)).dividedBy(100).toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
-    const shipping = new Decimal(seed.shippingCharge || 0).toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
-    const totalAmount = subtotalAfterDiscount.plus(itemTaxes).plus(orderTax).plus(shipping).toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
-    const amountPaid = seed.amountPaid === "full" ? totalAmount : new Decimal(seed.amountPaid || 0).toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
-    const balanceDue = Decimal.max(new Decimal(0), totalAmount.minus(amountPaid)).toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
+    const amountPaid = seed.amountPaid === "full"
+        ? new Decimal(totals.total).toDecimalPlaces(2, Decimal.ROUND_HALF_UP)
+        : new Decimal(seed.amountPaid || 0).toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
+    const balanceDue = Decimal.max(new Decimal(0), new Decimal(totals.total).minus(amountPaid)).toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
 
     return {
         totalItems: normalizedItems.reduce((sum, item) => sum + Number(item.quantity || 0), 0),
-        netTotalAmount: roundMoney(itemSubtotal),
-        discountAmount: roundMoney(orderDiscount),
-        orderTaxAmount: roundMoney(orderTax),
-        shippingCharge: roundMoney(shipping),
-        totalAmount: roundMoney(totalAmount),
+        netTotalAmount: roundMoney(totals.netTotal),
+        discountAmount: roundMoney(totals.orderDiscount),
+        orderTaxAmount: roundMoney(totals.orderTax),
+        shippingCharge: roundMoney(totals.shipping),
+        totalAmount: roundMoney(totals.total),
         amountPaid: roundMoney(amountPaid),
         balanceDue: roundMoney(balanceDue),
         invoiceStatus: balanceDue.equals(0) ? "paid" : "issued",
@@ -588,7 +583,7 @@ module.exports = {
             await fetchRows(
                 queryInterface,
                 Sequelize,
-                "SELECT id, referenceNo FROM sales WHERE referenceNo IN (:referenceNos)",
+                "SELECT id, referenceNo, discountAmount, orderTaxAmount, netTotalAmount FROM sales WHERE referenceNo IN (:referenceNos)",
                 { referenceNos: SALE_SEEDS.map((sale) => sale.referenceNo) }
             ),
             "referenceNo"
@@ -639,7 +634,19 @@ module.exports = {
                     const originalQty = Number(saleItem.quantity || 0);
                     const originalLineTotal = Number(saleItem.lineTotal || 0);
                     const originalTaxAmount = Number(saleItem.taxAmount || 0);
+                    const originalBaseAmount = roundMoney(originalLineTotal - originalTaxAmount);
                     const originalAllocations = parseJsonArray(saleItem.allocations);
+                    const totalOrderDiscount = roundMoney(sale.discountAmount || 0);
+                    const fullSubtotal = roundMoney(sale.netTotalAmount || 0);
+                    const orderDiscountAmount = fullSubtotal > 0
+                        ? roundMoney((originalBaseAmount * totalOrderDiscount) / fullSubtotal)
+                        : 0;
+                    const discountedBaseAmount = roundMoney(originalBaseAmount - orderDiscountAmount);
+                    const discountedSubtotal = roundMoney(fullSubtotal - totalOrderDiscount);
+                    const totalOrderTax = roundMoney(sale.orderTaxAmount || 0);
+                    const orderTaxAmount = discountedSubtotal > 0
+                        ? roundMoney((discountedBaseAmount * totalOrderTax) / discountedSubtotal)
+                        : 0;
                     let remaining = quantity;
                     const allocations = [];
 
@@ -661,8 +668,18 @@ module.exports = {
                         saleItemId: saleItem.id,
                         productId: saleItem.productId,
                         quantity,
-                        taxAmount: roundMoney(originalTaxAmount * quantity / originalQty),
-                        lineTotal: roundMoney(originalLineTotal * quantity / originalQty),
+                        baseAmount: roundMoney(prorateAmount(originalBaseAmount, quantity, originalQty)),
+                        taxAmount: roundMoney(prorateAmount(originalTaxAmount, quantity, originalQty)),
+                        orderDiscountAmount: roundMoney(prorateAmount(orderDiscountAmount, quantity, originalQty)),
+                        orderTaxAmount: roundMoney(prorateAmount(orderTaxAmount, quantity, originalQty)),
+                        lineTotal: roundMoney(
+                            getSaleReturnRevenueAmount({
+                                baseAmount: roundMoney(prorateAmount(originalBaseAmount, quantity, originalQty)),
+                                orderDiscountAmount: roundMoney(prorateAmount(orderDiscountAmount, quantity, originalQty)),
+                            })
+                            + roundMoney(prorateAmount(originalTaxAmount, quantity, originalQty))
+                            + roundMoney(prorateAmount(orderTaxAmount, quantity, originalQty))
+                        ),
                         allocations,
                     };
                 });

@@ -61,30 +61,6 @@ export default function POSDetails() {
     return dayjs(dateString).format("MMM D, YYYY");
   };
 
-  const calculateSubtotal = () => {
-    return posData?.items?.reduce(
-      (sum, item) =>
-        sum + parseFloat(item.quantity) * parseFloat(item.unitPrice),
-      0
-    );
-  };
-
-  const calculateTotalDiscount = () => {
-    return posData?.items?.reduce(
-      (sum, item) => sum + parseFloat(item.discountAmount),
-      0
-    );
-  };
-
-  const calculateTotalTax = () => {
-    return posData?.items?.reduce((sum, item) => {
-      const itemSubtotal =
-        parseFloat(item.quantity) * parseFloat(item.unitPrice) -
-        parseFloat(item.discountAmount);
-      return sum + (itemSubtotal * parseFloat(item.taxPercent)) / 100;
-    }, 0);
-  };
-
   const getDiscountTypeText = (type: string) => {
     switch (type) {
       case "none":
@@ -179,7 +155,7 @@ export default function POSDetails() {
       ),
     },
     {
-      title: "Unit Price",
+      title: "Selling Price",
       dataIndex: "unitPrice",
       key: "unitPrice",
       align: "right" as const,

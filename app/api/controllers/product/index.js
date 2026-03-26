@@ -1,10 +1,26 @@
 "use strict";
 
-const { Op } = require("sequelize");
+const { Op, QueryTypes } = require("sequelize");
 const { Product, Category, sequelize } = require("../../database/models");
 const {badRequest, created, conflict, serverError, parsePagination, paginated, notFound, success} = require("../../utils/api-response");
 const { calculateProfitMetrics, validateSellingPrice } = require("../../utils/price-calculator");
-const { STOCKED_PURCHASE_STATUSES } = require("../../utils/inventory-recompute");
+const { getNetPurchaseCostSnapshots } = require("../../utils/costing");
+const { getSaleReturnRevenueAmount } = require("../../utils/sale-returns");
+
+const normalizeSellingPrice = (payload = {}) => {
+    if (payload.sellingPrice !== undefined) {
+        return payload.sellingPrice;
+    }
+    return payload.price;
+};
+
+const decorateProductPayload = (product) => {
+    if (!product) return product;
+    return {
+        ...product,
+        sellingPrice: Number(product.price || 0),
+    };
+};
 
 const normalizeTags = (value) => {
     if (Array.isArray(value)) {
@@ -98,7 +114,6 @@ async function getProductAnalytics(productIds, periodConfig) {
 
     const productPlaceholders = productIds.map(() => "?").join(",");
     const salesReplacements = [...productIds];
-    const purchaseReplacements = [...productIds, ...STOCKED_PURCHASE_STATUSES];
     const salesDateFilter =
         periodConfig.start && periodConfig.end
             ? "AND s.saleDate >= ? AND s.saleDate <= ?"
@@ -134,19 +149,6 @@ async function getProductAnalytics(productIds, periodConfig) {
         { replacements: salesReplacements }
     );
 
-    const purchaseStatusPlaceholders = STOCKED_PURCHASE_STATUSES.map(() => "?").join(",");
-    const [costRows] = await sequelize.query(
-        `SELECT
-             pi.productId,
-             COALESCE(SUM(pi.quantity * pi.unitPrice) / NULLIF(SUM(pi.quantity), 0), 0) AS avgCost
-         FROM purchase_items pi
-         JOIN purchases p ON p.id = pi.purchaseId
-         WHERE pi.productId IN (${productPlaceholders})
-           AND p.status IN (${purchaseStatusPlaceholders})
-         GROUP BY pi.productId`,
-        { replacements: purchaseReplacements }
-    );
-
     const salesByProductId = new Map(
         salesRows.map((row) => [
             Number(row.productId),
@@ -172,7 +174,7 @@ async function getProductAnalytics(productIds, periodConfig) {
          FROM sale_returns
          WHERE refundStatus IN ('approved', 'refunded')
            ${returnDateFilter}`,
-        { replacements: returnReplacements, type: sequelize.QueryTypes.SELECT }
+        { replacements: returnReplacements, type: QueryTypes.SELECT }
     );
 
     const returnedByProductId = new Map();
@@ -189,24 +191,22 @@ async function getProductAnalytics(productIds, periodConfig) {
             };
 
             current.soldQuantity += Number(item.quantity || 0);
-            current.revenue += Number(item.lineTotal || 0) - Number(item.taxAmount || 0);
+            current.revenue += getSaleReturnRevenueAmount(item);
             returnedByProductId.set(productId, current);
         }
     }
 
-    const avgCostByProductId = new Map(
-        costRows.map((row) => [Number(row.productId), Number(row.avgCost || 0)])
-    );
+    const costSnapshotsByProductId = await getNetPurchaseCostSnapshots(productIds);
 
     const analyticsByProductId = new Map();
     for (const productId of productIds) {
         const grossSalesData = salesByProductId.get(Number(productId)) || { soldQuantity: 0, revenue: 0 };
         const returnedData = returnedByProductId.get(Number(productId)) || { soldQuantity: 0, revenue: 0 };
         const salesData = {
-            soldQuantity: Math.max(0, grossSalesData.soldQuantity - returnedData.soldQuantity),
-            revenue: Math.max(0, grossSalesData.revenue - returnedData.revenue),
+            soldQuantity: Number((grossSalesData.soldQuantity - returnedData.soldQuantity).toFixed(2)),
+            revenue: Number((grossSalesData.revenue - returnedData.revenue).toFixed(2)),
         };
-        const avgCost = avgCostByProductId.get(Number(productId)) || 0;
+        const avgCost = Number(costSnapshotsByProductId.get(Number(productId))?.avgCost || 0);
         const costOfGoodsSold = Number((salesData.soldQuantity * avgCost).toFixed(2));
         const revenue = Number(Number(salesData.revenue || 0).toFixed(2));
         const margin = Number((revenue - costOfGoodsSold).toFixed(2));
@@ -257,12 +257,12 @@ async function fetchProductsList(req, { includeAnalytics = false } = {}) {
 
     const analyticsConfig = resolveAnalyticsPeriod(req.query.period);
     const productIds = result.rows.map((row) => Number(row.id)).filter(Boolean);
-    const analyticsByProductId = includeAnalytics
+        const analyticsByProductId = includeAnalytics
         ? await getProductAnalytics(productIds, analyticsConfig)
         : new Map();
 
     const data = result.rows.map((row) => {
-        const item = row.get({ plain: true });
+        const item = decorateProductPayload(row.get({ plain: true }));
         item.tags = normalizeTags(item.tags);
         if (includeAnalytics) {
             Object.assign(item, analyticsByProductId.get(Number(item.id)) || {
@@ -303,6 +303,12 @@ const create = async (req, res) => {
             return badRequest(res, "name and categoryId are required");
         }
 
+        const sellingPrice = normalizeSellingPrice(req.body);
+        const priceValidation = validateSellingPrice(sellingPrice || 0, 0);
+        if (!priceValidation.isValid) {
+            return badRequest(res, priceValidation.error);
+        }
+
         const category = await Category.findByPk(categoryId);
         if (!category) {
             return badRequest(res, "Invalid categoryId: category not found");
@@ -314,7 +320,7 @@ const create = async (req, res) => {
             categoryId,
             sku,
             barcode,
-            price,
+            price: sellingPrice,
             stockQuantity,
             reorderLevel,
             isTrackStock,
@@ -324,7 +330,7 @@ const create = async (req, res) => {
             createdBy,
         });
 
-        return created(res, "Product created", product);
+        return created(res, "Product created", decorateProductPayload(product.get({ plain: true })));
     } catch (err) {
         if (err?.name === "SequelizeUniqueConstraintError") {
             return conflict(res, "SKU must be unique");
@@ -407,7 +413,7 @@ const getOne = async (req, res) => {
         });
 
         if (!product) return notFound(res, "Product not found");
-        const p = product.get({ plain: true });
+        const p = decorateProductPayload(product.get({ plain: true }));
         p.tags = normalizeTags(p.tags);
 
         return success(res, "Success", p);
@@ -427,6 +433,16 @@ const update = async (req, res) => {
             const category = await Category.findByPk(req.body.categoryId);
             if (!category) {
                 return badRequest(res, "Invalid categoryId: category not found");
+            }
+        }
+
+        const sellingPrice = normalizeSellingPrice(req.body);
+        if (sellingPrice !== undefined) {
+            const costSnapshot = (await getNetPurchaseCostSnapshots([Number(id)])).get(Number(id)) || null;
+            const costPrice = Number(costSnapshot?.avgCost || costSnapshot?.lastCost || 0);
+            const priceValidation = validateSellingPrice(sellingPrice, costPrice);
+            if (!priceValidation.isValid) {
+                return badRequest(res, priceValidation.error);
             }
         }
 
@@ -451,9 +467,12 @@ const update = async (req, res) => {
         fields.forEach((field) => {
             if (req.body[field] !== undefined) product[field] = req.body[field];
         });
+        if (sellingPrice !== undefined) {
+            product.price = sellingPrice;
+        }
 
         await product.save();
-        return success(res, "Product updated", product);
+        return success(res, "Product updated", decorateProductPayload(product.get({ plain: true })));
     } catch (err) {
         if (err?.name === "SequelizeUniqueConstraintError") {
             return conflict(res, "SKU must be unique");
@@ -483,29 +502,9 @@ const getCostFromPurchaseHistory = async (req, res) => {
         const product = await Product.findByPk(id);
         if (!product) return notFound(res, "Product not found");
 
-        const [lastPurchase] = await sequelize.query(
-            `SELECT pi.unitPrice as lastCost, p.purchaseDate
-             FROM purchase_items pi
-             JOIN purchases p ON p.id = pi.purchaseId
-             WHERE pi.productId = ?
-             ORDER BY p.purchaseDate DESC, p.id DESC
-             LIMIT 1`,
-            { replacements: [id], type: sequelize.QueryTypes.SELECT }
-        );
-
-        const [avgCostResult] = await sequelize.query(
-            `SELECT 
-                SUM(pi.quantity * pi.unitPrice) / NULLIF(SUM(pi.quantity), 0) as avgCost,
-                SUM(pi.quantity) as totalPurchased
-             FROM purchase_items pi
-             JOIN purchases p ON p.id = pi.purchaseId
-             WHERE pi.productId = ?
-             AND p.status IN ('purchase', 'received')`,
-            { replacements: [id], type: sequelize.QueryTypes.SELECT }
-        );
-
-        const lastCost = lastPurchase ? parseFloat(lastPurchase.lastCost) : null;
-        const avgCost = avgCostResult && avgCostResult.avgCost ? parseFloat(avgCostResult.avgCost) : null;
+        const costSnapshot = (await getNetPurchaseCostSnapshots([Number(id)])).get(Number(id)) || null;
+        const lastCost = costSnapshot?.lastCost ?? null;
+        const avgCost = costSnapshot?.avgCost ?? null;
         const costPrice = avgCost || lastCost || 0;
         const sellingPrice = product.price || 0;
 
@@ -515,9 +514,14 @@ const getCostFromPurchaseHistory = async (req, res) => {
             productId: product.id,
             productName: product.name,
             price: sellingPrice,
+            sellingPrice,
+            buyingPrice: costPrice,
             lastCost: lastCost,
+            lastBuyingPrice: lastCost,
             avgCost: avgCost,
-            totalPurchased: avgCostResult ? parseInt(avgCostResult.totalPurchased) || 0 : 0,
+            averageBuyingPrice: avgCost,
+            totalPurchased: Number(costSnapshot?.netQuantity || 0),
+            totalPurchaseValue: Number(costSnapshot?.netValue || 0),
             profitMetrics: profitMetrics,
             stockQuantity: product.stockQuantity,
         });

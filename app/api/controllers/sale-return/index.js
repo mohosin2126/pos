@@ -27,6 +27,7 @@ const {
     shouldRestockSaleReturn,
     validateSaleReturnRequest,
 } = require("../../utils/sale-returns");
+const { roundMoney } = require("../../utils/price-calculator");
 
 function toResponseInclude() {
     return [
@@ -63,6 +64,11 @@ const create = async (req, res) => {
             built.returnItems.reduce((sum, item) => sum + Number(item.lineTotal || 0), 0).toFixed(2)
         );
         if (totalReturnAmount <= 0) return badRequest(res, "Total return amount must be greater than 0");
+        const refundAmount = roundMoney(req.body.refundAmount ?? totalReturnAmount);
+        if (refundAmount < 0) return badRequest(res, "Refund amount cannot be negative");
+        if (refundAmount > totalReturnAmount + 0.01) {
+            return badRequest(res, "Refund amount cannot exceed the total return amount");
+        }
 
         const saleReturn = await sequelize.transaction(async (t) => {
             const createdReturn = await SaleReturn.create({
@@ -73,7 +79,7 @@ const create = async (req, res) => {
                 returnReason: req.body.returnReason,
                 returnItems: built.returnItems,
                 totalReturnAmount,
-                refundAmount: req.body.refundAmount ?? totalReturnAmount,
+                refundAmount,
                 refundStatus: "pending",
                 restockingDisposition: req.body.restockingDisposition || "pending",
                 notes: req.body.notes || null,
@@ -166,12 +172,19 @@ const update = async (req, res) => {
             const totalReturnAmount = Number(
                 built.returnItems.reduce((sum, item) => sum + Number(item.lineTotal || 0), 0).toFixed(2)
             );
+            const refundAmount = roundMoney(req.body.refundAmount ?? saleReturn.refundAmount ?? totalReturnAmount);
+            if (refundAmount < 0) {
+                throw { _badRequest: "Refund amount cannot be negative" };
+            }
+            if (refundAmount > totalReturnAmount + 0.01) {
+                throw { _badRequest: "Refund amount cannot exceed the total return amount" };
+            }
 
             const result = await saleReturn.update({
                 returnReason: req.body.returnReason ?? saleReturn.returnReason,
                 returnItems: built.returnItems,
                 totalReturnAmount,
-                refundAmount: req.body.refundAmount ?? saleReturn.refundAmount ?? totalReturnAmount,
+                refundAmount,
                 restockingDisposition: req.body.restockingDisposition ?? saleReturn.restockingDisposition,
                 notes: req.body.notes ?? saleReturn.notes,
             }, { transaction: t });
@@ -212,9 +225,19 @@ const approveReturn = async (req, res) => {
         }
 
         const approved = await sequelize.transaction(async (t) => {
+            const refundAmount = roundMoney(
+                req.body.refundAmount ?? saleReturn.refundAmount ?? saleReturn.totalReturnAmount
+            );
+            if (refundAmount < 0) {
+                throw { _badRequest: "Refund amount cannot be negative" };
+            }
+            if (refundAmount > Number(saleReturn.totalReturnAmount || 0) + 0.01) {
+                throw { _badRequest: "Refund amount cannot exceed the total return amount" };
+            }
+
             const result = await saleReturn.update({
                 refundStatus: "approved",
-                refundAmount: req.body.refundAmount ?? saleReturn.refundAmount ?? saleReturn.totalReturnAmount,
+                refundAmount,
                 restockingDisposition: req.body.restockingDisposition ?? saleReturn.restockingDisposition,
                 notes: req.body.notes ?? saleReturn.notes,
             }, { transaction: t });
@@ -231,6 +254,7 @@ const approveReturn = async (req, res) => {
 
         return success(res, "Sale return approved successfully", approved);
     } catch (error) {
+        if (error && error._badRequest) return badRequest(res, error._badRequest);
         return serverError(res, "Error approving sale return", error);
     }
 };
@@ -245,9 +269,17 @@ const processRefund = async (req, res) => {
         }
 
         const refunded = await sequelize.transaction(async (t) => {
+            const refundAmount = roundMoney(req.body.refundAmount ?? saleReturn.refundAmount);
+            if (refundAmount < 0) {
+                throw { _badRequest: "Refund amount cannot be negative" };
+            }
+            if (refundAmount > Number(saleReturn.totalReturnAmount || 0) + 0.01) {
+                throw { _badRequest: "Refund amount cannot exceed the total return amount" };
+            }
+
             const result = await saleReturn.update({
                 refundStatus: "refunded",
-                refundAmount: req.body.refundAmount ?? saleReturn.refundAmount,
+                refundAmount,
             }, { transaction: t });
 
             if (shouldRestockSaleReturn(result)) {
@@ -262,6 +294,7 @@ const processRefund = async (req, res) => {
 
         return success(res, "Refund processed successfully", refunded);
     } catch (error) {
+        if (error && error._badRequest) return badRequest(res, error._badRequest);
         return serverError(res, "Error processing refund", error);
     }
 };

@@ -161,9 +161,9 @@ export default function PurchaseDetails() {
                   key: "quantity",
                 },
                 {
-                  title: "Unit Price",
-                  dataIndex: "unitPrice",
-                  key: "unitPrice",
+      title: "Buying Price",
+      dataIndex: "unitPrice",
+      key: "unitPrice",
                   render: (price: any) => formatCurrency(Number(price) || 0),
                 },
                 {
@@ -171,6 +171,14 @@ export default function PurchaseDetails() {
                   dataIndex: "lineTotal",
                   key: "lineTotal",
                   render: (total: any) => formatCurrency(Number(total) || 0),
+                },
+                {
+                  title: "Selling Price",
+                  key: "sellingPrice",
+                  render: (_: any, record: any) =>
+                    formatCurrency(
+                      Number(record?.product?.sellingPrice ?? record?.product?.price ?? 0)
+                    ),
                 },
                 {
                   title: "Expiry Date",

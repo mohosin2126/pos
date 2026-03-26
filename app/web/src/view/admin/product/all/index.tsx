@@ -80,6 +80,15 @@ export default function AllProducts() {
     {
       title: "Category ID", dataIndex: "categoryId", key: "categoryId"
     },
+    {
+      title: "Selling Price",
+      dataIndex: "sellingPrice",
+      key: "sellingPrice",
+      render: (_: any, record: TProductPayload) => {
+        const sellingPrice = Number(record?.sellingPrice ?? record?.price ?? 0);
+        return <span className="font-medium">৳{sellingPrice.toFixed(2)}</span>;
+      },
+    },
     { title: "Stock", dataIndex: "stockQuantity", key: "stockQuantity" },
     { title: "Re-Order", dataIndex: "reorderLevel", key: "reorderLevel" },
 

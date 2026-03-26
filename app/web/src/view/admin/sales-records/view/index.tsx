@@ -413,7 +413,7 @@ export default function SalesDetails() {
                     ),
                   },
                   {
-                    title: "Unit Price",
+                    title: "Selling Price",
                     dataIndex: "unitPrice",
                     key: "unitPrice",
                     width: 120,
@@ -1143,9 +1143,9 @@ export default function SalesDetails() {
                 key: "availableQty",
               },
               {
-                title: "Unit Price",
-                dataIndex: "unitPrice",
-                key: "unitPrice",
+                        title: "Selling Price",
+                        dataIndex: "unitPrice",
+                        key: "unitPrice",
                 render: (value) => `$${Number(value || 0).toFixed(2)}`,
               },
               {

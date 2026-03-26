@@ -96,6 +96,7 @@ export interface TProductPayload {
   sku?: string;
   barcode?: string;
   price?: number;
+  sellingPrice?: number;
   stockQuantity?: number;
   reorderLevel?: number;
   isTrackStock?: boolean;
@@ -148,6 +149,8 @@ export interface TLineItem {
   productId: number;
   quantity: number;
   unitPrice: number;
+  buyingPrice?: number;
+  sellingPrice?: number;
   lineTotal: number;
   expiryDate?: string;
   batchNo?: string;
@@ -283,6 +286,7 @@ export interface TSaleItem {
   productId: number;
   quantity: string;
   unitPrice: string;
+  sellingPrice?: string;
   discountType: string;
   discountAmount: string;
   taxPercent: string;
@@ -328,7 +332,10 @@ export interface TSaleReturnItem {
   saleItemId: number;
   productId: number;
   quantity: number;
+  baseAmount?: number;
   taxAmount: number;
+  orderDiscountAmount?: number;
+  orderTaxAmount?: number;
   lineTotal: number;
   allocations?: TAllocation[];
 }

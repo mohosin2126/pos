@@ -4,7 +4,9 @@ const { QueryTypes } = require("sequelize");
 const { sequelize, Product } = require("../../database/models");
 const { success, serverError } = require("../../utils/api-response");
 const { Decimal } = require("../../utils/price-calculator");
-const { STOCKED_PURCHASE_STATUSES, buildLotSnapshot } = require("../../utils/inventory-recompute");
+const { buildLotSnapshot } = require("../../utils/inventory-recompute");
+const { getNetAverageCostMap } = require("../../utils/costing");
+const { getSaleReturnRevenueAmount } = require("../../utils/sale-returns");
 
 const SALE_RETURN_STATUSES = ["approved", "refunded"];
 const PURCHASE_RETURN_STATUSES = ["pending", "approved", "refunded"];
@@ -73,22 +75,7 @@ function roundCurrency(value) {
 }
 
 async function getAverageCostMap() {
-    const placeholders = STOCKED_PURCHASE_STATUSES.map(() => "?").join(",");
-    const rows = await sequelize.query(
-        `SELECT
-             pi.productId,
-             COALESCE(SUM(pi.quantity * pi.unitPrice) / NULLIF(SUM(pi.quantity), 0), 0) AS avgCost
-         FROM purchase_items pi
-         JOIN purchases p ON p.id = pi.purchaseId
-         WHERE p.status IN (${placeholders})
-         GROUP BY pi.productId`,
-        {
-            replacements: STOCKED_PURCHASE_STATUSES,
-            type: QueryTypes.SELECT,
-        }
-    );
-
-    return new Map(rows.map((row) => [Number(row.productId), toAmount(row.avgCost)]));
+    return getNetAverageCostMap();
 }
 
 async function getSalesRows(minDate) {
@@ -195,7 +182,7 @@ function buildMetrics({ start, end, salesRows, saleItemRows, saleReturnRows, avg
 
         for (const item of parseJsonArray(saleReturn.returnItems)) {
             const quantity = toAmount(item.quantity);
-            const revenueAmount = toAmount(item.lineTotal) - toAmount(item.taxAmount);
+            const revenueAmount = getSaleReturnRevenueAmount(item);
             const avgCost = toAmount(avgCostMap.get(Number(item.productId)));
 
             returnedRevenue += revenueAmount;
@@ -266,7 +253,7 @@ function buildTrend({ days, salesRows, saleItemRows, saleReturnRows, avgCostMap 
 
         for (const item of parseJsonArray(saleReturn.returnItems)) {
             const quantity = toAmount(item.quantity);
-            const revenue = toAmount(item.lineTotal) - toAmount(item.taxAmount);
+            const revenue = getSaleReturnRevenueAmount(item);
             const avgCost = toAmount(avgCostMap.get(Number(item.productId)));
 
             bucket.profit -= revenue - (quantity * avgCost);
@@ -321,7 +308,7 @@ function aggregateTopSellingProducts({ start, end, saleItemRows, saleReturnRows,
             };
 
             const quantity = toAmount(item.quantity);
-            const revenue = toAmount(item.lineTotal) - toAmount(item.taxAmount);
+            const revenue = getSaleReturnRevenueAmount(item);
             const cost = quantity * toAmount(avgCostMap.get(productId));
 
             current.soldQuantity -= quantity;

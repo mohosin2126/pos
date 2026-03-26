@@ -4,7 +4,8 @@ const purchaseItemSchema = Joi.object({
     productId: Joi.number().integer().positive().required(),
     quantity: Joi.number().integer().positive().max(9999999).required(),
     unitPrice: Joi.number().min(0).max(99999999.99).required(),
-    lineTotal: Joi.number().min(0).max(99999999.99).required(),
+    sellingPrice: Joi.number().min(0).max(99999999.99).required(),
+    lineTotal: Joi.number().min(0).max(99999999.99).optional(),
     expiryDate: Joi.date().iso().allow(null),
     batchNo: Joi.string().max(64).allow(null, ""),
 });
@@ -26,12 +27,12 @@ const createPurchaseOrderValidation = Joi.object({
     discountType: Joi.string().valid("none", "percent", "fixed").default("none"),
     discountAmount: Joi.number().min(0).max(99999999.99).default(0),
     orderTaxPercent: Joi.number().min(0).max(100).default(0),
-    orderTaxAmount: Joi.number().min(0).max(99999999.99).default(0),
+    orderTaxAmount: Joi.number().min(0).max(99999999.99).optional(),
     shippingCharge: Joi.number().min(0).max(99999999.99).default(0),
     additionalExpenses: Joi.object().allow(null),
 
-    netTotalAmount: Joi.number().min(0).max(99999999.99).required(),
-    totalAmount: Joi.number().min(0).max(99999999.99).required(),
+    netTotalAmount: Joi.number().min(0).max(99999999.99).optional(),
+    totalAmount: Joi.number().min(0).max(99999999.99).optional(),
     amountPaid: Joi.number().min(0).max(99999999.99).default(0),
 
     notes: Joi.string().allow(null, ""),
@@ -62,12 +63,12 @@ const updatePurchaseValidation = Joi.object({
     discountType: Joi.string().valid("none", "percent", "fixed"),
     discountAmount: Joi.number().min(0).max(99999999.99),
     orderTaxPercent: Joi.number().min(0).max(100),
-    orderTaxAmount: Joi.number().min(0).max(99999999.99),
+    orderTaxAmount: Joi.number().min(0).max(99999999.99).optional(),
     shippingCharge: Joi.number().min(0).max(99999999.99),
     additionalExpenses: Joi.object().allow(null),
 
-    netTotalAmount: Joi.number().min(0).max(99999999.99),
-    totalAmount: Joi.number().min(0).max(99999999.99),
+    netTotalAmount: Joi.number().min(0).max(99999999.99).optional(),
+    totalAmount: Joi.number().min(0).max(99999999.99).optional(),
     amountPaid: Joi.number().min(0).max(99999999.99),
 
     notes: Joi.string().allow(null, ""),
@@ -94,13 +95,13 @@ const createPurchaseReturnValidation = Joi.object({
             Joi.object({
                 productId: Joi.number().integer().positive().required(),
                 quantity: Joi.number().positive().required(),
-                lineTotal: Joi.number().positive().required(),
+                lineTotal: Joi.number().positive().optional(),
             })
         )
         .min(1)
         .required(),
 
-    totalReturnAmount: Joi.number().positive().required(),
+    totalReturnAmount: Joi.number().positive().optional(),
     refundAmount: Joi.number().min(0).allow(null),
     restockingDisposition: Joi.string()
         .valid("restock", "scrap", "donate", "pending")

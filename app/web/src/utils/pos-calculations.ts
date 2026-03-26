@@ -41,39 +41,57 @@ export interface POSTotals {
   total: number;
 }
 
+export interface POSItemBreakdown {
+  base: number;
+  discount: number;
+  taxable: number;
+  tax: number;
+  total: number;
+}
+
+export const calculatePOSItemBreakdown = (item: CartItem): POSItemBreakdown => {
+  const itemPrice = item.price || 0;
+  const itemQty = item.quantity || 0;
+  const base = roundTo(multiply(itemPrice, itemQty), 2);
+
+  let discount = 0;
+  if (item.discountType === "percent") {
+    discount = percentage(base, item.discountAmount || 0);
+  } else if (item.discountType === "fixed") {
+    discount = Math.min(item.discountAmount || 0, base);
+  }
+  discount = roundTo(discount, 2);
+
+  const taxable = roundTo(max(subtract(base, discount), 0), 2);
+  const tax = roundTo(percentage(taxable, item.tax || 0), 2);
+
+  return {
+    base,
+    discount,
+    taxable,
+    tax,
+    total: roundTo(add(taxable, tax), 2),
+  };
+};
+
 export const calculatePOSTotals = (
   cartItems: CartItem[],
   settings: POSSettings
 ): POSTotals => {
-  // Calculate subtotal
-  let subtotal = 0;
-  for (const item of cartItems) {
-    const itemPrice = item.price || 0;
-    const itemQty = item.quantity || 0;
-    const itemTotal = multiply(itemPrice, itemQty);
-    subtotal = add(subtotal, itemTotal);
-  }
-  subtotal = roundTo(subtotal, 2);
+  const itemBreakdowns = cartItems.map(calculatePOSItemBreakdown);
 
-  // Calculate item discounts
-  let itemDiscounts = 0;
-  for (const item of cartItems) {
-    const discountAmount = item.discountAmount || 0;
-    itemDiscounts = add(itemDiscounts, discountAmount);
-  }
-  itemDiscounts = roundTo(itemDiscounts, 2);
-
-  // Calculate item taxes
-  let itemTaxes = 0;
-  for (const item of cartItems) {
-    const itemSubtotal = multiply(item.price || 0, item.quantity || 0);
-    const itemDiscount = item.discountAmount || 0;
-    const taxableAmount = max(subtract(itemSubtotal, itemDiscount), 0);
-    const taxPercent = item.tax || 0;
-    const itemTax = percentage(taxableAmount, taxPercent);
-    itemTaxes = add(itemTaxes, itemTax);
-  }
-  itemTaxes = roundTo(itemTaxes, 2);
+  const subtotal = roundTo(
+    itemBreakdowns.reduce((sum, item) => add(sum, item.base), 0),
+    2
+  );
+  const itemDiscounts = roundTo(
+    itemBreakdowns.reduce((sum, item) => add(sum, item.discount), 0),
+    2
+  );
+  const itemTaxes = roundTo(
+    itemBreakdowns.reduce((sum, item) => add(sum, item.tax), 0),
+    2
+  );
 
   // Calculate subtotal after item discounts
   const subtotalAfterItemDiscounts = subtract(subtotal, itemDiscounts);
@@ -174,7 +192,7 @@ export const validateItemCalculation = (
       };
     }
 
-    const tax = percentage(taxable, taxPercentVal);
+    const tax = roundTo(percentage(taxable, taxPercentVal), 2);
     const lineTotal = roundTo(add(taxable, tax), 2);
 
     return { isValid: true, lineTotal };

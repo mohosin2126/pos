@@ -211,6 +211,24 @@ export default function ProductDetails() {
 
             <Divider />
 
+            <Title level={4} className="!mb-5 flex items-center">
+              <TagOutlined className="mr-2 !text-[#005555]" />
+              Pricing
+            </Title>
+            <Row gutter={[24, 16]}>
+              <Col xs={24} sm={12}>
+                <Statistic
+                  title="Selling Price"
+                  value={Number(product?.sellingPrice ?? product?.price ?? 0)}
+                  precision={2}
+                  prefix="৳"
+                  valueStyle={{ color: "#005555" }}
+                />
+              </Col>
+            </Row>
+
+            <Divider />
+
             {/* Stock Management */}
             {product?.isTrackStock && (
               <>

@@ -4,11 +4,13 @@ const { Op } = require("sequelize");
 const { PurchaseReturn, Purchase, sequelize } = require("../../database/models");
 const { recomputeForProducts } = require("../../utils/inventory-recompute");
 const {
+    buildValidatedReturnItems,
     getReturnAvailability,
     getReturnProductIds,
     syncPurchaseReturnStatus,
     validateReturnRequest,
 } = require("../../utils/purchase-returns");
+const { roundMoney } = require("../../utils/price-calculator");
 const {
     success, created, badRequest, notFound, serverError, parsePagination, paginated,
 } = require("../../utils/api-response");
@@ -75,7 +77,6 @@ const update = async (req, res) => {
         const updatable = {
             returnReason: req.body.returnReason,
             returnItems: req.body.returnItems,
-            totalReturnAmount: req.body.totalReturnAmount,
             refundAmount: req.body.refundAmount,
             restockingDisposition: req.body.restockingDisposition,
             notes: req.body.notes,
@@ -85,33 +86,46 @@ const update = async (req, res) => {
 
         const updated = await sequelize.transaction(async (t) => {
             const purchase = await Purchase.findByPk(purchaseReturn.purchaseId, { transaction: t });
-            const nextReturnItems = updatable.returnItems ?? purchaseReturn.returnItems;
-            const validationTarget = {
-                ...purchaseReturn.get({ plain: true }),
-                ...updatable,
-                returnItems: nextReturnItems,
-            };
             const availability = await getReturnAvailability(purchaseReturn.purchaseId, t, purchaseReturn.id);
-            const validationMessage = validateReturnRequest(purchase, validationTarget.returnItems, availability);
+            const requestItems = updatable.returnItems ?? purchaseReturn.returnItems;
+            const built = buildValidatedReturnItems(requestItems, availability);
+            if (built.error) {
+                throw { _badRequest: built.error };
+            }
+
+            const validationMessage = validateReturnRequest(purchase, built.returnItems, availability);
             if (validationMessage) {
                 throw { _badRequest: validationMessage };
             }
 
-            const nextTotalReturnAmount =
-                updatable.totalReturnAmount === undefined
-                    ? Number(purchaseReturn.totalReturnAmount || 0)
-                    : Number(updatable.totalReturnAmount || 0);
-            const lineItemsTotal = Number(
-                nextReturnItems.reduce((sum, item) => sum + Number(item.lineTotal || 0), 0).toFixed(2)
+            const totalReturnAmount = roundMoney(
+                built.returnItems.reduce((sum, item) => sum + Number(item.lineTotal || 0), 0)
             );
-            if (Math.abs(lineItemsTotal - nextTotalReturnAmount) > 0.01) {
-                throw { _badRequest: "Total return amount must equal the sum of the return items" };
+            const requestedRefundAmount =
+                updatable.refundAmount === undefined
+                    ? purchaseReturn.refundAmount ?? totalReturnAmount
+                    : updatable.refundAmount;
+            const refundAmount = roundMoney(requestedRefundAmount);
+
+            if (refundAmount < 0) {
+                throw { _badRequest: "Refund amount cannot be negative" };
             }
 
-            const result = await purchaseReturn.update(updatable, { transaction: t });
+            if (refundAmount > totalReturnAmount + 0.01) {
+                throw { _badRequest: "Refund amount cannot exceed the total return amount" };
+            }
+
+            const result = await purchaseReturn.update({
+                returnReason: updatable.returnReason ?? purchaseReturn.returnReason,
+                returnItems: built.returnItems,
+                totalReturnAmount,
+                refundAmount,
+                restockingDisposition: updatable.restockingDisposition ?? purchaseReturn.restockingDisposition,
+                notes: updatable.notes ?? purchaseReturn.notes,
+            }, { transaction: t });
             await syncPurchaseReturnStatus(purchaseReturn.purchaseId, t);
 
-            const affectedProductIds = getReturnProductIds({ returnItems: nextReturnItems });
+            const affectedProductIds = getReturnProductIds({ returnItems: built.returnItems });
             if (affectedProductIds.length > 0) {
                 await recomputeForProducts(affectedProductIds, t);
             }
@@ -170,6 +184,14 @@ const approveReturn = async (req, res) => {
             restockingDisposition: restockingDisposition ?? purchaseReturn.restockingDisposition,
         };
 
+        if (Number(updateData.refundAmount || 0) < 0) {
+            return badRequest(res, "Refund amount cannot be negative");
+        }
+
+        if (Number(updateData.refundAmount || 0) > Number(purchaseReturn.totalReturnAmount || 0) + 0.01) {
+            return badRequest(res, "Refund amount cannot exceed the total return amount");
+        }
+
         const approved = await sequelize.transaction(async (t) => {
             const result = await purchaseReturn.update(updateData, { transaction: t });
             await syncPurchaseReturnStatus(purchaseReturn.purchaseId, t);
@@ -199,7 +221,18 @@ const processRefund = async (req, res) => {
         }
 
         const refunded = await sequelize.transaction(async (t) => {
-            const result = await purchaseReturn.update({ refundStatus: "refunded" }, { transaction: t });
+            const refundAmount = req.body.refundAmount ?? purchaseReturn.refundAmount;
+            if (Number(refundAmount || 0) < 0) {
+                throw { _badRequest: "Refund amount cannot be negative" };
+            }
+            if (Number(refundAmount || 0) > Number(purchaseReturn.totalReturnAmount || 0) + 0.01) {
+                throw { _badRequest: "Refund amount cannot exceed the total return amount" };
+            }
+
+            const result = await purchaseReturn.update({
+                refundStatus: "refunded",
+                refundAmount,
+            }, { transaction: t });
             await syncPurchaseReturnStatus(purchaseReturn.purchaseId, t);
 
             const affectedProductIds = getReturnProductIds(purchaseReturn);
@@ -211,6 +244,7 @@ const processRefund = async (req, res) => {
         });
         return success(res, "Refund processed successfully", refunded);
     } catch (error) {
+        if (error && error._badRequest) return badRequest(res, error._badRequest);
         return serverError(res, "Error processing refund", error);
     }
 };
