@@ -209,7 +209,7 @@ module.exports = {
                     updatedAt: now,
                 },
             ],
-            {}
+            { ignoreDuplicates: true }
         );
     },
 

@@ -9,6 +9,7 @@ import { ActionButton } from "@/components/re-useable/action-button";
 import dayjs from "dayjs";
 import Loader from "@/components/re-useable/loader";
 import { useBasePath } from "@/hooks/common/use-base-path";
+import { normalizeTags } from "@/utils/tag-utils";
 
 const { Option } = Select;
 
@@ -102,7 +103,7 @@ export default function SellableProducts() {
       key: "tags",
       render: (_: any, record: any) =>
         record?.product?.tags ? (
-          record?.product?.tags?.split(",").map((tag: string) => (
+          normalizeTags(record?.product?.tags).map((tag: string) => (
             <Tag color="blue" className="capitalize" key={tag}>
               {tag.trim()}
             </Tag>

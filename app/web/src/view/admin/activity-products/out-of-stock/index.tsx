@@ -10,6 +10,7 @@ import { useState } from "react";
 import { useOutOfStockProducts } from "@/hooks/admin/inventory";
 import Loader from "@/components/re-useable/loader";
 import { useBasePath } from "@/hooks/common/use-base-path";
+import { normalizeTags } from "@/utils/tag-utils";
 const { Option } = Select;
 
 export default function OutOfStock() {
@@ -96,7 +97,7 @@ export default function OutOfStock() {
       key: "tags",
       render: (_: any, record: any) =>
         record?.product?.tags ? (
-          record?.product?.tags?.split(",").map((tag: string) => (
+          normalizeTags(record?.product?.tags).map((tag: string) => (
             <Tag color="blue" className="capitalize" key={tag}>
               {tag.trim()}
             </Tag>

@@ -14,6 +14,7 @@ const createPurchaseOrderValidation = Joi.object({
     supplierAddress: Joi.string().max(500).allow(null, ""),
     referenceNo: Joi.string().max(64).allow(null, ""),
     purchaseDate: Joi.date().iso().required(),
+    status: Joi.string().valid("draft", "po", "ordered", "purchase", "received", "partial", "partial_return", "full_return", "cancelled").default("po"),
     items: Joi.array().items(purchaseItemSchema).min(1).required(),
     totalItems: Joi.forbidden().messages({
         'any.unknown': '"totalItems" is calculated server-side and should not be included in the request'

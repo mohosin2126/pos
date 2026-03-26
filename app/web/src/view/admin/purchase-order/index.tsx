@@ -63,7 +63,7 @@ export default function PurchaseOrder() {
     },
     {
       title: "Supplier",
-      dataIndex: ["supplier", "name"],
+      dataIndex: ["supplier", "companyName"],
       key: "supplier",
     },
     {

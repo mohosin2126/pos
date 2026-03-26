@@ -3,30 +3,31 @@
 const bcrypt = require('bcryptjs');
 
 module.exports = {
-    async up(queryInterface) {
+    async up(queryInterface, Sequelize) {
         const now = new Date();
         const PASSWORD = '12345678';
         const hash = bcrypt.hashSync(PASSWORD, 10);
+        const { QueryTypes } = Sequelize;
 
      
         const [adminRole] = await queryInterface.sequelize.query(
             `SELECT id FROM roles WHERE name = 'admin'`,
-            { type: queryInterface.sequelize.constructor.QueryTypes.SELECT }
+            { type: QueryTypes.SELECT }
         );
         const [managerRole] = await queryInterface.sequelize.query(
             `SELECT id FROM roles WHERE name = 'manager'`,
-            { type: queryInterface.sequelize.constructor.QueryTypes.SELECT }
+            { type: QueryTypes.SELECT }
         );
         const [employeeRole] = await queryInterface.sequelize.query(
             `SELECT id FROM roles WHERE name = 'employee'`,
-            { type: queryInterface.sequelize.constructor.QueryTypes.SELECT }
+            { type: QueryTypes.SELECT }
         );
 
         if (!adminRole || !managerRole || !employeeRole) {
             throw new Error('Roles must be seeded before users. Run role seeder first.');
         }
 
-        await queryInterface.bulkInsert('users', [
+        const userSeeds = [
             {
                 firstName: 'Admin',
                 lastName: 'User',
@@ -120,12 +121,26 @@ module.exports = {
                 createdAt: now,
                 updatedAt: now
             }
-        ], {});
+        ];
+
+        const existingUsers = await queryInterface.sequelize.query(
+            `SELECT email FROM users WHERE email IN (:emails)`,
+            {
+                replacements: { emails: userSeeds.map((user) => user.email) },
+                type: QueryTypes.SELECT,
+            }
+        );
+        const existingEmails = new Set(existingUsers.map((user) => user.email));
+
+        const usersToInsert = userSeeds.filter((user) => !existingEmails.has(user.email));
+        if (usersToInsert.length > 0) {
+            await queryInterface.bulkInsert('users', usersToInsert, {});
+        }
     },
 
     async down(queryInterface) {
         await queryInterface.bulkDelete('users', {
-            email: ['admin@example.com', 'jane.manager@example.com', 'john.employee@example.com']
+            email: ['admin@demo.com', 'jane.manager@example.com', 'john.employee@example.com']
         }, {});
     }
 };

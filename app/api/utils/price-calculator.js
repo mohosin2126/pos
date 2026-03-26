@@ -73,6 +73,8 @@ const calculateItemTotal = (item) => {
         const lineTotal = taxable.plus(tax).toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
 
         return {
+            quantity: validated.quantity,
+            unitPrice: validated.unitPrice,
             base: base.toNumber(),
             discount: discount.toNumber(),
             taxable: taxable.toNumber(),
@@ -91,10 +93,11 @@ const calculateItemTotal = (item) => {
 const calculateOrderTotal = (items = [], orderDiscount = { type: "none", amount: 0 }, orderTaxPercent = 0, shippingCharge = 0) => {
     try {
         const subtotal = items.reduce((sum, item) => {
-            if (typeof item.lineTotal !== 'number') {
+            const lineTotalValue = Number(item.lineTotal);
+            if (!Number.isFinite(lineTotalValue)) {
                 throw new Error("Invalid item lineTotal");
             }
-            return sum.plus(new Decimal(item.lineTotal));
+            return sum.plus(new Decimal(lineTotalValue));
         }, new Decimal(0)).toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
 
         let orderDiscountAmount = new Decimal(0);

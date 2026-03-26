@@ -224,9 +224,6 @@ export default function PurchaseForm() {
         delete formattedValues.productId;
         delete formattedValues.expiryDate;
         try {
-            if (!isUpdate) {
-                delete formattedValues.status;
-            }
             if (isUpdate) {
                 await updatePurchase(id, formattedValues);
                 message.success("Purchase updated successfully!");

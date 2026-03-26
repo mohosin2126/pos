@@ -140,6 +140,14 @@ export default function AllPos() {
         if (quantity <= 0) {
             setCartItems((prev) => prev.filter((item) => item.id !== id));
         } else {
+            const matchedProduct = (sellableProducts ?? []).find(
+                (product: any) => normalizeProduct(product)?.id === id
+            );
+            const availableQty = matchedProduct ? productAvailableQty(matchedProduct) : 0;
+            if (availableQty > 0 && quantity > availableQty) {
+                message.warning("Not enough stock for this item");
+                return;
+            }
             setCartItems((prev) =>
                 prev.map((item) => (item.id === id ? { ...item, quantity } : item))
             );

@@ -51,7 +51,7 @@ export default function SalesRecords() {
     },
     {
       title: "Status",
-      dataIndex: "status",
+      dataIndex: ["invoice", "status"],
       key: "status",
       render: (status: string) => {
         let color = "blue";
@@ -189,7 +189,7 @@ export default function SalesRecords() {
           dataSource={filteredData}
           columns={columns}
           loading={Loader({ loading })}
-          rowKey="saleId"
+          rowKey="id"
           pagination={
             filteredData?.length > 10
               ? {

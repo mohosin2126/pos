@@ -301,6 +301,15 @@ export interface TActivityProduct {
   expiredQty?: string;
 }
 
+export interface TInventorySummaryItem {
+  product: TProductPayload;
+  quantityOnHand: string;
+  unexpiredQty: string;
+  expiredQty: string;
+  reorderPoint: string;
+  lastComputedAt: string;
+}
+
 export interface TNotifications {
   id: number;
   subject: string;

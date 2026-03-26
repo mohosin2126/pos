@@ -127,8 +127,8 @@ const rebuild = async (req, res) => {
                 ? req.body.productIds.map(Number).filter(Boolean)
                 : [];
             if (!productIds.length) {
-                const [ids] = await sequelize.query(`SELECT DISTINCT productId FROM purchases`, { transaction: t });
-                productIds = ids.map(r => Number(r.productId)).filter(Boolean);
+                const [ids] = await sequelize.query(`SELECT id FROM products WHERE isTrackStock = 1`, { transaction: t });
+                productIds = ids.map(r => Number(r.id)).filter(Boolean);
             }
             if (!productIds.length) return;
             await recomputeForProducts(productIds, t);

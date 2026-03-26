@@ -1,7 +1,13 @@
 "use strict";
 
 const { Purchase, Supplier, Product, PurchaseItem, PurchaseReturn, sequelize } = require("../../database/models");
-const { recomputeForProducts } = require("../../utils/inventory-recompute");
+const { recomputeForProducts, STOCKED_PURCHASE_STATUSES } = require("../../utils/inventory-recompute");
+const {
+    getReturnAvailability,
+    getReturnProductIds,
+    syncPurchaseReturnStatus,
+    validateReturnRequest,
+} = require("../../utils/purchase-returns");
 const {
     success, created, badRequest, notFound, serverError, parsePagination, paginated,
 } = require("../../utils/api-response");
@@ -15,6 +21,8 @@ const {
     calculateOrderTotal,
     calculateTotalItems,
 } = require("../../utils/price-calculator");
+
+const STOCK_AFFECTING_PURCHASE_STATUSES = new Set(STOCKED_PURCHASE_STATUSES);
 
 const create = async (req, res) => {
     try {
@@ -71,6 +79,7 @@ const create = async (req, res) => {
 
         const totalItemsCount = calculateTotalItems(calculatedItems);
 
+        const createdStatus = value.status || "po";
         const purchase = await sequelize.transaction(async (t) => {
             const p = await Purchase.create(
                 {
@@ -78,7 +87,7 @@ const create = async (req, res) => {
                     supplierAddress: value.supplierAddress,
                     referenceNo: value.referenceNo,
                     purchaseDate: value.purchaseDate,
-                    status: "po",
+                    status: createdStatus,
                     payTermValue: value.payTermValue,
                     payTermUnit: value.payTermUnit,
                     discountType: value.discountType || "none",
@@ -115,14 +124,18 @@ const create = async (req, res) => {
                 createdItems.push(lineItem);
             }
 
-            for (const item of calculatedItems) {
+            if (STOCK_AFFECTING_PURCHASE_STATUSES.has(createdStatus)) {
+                await recomputeForProducts(productIds, t);
             }
 
             p.items = createdItems;
             return p;
         });
 
-        return created(res, "Purchase Order created successfully", purchase);
+        const successMessage = createdStatus === "po"
+            ? "Purchase Order created successfully"
+            : "Purchase created successfully";
+        return created(res, successMessage, purchase);
     } catch (error) {
         console.error("Error in create purchase:", error);
         return serverError(res, "Error creating purchase order", error);
@@ -268,9 +281,6 @@ const update = async (req, res) => {
                         { transaction: t }
                     );
                 }
-
-                for (const item of calculatedItems) {
-                }
             }
 
             const affectedProductIds = new Set();
@@ -287,7 +297,6 @@ const update = async (req, res) => {
             return Purchase.findByPk(id, {
                 include: [
                     { model: Supplier, as: "supplier" },
-                    { model: Product, as: "product" },
                     { model: PurchaseItem, as: "items", include: { model: Product, as: "product" } },
                 ],
                 transaction: t,
@@ -316,14 +325,8 @@ const destroy = async (req, res) => {
             for (const item of purchase.items) {
                 productIds.add(item.productId);
             }
-            if (purchase.productId) {
-                productIds.add(purchase.productId);
-            }
-
-           
             await purchase.destroy({ transaction: t });
 
-        
             if (productIds.size > 0) {
                 await recomputeForProducts([...productIds], t);
             }
@@ -377,22 +380,39 @@ const createReturn = async (req, res) => {
         const { error, value } = createPurchaseReturnValidation.validate(req.body);
         if (error) return badRequest(res, error.details[0].message);
 
-        const { purchaseId } = value;
+        const routePurchaseId = Number(req.params.id);
+        const payloadPurchaseId = Number(value.purchaseId);
+        if (routePurchaseId && payloadPurchaseId && routePurchaseId !== payloadPurchaseId) {
+            return badRequest(res, "Purchase ID in the URL does not match the request body");
+        }
 
-       
+        const purchaseId = routePurchaseId || payloadPurchaseId;
+
         const purchase = await Purchase.findByPk(purchaseId);
         if (!purchase) return notFound(res, "Purchase not found");
 
-    
         const items = await PurchaseItem.findAll({ where: { purchaseId } });
-        if (items.length === 0 && !purchase.productId) {
+        if (items.length === 0) {
             return badRequest(res, "Cannot return items from a purchase with no items");
         }
 
+        const lineItemsTotal = Number(
+            value.returnItems.reduce((sum, item) => sum + Number(item.lineTotal || 0), 0).toFixed(2)
+        );
+        if (Math.abs(lineItemsTotal - Number(value.totalReturnAmount || 0)) > 0.01) {
+            return badRequest(res, "Total return amount must equal the sum of the return items");
+        }
+
         const purchaseReturn = await sequelize.transaction(async (t) => {
+            const availability = await getReturnAvailability(purchaseId, t);
+            const validationMessage = validateReturnRequest(purchase, value.returnItems, availability);
+            if (validationMessage) {
+                throw { _badRequest: validationMessage };
+            }
+
             const pr = await PurchaseReturn.create(
                 {
-                    purchaseId: value.purchaseId,
+                    purchaseId,
                     referenceNo: value.referenceNo,
                     returnDate: value.returnDate,
                     returnReason: value.returnReason,
@@ -406,20 +426,9 @@ const createReturn = async (req, res) => {
                 { transaction: t }
             );
 
-           
-            const totalReturnAmount = parseFloat(value.totalReturnAmount);
-            const purchaseTotal = parseFloat(purchase.totalAmount);
+            await syncPurchaseReturnStatus(purchaseId, t);
 
-            if (Math.abs(totalReturnAmount - purchaseTotal) < 0.01) {
-              
-                await purchase.update({ status: "full_return" }, { transaction: t });
-            } else {
-            
-                await purchase.update({ status: "partial_return" }, { transaction: t });
-            }
-
-           
-            const returnedProductIds = value.returnItems.map(item => item.productId);
+            const returnedProductIds = getReturnProductIds(pr);
             if (returnedProductIds.length > 0) {
                 await recomputeForProducts(returnedProductIds, t);
             }
@@ -429,6 +438,7 @@ const createReturn = async (req, res) => {
 
         return created(res, "Purchase return created successfully", purchaseReturn);
     } catch (error) {
+        if (error && error._badRequest) return badRequest(res, error._badRequest);
         return serverError(res, "Error creating purchase return", error);
     }
 };

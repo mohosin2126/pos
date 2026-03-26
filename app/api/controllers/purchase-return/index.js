@@ -1,6 +1,13 @@
 "use strict";
 
 const { PurchaseReturn, Purchase, sequelize } = require("../../database/models");
+const { recomputeForProducts } = require("../../utils/inventory-recompute");
+const {
+    getReturnAvailability,
+    getReturnProductIds,
+    syncPurchaseReturnStatus,
+    validateReturnRequest,
+} = require("../../utils/purchase-returns");
 const {
     success, created, badRequest, notFound, serverError, parsePagination, paginated,
 } = require("../../utils/api-response");
@@ -53,9 +60,44 @@ const update = async (req, res) => {
 
         Object.keys(updatable).forEach(key => updatable[key] === undefined && delete updatable[key]);
 
-        const updated = await purchaseReturn.update(updatable);
+        const updated = await sequelize.transaction(async (t) => {
+            const purchase = await Purchase.findByPk(purchaseReturn.purchaseId, { transaction: t });
+            const nextReturnItems = updatable.returnItems ?? purchaseReturn.returnItems;
+            const validationTarget = {
+                ...purchaseReturn.get({ plain: true }),
+                ...updatable,
+                returnItems: nextReturnItems,
+            };
+            const availability = await getReturnAvailability(purchaseReturn.purchaseId, t, purchaseReturn.id);
+            const validationMessage = validateReturnRequest(purchase, validationTarget.returnItems, availability);
+            if (validationMessage) {
+                throw { _badRequest: validationMessage };
+            }
+
+            const nextTotalReturnAmount =
+                updatable.totalReturnAmount === undefined
+                    ? Number(purchaseReturn.totalReturnAmount || 0)
+                    : Number(updatable.totalReturnAmount || 0);
+            const lineItemsTotal = Number(
+                nextReturnItems.reduce((sum, item) => sum + Number(item.lineTotal || 0), 0).toFixed(2)
+            );
+            if (Math.abs(lineItemsTotal - nextTotalReturnAmount) > 0.01) {
+                throw { _badRequest: "Total return amount must equal the sum of the return items" };
+            }
+
+            const result = await purchaseReturn.update(updatable, { transaction: t });
+            await syncPurchaseReturnStatus(purchaseReturn.purchaseId, t);
+
+            const affectedProductIds = getReturnProductIds({ returnItems: nextReturnItems });
+            if (affectedProductIds.length > 0) {
+                await recomputeForProducts(affectedProductIds, t);
+            }
+
+            return result;
+        });
         return success(res, "Return updated successfully", updated);
     } catch (error) {
+        if (error && error._badRequest) return badRequest(res, error._badRequest);
         return serverError(res, "Error updating return", error);
     }
 };
@@ -69,7 +111,17 @@ const destroy = async (req, res) => {
             return badRequest(res, "Can only delete returns with pending refund status");
         }
 
-        await purchaseReturn.destroy();
+        await sequelize.transaction(async (t) => {
+            const affectedProductIds = getReturnProductIds(purchaseReturn);
+            const purchaseId = purchaseReturn.purchaseId;
+
+            await purchaseReturn.destroy({ transaction: t });
+            await syncPurchaseReturnStatus(purchaseId, t);
+
+            if (affectedProductIds.length > 0) {
+                await recomputeForProducts(affectedProductIds, t);
+            }
+        });
         return success(res, "Return deleted successfully", null);
     } catch (error) {
         return serverError(res, "Error deleting return", error);
@@ -94,7 +146,17 @@ const approveReturn = async (req, res) => {
             restockingDisposition: restockingDisposition ?? purchaseReturn.restockingDisposition,
         };
 
-        const approved = await purchaseReturn.update(updateData);
+        const approved = await sequelize.transaction(async (t) => {
+            const result = await purchaseReturn.update(updateData, { transaction: t });
+            await syncPurchaseReturnStatus(purchaseReturn.purchaseId, t);
+
+            const affectedProductIds = getReturnProductIds(purchaseReturn);
+            if (affectedProductIds.length > 0) {
+                await recomputeForProducts(affectedProductIds, t);
+            }
+
+            return result;
+        });
         return success(res, "Return approved successfully", approved);
     } catch (error) {
         return serverError(res, "Error approving return", error);
@@ -112,7 +174,17 @@ const processRefund = async (req, res) => {
             return badRequest(res, "Only approved returns can be processed for refund");
         }
 
-        const refunded = await purchaseReturn.update({ refundStatus: "refunded" });
+        const refunded = await sequelize.transaction(async (t) => {
+            const result = await purchaseReturn.update({ refundStatus: "refunded" }, { transaction: t });
+            await syncPurchaseReturnStatus(purchaseReturn.purchaseId, t);
+
+            const affectedProductIds = getReturnProductIds(purchaseReturn);
+            if (affectedProductIds.length > 0) {
+                await recomputeForProducts(affectedProductIds, t);
+            }
+
+            return result;
+        });
         return success(res, "Refund processed successfully", refunded);
     } catch (error) {
         return serverError(res, "Error processing refund", error);
@@ -136,7 +208,17 @@ const rejectReturn = async (req, res) => {
             notes: notes ?? purchaseReturn.notes,
         };
 
-        const rejected = await purchaseReturn.update(updateData);
+        const rejected = await sequelize.transaction(async (t) => {
+            const result = await purchaseReturn.update(updateData, { transaction: t });
+            await syncPurchaseReturnStatus(purchaseReturn.purchaseId, t);
+
+            const affectedProductIds = getReturnProductIds(purchaseReturn);
+            if (affectedProductIds.length > 0) {
+                await recomputeForProducts(affectedProductIds, t);
+            }
+
+            return result;
+        });
         return success(res, "Return rejected successfully", rejected);
     } catch (error) {
         return serverError(res, "Error rejecting return", error);

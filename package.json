@@ -8,6 +8,9 @@
     "dev:api": "pnpm --filter @pos/api run dev",
     "build": "pnpm -r --if-present run build",
     "lint": "pnpm -r --if-present run lint",
-    "start": "pnpm --filter @pos/api run start"
+    "start": "pnpm --filter @pos/api run start",
+    "db:migrate": "pnpm --filter @pos/api run db:migrate",
+    "db:seed": "pnpm --filter @pos/api run db:seed",
+    "db:seed:undo": "pnpm --filter @pos/api run db:seed:undo"
   }
 }

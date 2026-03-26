@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import useApi from "../../use-api";
-import { TActivityProduct } from "@/interface/common";
+import { TActivityProduct, TInventorySummaryItem } from "@/interface/common";
 export type Product = Record<string, unknown>;
 
 export function useActiveProducts() {
@@ -120,4 +120,27 @@ export function useOutOfStockProducts() {
   }, [fetchOutOfStockProducts]);
 
   return { products, loading, refetch: fetchOutOfStockProducts };
+}
+
+export function useInventorySummary() {
+  const [summary, setSummary] = useState<TInventorySummaryItem[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+
+  const fetchInventorySummary = useCallback(async () => {
+    setLoading(true);
+    try {
+      const { data } = await useApi.get("/v1/admin/inventory/summary");
+      setSummary(data?.data || []);
+    } catch (error) {
+      console.error("Error fetching inventory summary:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchInventorySummary();
+  }, [fetchInventorySummary]);
+
+  return { summary, loading, refetch: fetchInventorySummary };
 }
