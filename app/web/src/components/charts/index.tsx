@@ -140,7 +140,7 @@ export const DonutChart: React.FC = () => {
       type: "donut",
       events: {
         dataPointSelection: (_event, _chartContext, config) => {
-          setActiveIndex(config.dataPointIndex);
+          setActiveIndex(config?.dataPointIndex ?? null);
         },
       },
     },
@@ -189,8 +189,13 @@ export const DonutChart: React.FC = () => {
       floating: false,
       fontSize: "12px",
       itemMargin: { horizontal: 10, vertical: 0 },
-      formatter: (val, opts) =>
-        `${val} - ${opts.w.globals.series[opts.seriesIndex]}`,
+      formatter: (val, opts) => {
+        const seriesIndex = opts?.seriesIndex ?? -1;
+        const seriesValue =
+          seriesIndex >= 0 ? opts?.w.globals.series[seriesIndex] : undefined;
+
+        return `${val} - ${seriesValue ?? 0}`;
+      },
     },
     tooltip: { y: { formatter: (val) => val.toString() } },
   };

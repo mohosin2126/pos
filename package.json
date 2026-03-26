@@ -1,0 +1,13 @@
+{
+  "name": "pos-workspace",
+  "private": true,
+  "packageManager": "pnpm@10.0.0",
+  "scripts": {
+    "dev": "pnpm -r --parallel --filter @pos/web --filter @pos/api run dev",
+    "dev:web": "pnpm --filter @pos/web run dev",
+    "dev:api": "pnpm --filter @pos/api run dev",
+    "build": "pnpm -r --if-present run build",
+    "lint": "pnpm -r --if-present run lint",
+    "start": "pnpm --filter @pos/api run start"
+  }
+}
