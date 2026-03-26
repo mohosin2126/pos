@@ -52,7 +52,7 @@ const adminRoutes = [
           {
             index: true,
             element: (
-              <PermissionGuard requires={[]}>
+              <PermissionGuard requires={[P.VIEW_DASHBOARD]}>
                 <Dashboard />
               </PermissionGuard>
             ),
@@ -60,7 +60,7 @@ const adminRoutes = [
           {
             path: "dashboard",
             element: (
-              <PermissionGuard requires={[]}>
+              <PermissionGuard requires={[P.VIEW_DASHBOARD]}>
                 <Dashboard />
               </PermissionGuard>
             ),

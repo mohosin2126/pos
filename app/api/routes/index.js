@@ -12,6 +12,7 @@ const saleReturnManagement = require("./sale-return");
 const inventoryManagement = require("./inventory");
 const customerManagement = require("./customer");
 const invoiceManagement = require("./invoice");
+const dashboardManagement = require("./dashboard");
 const authRoutes = require("./auth");
 const commonRoutes = require("./common");
 const requireAuth = require("../middleware/authenticate");
@@ -30,6 +31,7 @@ module.exports = function registerRoutes(app) {
         }
     });
     app.use("/api/v1/admin", requireAuth);
+    app.use("/api/v1/admin/dashboard", dashboardManagement);
     app.use("/api/v1/admin/user", userManagement);
     app.use("/api/v1/admin/role", roleManagement);
     app.use("/api/v1/admin/supplier", supplierManagement);

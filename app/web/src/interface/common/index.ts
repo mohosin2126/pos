@@ -395,6 +395,84 @@ export interface TNotifications {
   createdAt: string;
 }
 
+export interface TDashboardOverviewMetric {
+  salesTotal: number;
+  grossSales: number;
+  orders: number;
+  returnsTotal: number;
+  revenue: number;
+  profit: number;
+}
+
+export interface TDashboardInventoryRiskItem {
+  productId: number;
+  productName: string;
+  sku?: string | null;
+  quantityOnHand?: number;
+  reorderPoint?: number;
+  stockQuantity?: number;
+  expiringQty?: number;
+  nextExpiryDate?: string;
+  daysUntilExpiry?: number;
+}
+
+export interface TDashboardTopSellingProduct {
+  productId: number;
+  productName: string;
+  sku?: string | null;
+  stockQuantity: number;
+  soldQuantity: number;
+  revenue: number;
+  costOfGoodsSold: number;
+  profit: number;
+}
+
+export interface TDashboardTransaction {
+  entityId: number;
+  type: "sale" | "purchase" | "sale_return" | "purchase_return";
+  referenceNo?: string | null;
+  transactionDate: string;
+  status: string;
+  partyName: string;
+  amount: number;
+}
+
+export interface TDashboardTrendPoint {
+  date: string;
+  label: string;
+  sales: number;
+  profit: number;
+  returns: number;
+  orders: number;
+}
+
+export interface TDashboardDistributionItem {
+  label: string;
+  value: number;
+}
+
+export interface TDashboardSummary {
+  overview: {
+    today: TDashboardOverviewMetric;
+    month: TDashboardOverviewMetric;
+    year: TDashboardOverviewMetric;
+  };
+  inventory: {
+    totalProducts: number;
+    sellableCount: number;
+    lowStockCount: number;
+    outOfStockCount: number;
+    expiredCount: number;
+    expiringSoonCount: number;
+    lowStockProducts: TDashboardInventoryRiskItem[];
+    expiringSoonProducts: TDashboardInventoryRiskItem[];
+  };
+  topSellingProducts: TDashboardTopSellingProduct[];
+  recentTransactions: TDashboardTransaction[];
+  trend: TDashboardTrendPoint[];
+  stockDistribution: TDashboardDistributionItem[];
+}
+
 export interface TUseUsersResult {
   users?: TUserPayload[];
   refetch?: () => Promise<void>;
@@ -486,6 +564,12 @@ export interface TInvoiceResponse {
   message: string;
   data: TInvoice[];
   pagination: TPagination;
+}
+
+export interface TDashboardSummaryApiResponse {
+  success: boolean;
+  message: string;
+  data: TDashboardSummary | null;
 }
 
 export type LoaderProps = {

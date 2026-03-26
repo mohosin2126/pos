@@ -363,6 +363,7 @@ module.exports = {
     STOCKED_PURCHASE_STATUSES,
     STOCK_REDUCING_RETURN_STATUSES,
     STOCK_RESTORING_SALE_RETURN_STATUSES,
+    buildLotSnapshot,
     getRemainingLotsForProduct,
     recomputeForProducts,
 };

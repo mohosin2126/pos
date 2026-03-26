@@ -1,88 +1,152 @@
 "use client";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import ReactApexChart from "react-apexcharts";
-import dayjs, { Dayjs } from "dayjs";
-import quarterOfYear from "dayjs/plugin/quarterOfYear";
-import { Card, ConfigProvider, DatePicker, Tag } from "antd";
+import { Card, Empty, Tag } from "antd";
 import { HiOutlineShoppingCart } from "react-icons/hi";
 import { GrOverview } from "react-icons/gr";
+import { TDashboardDistributionItem, TDashboardTrendPoint } from "@/interface/common";
 
-dayjs.extend(quarterOfYear);
+const currencyFormatter = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  maximumFractionDigits: 0,
+});
 
-type DataPoint = {
-  x: string;
-  y: number;
-};
+interface TGraphChartProps {
+  data: TDashboardTrendPoint[];
+  loading?: boolean;
+}
 
-type Series = {
-  name: string;
-  data: DataPoint[];
-};
+interface TDonutChartProps {
+  data: TDashboardDistributionItem[];
+  loading?: boolean;
+}
 
-export const GraphChart: React.FC = () => {
-  const [state] = useState<{
-    series: Series[];
-    options: ApexCharts.ApexOptions;
-  }>({
-    series: [
-      {
-        name: "sales",
-        data: [
-          { x: "2019/01/01", y: 400 },
-          { x: "2019/04/01", y: 430 },
-          { x: "2019/07/01", y: 448 },
-          { x: "2019/10/01", y: 470 },
-          { x: "2020/01/01", y: 540 },
-          { x: "2020/04/01", y: 580 },
-          { x: "2020/07/01", y: 690 },
-          { x: "2020/10/01", y: 690 },
-        ],
-      },
-    ],
-    options: {
-      chart: {
-        type: "bar",
-        height: 380,
-        toolbar: {
-          show: false,
+export const GraphChart: React.FC<TGraphChartProps> = ({ data, loading = false }) => {
+  const totalSales = useMemo(
+    () => data.reduce((sum, item) => sum + Number(item.sales || 0), 0),
+    [data]
+  );
+  const totalProfit = useMemo(
+    () => data.reduce((sum, item) => sum + Number(item.profit || 0), 0),
+    [data]
+  );
+  const totalOrders = useMemo(
+    () => data.reduce((sum, item) => sum + Number(item.orders || 0), 0),
+    [data]
+  );
+  const peakSalesDay = useMemo(() => {
+    if (!data.length) return null;
+    return [...data].sort((a, b) => Number(b.sales || 0) - Number(a.sales || 0))[0];
+  }, [data]);
+
+  const chartConfig = useMemo(() => {
+    const categories = data.map((item) => item.label);
+
+    return {
+      series: [
+        {
+          name: "Net Sales",
+          type: "area" as const,
+          data: data.map((item) => item.sales),
         },
-      },
-      xaxis: {
-        type: "category",
-        labels: {
-          formatter: (val: string) => "Q" + dayjs(val).quarter(),
+        {
+          name: "Profit",
+          type: "line" as const,
+          data: data.map((item) => item.profit),
         },
-        group: {
-          style: {
-            fontSize: "10px",
-            fontWeight: 700,
+      ],
+      options: {
+        chart: {
+          type: "line",
+          height: 340,
+          toolbar: {
+            show: false,
           },
-          groups: [
-            { title: "2019", cols: 4 },
-            { title: "2020", cols: 4 },
-          ],
         },
-      },
-      tooltip: {
-        x: {
-          formatter: (val: string | number) =>
-            "Q" + dayjs(val).quarter() + " " + dayjs(val).format("YYYY"),
+        colors: ["#0f766e", "#c2410c"],
+        stroke: {
+          curve: "smooth",
+          width: [3, 3],
+          dashArray: [0, 8],
         },
-      },
-    },
-  });
-
-  const onChange = (date: Dayjs) => {
-    if (date) {
-      console.log("Date: ", date);
-    } else {
-      console.log("Clear");
-    }
-  };
+        markers: {
+          size: [0, 4],
+          strokeWidth: 2,
+          strokeColors: ["#ffffff", "#c2410c"],
+          colors: ["#0f766e", "#ffffff"],
+          hover: {
+            sizeOffset: 2,
+          },
+        },
+        dataLabels: {
+          enabled: false,
+        },
+        grid: {
+          borderColor: "#e5e7eb",
+          strokeDashArray: 3,
+          padding: {
+            left: 4,
+            right: 6,
+            top: 12,
+            bottom: 0,
+          },
+        },
+        xaxis: {
+          categories,
+          axisBorder: {
+            show: false,
+          },
+          axisTicks: {
+            show: false,
+          },
+          labels: {
+            style: {
+              colors: "#6b7280",
+              fontSize: "12px",
+              fontWeight: 500,
+            },
+          },
+        },
+        fill: {
+          type: ["gradient", "solid"],
+          gradient: {
+            shadeIntensity: 1,
+            opacityFrom: 0.22,
+            opacityTo: 0.02,
+            stops: [0, 100],
+          },
+        },
+        yaxis: {
+          labels: {
+            formatter: (value: number) => currencyFormatter.format(value),
+            style: {
+              colors: ["#6b7280"],
+              fontSize: "12px",
+            },
+          },
+        },
+        tooltip: {
+          shared: true,
+          intersect: false,
+          y: {
+            formatter: (value: number) => currencyFormatter.format(value),
+          },
+        },
+        legend: {
+          position: "top",
+          horizontalAlign: "right",
+          fontSize: "12px",
+          fontWeight: 600,
+        },
+      } satisfies ApexCharts.ApexOptions,
+    };
+  }, [data]);
 
   return (
     <Card
-      className="w-full h-[450px] overflow-hidden"
+      className="w-full overflow-hidden"
+      bodyStyle={{ padding: 18 }}
       title={
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="!text-base md:!text-lg font-semibold flex items-center !m-0">
@@ -90,50 +154,58 @@ export const GraphChart: React.FC = () => {
               <HiOutlineShoppingCart size={20} />
             </Tag>
             <span className="!text-base md:!text-lg font-semibold !mr-2">
-              Sales Overview
+              Sales And Profit
             </span>
           </div>
-          <ConfigProvider
-            theme={{
-              components: {
-                DatePicker: {
-                  hoverBorderColor: "#005555",
-                  activeBorderColor: "#005555",
-                  activeShadow: "0 0 0 2px rgba(124,58,237,0.12)",
-                },
-              },
-            }}
-          >
-            <DatePicker
-              presets={[
-                { label: "Yesterday", value: dayjs().add(-1, "d") },
-                { label: "Last Week", value: dayjs().add(-7, "d") },
-                { label: "Last Month", value: dayjs().add(-1, "month") },
-                { label: "Last Year", value: dayjs().add(-1, "year") },
-              ]}
-              onChange={onChange}
-            />
-          </ConfigProvider>
+          <p className="!m-0 text-sm text-gray-500">Last 7 days</p>
         </div>
       }
     >
-      <ReactApexChart
-        options={state.options}
-        series={state.series}
-        type="bar"
-        height={420}
-      />
+      {!loading && data.length === 0 ? (
+        <div className="h-[360px] flex items-center justify-center">
+          <Empty description="No trend data available" />
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 gap-3 border-b border-slate-100 pb-4 sm:grid-cols-3">
+            <div>
+              <p className="text-xs uppercase tracking-[0.18em] text-slate-400 !mb-1">7 Day Sales</p>
+              <p className="text-xl font-semibold text-slate-900 !mb-0">
+                {currencyFormatter.format(totalSales)}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-[0.18em] text-slate-400 !mb-1">7 Day Profit</p>
+              <p className="text-xl font-semibold text-slate-900 !mb-0">
+                {currencyFormatter.format(totalProfit)}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-[0.18em] text-slate-400 !mb-1">Peak Day</p>
+              <p className="text-xl font-semibold text-slate-900 !mb-0">
+                {peakSalesDay ? peakSalesDay.label : "--"}
+              </p>
+              <p className="text-xs text-slate-500 !mb-0">{totalOrders} orders</p>
+            </div>
+          </div>
+
+          <ReactApexChart
+            options={chartConfig.options}
+            series={chartConfig.series}
+            type="line"
+            height={340}
+          />
+        </div>
+      )}
     </Card>
   );
 };
 
-export const DonutChart: React.FC = () => {
-  const categories = ["Suppliers", "Categories", "Products", "Purchases"];
-  const values = [12, 8, 45, 20];
-
+export const DonutChart: React.FC<TDonutChartProps> = ({ data, loading = false }) => {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
-
-  const total = values.reduce((a, b) => a + b, 0);
+  const categories = useMemo(() => data.map((item) => item.label), [data]);
+  const values = useMemo(() => data.map((item) => item.value), [data]);
+  const total = values.reduce((sum, value) => sum + value, 0);
 
   const options: ApexCharts.ApexOptions = {
     chart: {
@@ -147,8 +219,6 @@ export const DonutChart: React.FC = () => {
     labels: categories,
     plotOptions: {
       pie: {
-        startAngle: -90,
-        endAngle: 270,
         donut: {
           labels: {
             show: true,
@@ -209,62 +279,48 @@ export const DonutChart: React.FC = () => {
               <GrOverview size={20} />
             </Tag>
             <span className="!text-base md:!text-lg font-semibold !mr-2">
-              POS Overview
+              Inventory Mix
             </span>
           </div>
-          <ConfigProvider
-            theme={{
-              components: {
-                DatePicker: {
-                  hoverBorderColor: "#005555",
-                  activeBorderColor: "#005555",
-                  activeShadow: "0 0 0 2px rgba(124,58,237,0.12)",
-                },
-              },
-            }}
-          >
-            <DatePicker
-              presets={[
-                { label: "Yesterday", value: dayjs().add(-1, "d") },
-                { label: "Last Week", value: dayjs().add(-7, "d") },
-                { label: "Last Month", value: dayjs().add(-1, "month") },
-                { label: "Last Year", value: dayjs().add(-1, "year") },
-              ]}
-              onChange={(e) => console.log(e)}
-            />
-          </ConfigProvider>
+          <p className="!m-0 text-sm text-gray-500">Current stock health</p>
         </div>
       }
     >
-      <div className="mx-auto w-full max-w-[360px] overflow-hidden">
-        <ReactApexChart
-          key={activeIndex ?? "total"}
-          options={{
-            ...options,
-            responsive: [
-              {
-                breakpoint: 1280,
-                options: {
-                  chart: {
-                    width: 320,
+      {!loading && data.length === 0 ? (
+        <div className="h-[320px] flex items-center justify-center">
+          <Empty description="No inventory data available" />
+        </div>
+      ) : (
+        <div className="mx-auto w-full max-w-[360px] overflow-hidden">
+          <ReactApexChart
+            key={activeIndex ?? "total"}
+            options={{
+              ...options,
+              responsive: [
+                {
+                  breakpoint: 1280,
+                  options: {
+                    chart: {
+                      width: 320,
+                    },
                   },
                 },
-              },
-              {
-                breakpoint: 768,
-                options: {
-                  chart: {
-                    width: 280,
+                {
+                  breakpoint: 768,
+                  options: {
+                    chart: {
+                      width: 280,
+                    },
                   },
                 },
-              },
-            ],
-          }}
-          series={values}
-          type="donut"
-          width="100%"
-        />
-      </div>
+              ],
+            }}
+            series={values}
+            type="donut"
+            width="100%"
+          />
+        </div>
+      )}
     </Card>
   );
 };
