@@ -1,9 +1,12 @@
 "use strict";
 
+const { Op } = require("sequelize");
 const { Purchase, Supplier, Product, PurchaseItem, PurchaseReturn, sequelize } = require("../../database/models");
 const { recomputeForProducts, STOCKED_PURCHASE_STATUSES } = require("../../utils/inventory-recompute");
 const {
+    BASE_PURCHASE_STATUSES,
     getReturnAvailability,
+    getFallbackPurchaseStatus,
     getReturnProductIds,
     syncPurchaseReturnStatus,
     validateReturnRequest,
@@ -39,8 +42,9 @@ const create = async (req, res) => {
         if (!supplier) return badRequest(res, "Supplier not found");
 
         const productIds = items.map(item => item.productId);
-        const products = await Product.findAll({ where: { id: productIds } });
-        if (products.length !== productIds.length) {
+        const uniqueProductIds = [...new Set(productIds.map(Number).filter(Boolean))];
+        const products = await Product.findAll({ where: { id: uniqueProductIds } });
+        if (products.length !== uniqueProductIds.length) {
             return badRequest(res, "One or more products not found");
         }
         for (const prod of products) {
@@ -125,7 +129,7 @@ const create = async (req, res) => {
             }
 
             if (STOCK_AFFECTING_PURCHASE_STATUSES.has(createdStatus)) {
-                await recomputeForProducts(productIds, t);
+                await recomputeForProducts(uniqueProductIds, t);
             }
 
             p.items = createdItems;
@@ -145,13 +149,38 @@ const create = async (req, res) => {
 const getAll = async (req, res) => {
     try {
         const { page, limit, offset } = parsePagination(req.query, { page: 1, limit: 20, maxLimit: 100 });
+        const search = String(req.query.search || "").trim();
+        const status = String(req.query.status || "").trim();
+        const statuses = String(req.query.statuses || "")
+            .split(",")
+            .map((value) => value.trim())
+            .filter(Boolean);
+        const where = {};
+
+        if (status) {
+            where.status = status;
+        } else if (statuses.length > 0) {
+            where.status = { [Op.in]: statuses };
+        }
+
+        if (search) {
+            where[Op.or] = [
+                { referenceNo: { [Op.like]: `%${search}%` } },
+                { supplierAddress: { [Op.like]: `%${search}%` } },
+                { "$supplier.companyName$": { [Op.like]: `%${search}%` } },
+            ];
+        }
+
         const { rows, count } = await Purchase.findAndCountAll({
+            where,
             include: [
                 { model: Supplier, as: "supplier", attributes: ["id", "companyName", "email"] },
                 { model: PurchaseItem, as: "items", include: { model: Product, as: "product" } },
             ],
             order: [["createdAt", "DESC"]],
             limit, offset,
+            distinct: true,
+            subQuery: false,
         });
         return paginated(res, { rows, count }, { page, limit }, "Fetched successfully");
     } catch (error) {
@@ -195,8 +224,9 @@ const update = async (req, res) => {
         let calculatedItems = value.items;
         if (value.items && value.items.length > 0) {
             const productIds = value.items.map(item => item.productId);
-            const products = await Product.findAll({ where: { id: productIds } });
-            if (products.length !== productIds.length) {
+            const uniqueProductIds = [...new Set(productIds.map(Number).filter(Boolean))];
+            const products = await Product.findAll({ where: { id: uniqueProductIds } });
+            if (products.length !== uniqueProductIds.length) {
                 return badRequest(res, "One or more products not found");
             }
 
@@ -390,6 +420,9 @@ const createReturn = async (req, res) => {
 
         const purchase = await Purchase.findByPk(purchaseId);
         if (!purchase) return notFound(res, "Purchase not found");
+        if (!BASE_PURCHASE_STATUSES.has(purchase.status) && !["partial_return", "full_return"].includes(purchase.status)) {
+            return badRequest(res, `Cannot create a return for a purchase in "${purchase.status}" status`);
+        }
 
         const items = await PurchaseItem.findAll({ where: { purchaseId } });
         if (items.length === 0) {
@@ -421,6 +454,10 @@ const createReturn = async (req, res) => {
                     refundAmount: value.refundAmount ?? value.totalReturnAmount,
                     refundStatus: "pending",
                     restockingDisposition: value.restockingDisposition,
+                    basePurchaseStatus: getFallbackPurchaseStatus(
+                        purchase,
+                        availability.existingReturns
+                    ),
                     notes: value.notes,
                 },
                 { transaction: t }

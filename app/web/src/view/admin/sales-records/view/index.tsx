@@ -108,6 +108,10 @@ export default function SalesDetails() {
   const handlePrint = () => {
     try {
       message.loading("Preparing for print...", 0);
+      setTimeout(() => {
+        message.destroy();
+        window.print();
+      }, 300);
     } catch (error: any) {
       console.log(error);
       message.destroy();
@@ -140,7 +144,7 @@ export default function SalesDetails() {
           >
             Print
           </Button>
-          <Link to={`${basePath}/sales-records`}>
+          <Link to={`${basePath}/sales/all`}>
             <Button
               icon={<ArrowLeftOutlined />}
               className="!border-[#005555] !text-[#005555] hover:!bg-[#005555] hover:!text-white"
@@ -458,7 +462,7 @@ export default function SalesDetails() {
                   >
                     <Statistic
                       title="Balance Due"
-                      value={sale?.netTotalAmount}
+                      value={detailsData?.balanceDue}
                       precision={2}
                       valueStyle={{
                         color: "#fa8c16",

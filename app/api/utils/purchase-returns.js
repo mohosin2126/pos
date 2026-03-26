@@ -3,6 +3,14 @@
 const { Op } = require("sequelize");
 const { Purchase, PurchaseItem, PurchaseReturn } = require("../database/models");
 
+const BASE_PURCHASE_STATUSES = new Set(["purchase", "received", "partial"]);
+const RETURNABLE_PURCHASE_STATUSES = new Set([
+    ...BASE_PURCHASE_STATUSES,
+    "partial_return",
+    "full_return",
+]);
+const RETURN_STATUS_SET = new Set(["partial_return", "full_return"]);
+
 function parseReturnItems(value) {
     if (Array.isArray(value)) return value;
     if (!value) return [];
@@ -17,6 +25,23 @@ function parseReturnItems(value) {
 
 function roundMoney(value) {
     return Math.round((Number(value || 0) + Number.EPSILON) * 100) / 100;
+}
+
+function getValidBasePurchaseStatus(status) {
+    return BASE_PURCHASE_STATUSES.has(status) ? status : null;
+}
+
+function getFallbackPurchaseStatus(purchase, purchaseReturns = []) {
+    for (const purchaseReturn of purchaseReturns) {
+        const baseStatus = getValidBasePurchaseStatus(
+            purchaseReturn?.basePurchaseStatus
+        );
+        if (baseStatus) {
+            return baseStatus;
+        }
+    }
+
+    return getValidBasePurchaseStatus(purchase?.status) || "purchase";
 }
 
 async function getReturnAvailability(purchaseId, t, excludeReturnId = null) {
@@ -41,45 +66,66 @@ async function getReturnAvailability(purchaseId, t, excludeReturnId = null) {
     });
 
     const purchasedByProduct = new Map();
-    const unitPriceByProduct = new Map();
+    const purchasedValueByProduct = new Map();
 
     for (const item of items) {
         const productId = Number(item.productId);
         const quantity = Number(item.quantity || 0);
+        const lineTotal = roundMoney(item.lineTotal || Number(item.unitPrice || 0) * quantity);
 
         purchasedByProduct.set(productId, (purchasedByProduct.get(productId) || 0) + quantity);
-
-        if (!unitPriceByProduct.has(productId)) {
-            unitPriceByProduct.set(productId, Number(item.unitPrice || 0));
-        }
+        purchasedValueByProduct.set(
+            productId,
+            roundMoney((purchasedValueByProduct.get(productId) || 0) + lineTotal)
+        );
     }
 
     const returnedByProduct = new Map();
+    const returnedValueByProduct = new Map();
     for (const purchaseReturn of existingReturns) {
         const returnItems = parseReturnItems(purchaseReturn.returnItems);
 
         for (const item of returnItems) {
             const productId = Number(item.productId);
             const quantity = Number(item.quantity || 0);
+            const lineTotal = roundMoney(item.lineTotal || 0);
             returnedByProduct.set(productId, (returnedByProduct.get(productId) || 0) + quantity);
+            returnedValueByProduct.set(
+                productId,
+                roundMoney((returnedValueByProduct.get(productId) || 0) + lineTotal)
+            );
         }
     }
 
     const availableByProduct = new Map();
+    const availableValueByProduct = new Map();
     for (const [productId, purchasedQty] of purchasedByProduct.entries()) {
         const returnedQty = returnedByProduct.get(productId) || 0;
+        const purchasedValue = purchasedValueByProduct.get(productId) || 0;
+        const returnedValue = returnedValueByProduct.get(productId) || 0;
         availableByProduct.set(productId, Math.max(0, purchasedQty - returnedQty));
+        availableValueByProduct.set(
+            productId,
+            roundMoney(Math.max(0, purchasedValue - returnedValue))
+        );
     }
 
     return {
+        existingReturns,
         items,
         availableByProduct,
+        availableValueByProduct,
         purchasedByProduct,
-        unitPriceByProduct,
+        purchasedValueByProduct,
+        returnedByProduct,
     };
 }
 
 function validateReturnRequest(purchase, returnItems, availability) {
+    if (!RETURNABLE_PURCHASE_STATUSES.has(purchase?.status)) {
+        return `Purchase status "${purchase?.status}" cannot be returned`;
+    }
+
     if (roundMoney(returnItems.reduce((sum, item) => sum + Number(item.lineTotal || 0), 0)) <= 0) {
         return "Return amount must be greater than 0";
     }
@@ -101,8 +147,9 @@ function validateReturnRequest(purchase, returnItems, availability) {
             return `Cannot return ${quantity} units for product ${productId}; only ${availableQty} available to return`;
         }
 
-        const unitPrice = Number(availability.unitPriceByProduct.get(productId) || 0);
-        const maxLineTotal = roundMoney(unitPrice * quantity);
+        const maxLineTotal = roundMoney(
+            availability.availableValueByProduct.get(productId) || 0
+        );
         const lineTotal = roundMoney(item.lineTotal);
 
         if (lineTotal > maxLineTotal + 0.01) {
@@ -122,10 +169,14 @@ function validateReturnRequest(purchase, returnItems, availability) {
     return null;
 }
 
-async function syncPurchaseReturnStatus(purchaseId, t) {
+async function syncPurchaseReturnStatus(purchaseId, t, options = {}) {
     const purchase = await Purchase.findByPk(purchaseId, { transaction: t });
     if (!purchase) return null;
 
+    const items = await PurchaseItem.findAll({
+        where: { purchaseId },
+        transaction: t,
+    });
     const activeReturns = await PurchaseReturn.findAll({
         where: {
             purchaseId,
@@ -134,17 +185,28 @@ async function syncPurchaseReturnStatus(purchaseId, t) {
         transaction: t,
     });
 
-    const totalReturned = roundMoney(
-        activeReturns.reduce((sum, purchaseReturn) => sum + Number(purchaseReturn.totalReturnAmount || 0), 0)
+    const purchasedQty = items.reduce(
+        (sum, item) => sum + Number(item.quantity || 0),
+        0
     );
-    const purchaseTotal = roundMoney(purchase.totalAmount);
+    const returnedQty = activeReturns.reduce(
+        (sum, purchaseReturn) =>
+            sum +
+            parseReturnItems(purchaseReturn.returnItems).reduce(
+                (innerSum, item) => innerSum + Number(item.quantity || 0),
+                0
+            ),
+        0
+    );
 
     let nextStatus = purchase.status;
-    if (totalReturned <= 0) {
-        if (purchase.status === "partial_return" || purchase.status === "full_return") {
-            nextStatus = "purchase";
+    if (returnedQty <= 0) {
+        if (RETURN_STATUS_SET.has(purchase.status)) {
+            nextStatus = getValidBasePurchaseStatus(options.fallbackStatus)
+                || getFallbackPurchaseStatus(purchase, activeReturns)
+                || "purchase";
         }
-    } else if (Math.abs(totalReturned - purchaseTotal) < 0.01 || totalReturned > purchaseTotal) {
+    } else if (returnedQty >= purchasedQty) {
         nextStatus = "full_return";
     } else {
         nextStatus = "partial_return";
@@ -166,8 +228,12 @@ function getReturnProductIds(purchaseReturn) {
 }
 
 module.exports = {
+    BASE_PURCHASE_STATUSES,
+    RETURNABLE_PURCHASE_STATUSES,
     getReturnAvailability,
+    getFallbackPurchaseStatus,
     getReturnProductIds,
+    getValidBasePurchaseStatus,
     parseReturnItems,
     syncPurchaseReturnStatus,
     validateReturnRequest,

@@ -35,6 +35,7 @@ import ViewInvoice from "@/view/admin/invoices/view";
 import ViewProfile from "@/view/admin/settings/view-profile";
 import PermissionGuard from "@/routes/private/permission-guard";
 import { PERMISSIONS } from "@/data/permissions";
+import ProductRevenueReport from "@/view/admin/reports/product-revenue";
 
 const P = PERMISSIONS;
 
@@ -327,6 +328,19 @@ const adminRoutes = [
                 element: (
                   <PermissionGuard requires={[P.VIEW_SALES]}>
                     <SalesDetails />
+                  </PermissionGuard>
+                ),
+              },
+            ],
+          },
+          {
+            path: "reports",
+            children: [
+              {
+                path: "product-revenue",
+                element: (
+                  <PermissionGuard requires={[P.VIEW_REPORTS]}>
+                    <ProductRevenueReport />
                   </PermissionGuard>
                 ),
               },

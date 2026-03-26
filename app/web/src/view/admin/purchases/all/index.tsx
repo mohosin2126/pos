@@ -3,7 +3,7 @@ import { DashboardTitle } from "@/components/re-useable/dashboard-titile";
 import ToolbarButton from "@/components/re-useable/toolbar-button";
 import { Button, Card, Input, message, Select, Table, Tag } from "antd";
 import { MdOutlineSearch } from "react-icons/md";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { showConfirmDelete } from "@/components/re-useable/delete-modal";
 import type { TableProps } from "antd";
 import { ActionButton } from "@/components/re-useable/action-button";
@@ -15,12 +15,19 @@ import { useBasePath } from "@/hooks/common/use-base-path";
 
 export default function Purchases() {
   const basePath = useBasePath();
-  const { purchases, refetch, loading } = usePurchases();
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [searchText, setSearchText] = useState<string>("");
   const [filterStatus, setFilterStatus] = useState<
     "all" | "draft" | "po" | "ordered" | "purchase" | "received" | "partial" | "partial_return" | "full_return" | "cancelled"
   >("all");
   const { deletePurchase } = useDeletePurchase();
+  const { purchases, refetch, loading, pagination } = usePurchases({
+    page: currentPage,
+    limit: pageSize,
+    search: searchText || undefined,
+    status: filterStatus === "all" ? undefined : filterStatus,
+  });
 
   const handleDelete = (record: any) => {
     showConfirmDelete({
@@ -40,6 +47,10 @@ export default function Purchases() {
       console.log("Selected Rows: ", selectedRows);
     },
   };
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterStatus, searchText]);
 
   const columns = [
     {
@@ -116,15 +127,6 @@ export default function Purchases() {
     },
   ];
 
-  const filteredData = purchases?.filter((item) => {
-    const matchesSearch =
-      (item.referenceNo?.toLowerCase() || "").includes(searchText.toLowerCase()) ||
-      (item.supplierAddress?.toLowerCase() || "").includes(searchText.toLowerCase());
-    const matchesStatus =
-      filterStatus === "all" ? true : item.status === filterStatus;
-    return matchesSearch && matchesStatus;
-  });
-
   return (
     <div className="space-y-6">
       <div className="flex md:items-center justify-between flex-col md:flex-row gap-6">
@@ -177,20 +179,24 @@ export default function Purchases() {
       >
         <Table
           rowSelection={rowSelection}
-          dataSource={filteredData}
+          dataSource={purchases}
           columns={columns}
           loading={Loader({ loading })}
           rowKey="id"
           pagination={
-            filteredData.length > 10
-              ? {
-                  pageSize: 10,
-                  showSizeChanger: true,
-                  showQuickJumper: true,
-                  showTotal: (total, range) =>
-                    `${range[0]}-${range[1]} of ${total} purchases`,
-                }
-              : false
+            {
+              current: pagination.page,
+              pageSize: pagination.limit,
+              total: pagination.total,
+              showSizeChanger: true,
+              showQuickJumper: true,
+              showTotal: (total, range) =>
+                `${range[0]}-${range[1]} of ${total} purchases`,
+              onChange: (page, size) => {
+                setCurrentPage(page);
+                setPageSize(size);
+              },
+            }
           }
           scroll={{ x: "max-content" }}
         />

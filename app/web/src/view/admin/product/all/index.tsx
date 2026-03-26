@@ -18,7 +18,6 @@ import { showConfirmDelete } from "@/components/re-useable/delete-modal";
 import { ActionButton } from "@/components/re-useable/action-button";
 import type { TProductPayload } from "@/interface/common";
 import { useDeleteProduct, useProducts } from "@/hooks/admin/products";
-import { RiResetLeftFill } from "react-icons/ri";
 import Loader from "@/components/re-useable/loader";
 import { normalizeTags } from "@/utils/tag-utils";
 import { useBasePath } from "@/hooks/common/use-base-path";
@@ -33,7 +32,6 @@ export default function AllProducts() {
   >("all");
   const { deleteItem } = useDeleteProduct();
   const { products, refetch, loading } = useProducts();
-  // console.log("products :", products);
 
   // Delete product
   const handleDelete = (record: TProductPayload) => {
@@ -79,7 +77,9 @@ export default function AllProducts() {
         </Space>
       ),
     },
-    { title: "Category ID", dataIndex: "categoryId", key: "categoryId" },
+    {
+      title: "Category ID", dataIndex: "categoryId", key: "categoryId"
+    },
     { title: "Stock", dataIndex: "stockQuantity", key: "stockQuantity" },
     { title: "Re-Order", dataIndex: "reorderLevel", key: "reorderLevel" },
 
@@ -130,7 +130,6 @@ export default function AllProducts() {
       ),
     },
   ];
-
 
   const filteredData = (products as TProductPayload[])?.filter((item) => {
     const matchesSearch =

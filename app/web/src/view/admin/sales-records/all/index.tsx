@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, Input, Select, Table, Tag, Button } from "antd";
 import { MdOutlineSearch } from "react-icons/md";
 import { MdAddCircleOutline } from "react-icons/md";
@@ -17,11 +17,18 @@ const { Option } = Select;
 
 export default function SalesRecords() {
   const basePath = useBasePath();
-  const { sales, refetch, loading } = useSales();
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [searchText, setSearchText] = useState<string>("");
   const [filterStatus, setFilterStatus] = useState<
     "all" | "issued" | "paid" | "void"
   >("all");
+  const { sales, refetch, loading, pagination } = useSales({
+    page: currentPage,
+    limit: pageSize,
+    search: searchText || undefined,
+    invoiceStatus: filterStatus === "all" ? undefined : filterStatus,
+  });
 
   const rowSelection: TableProps<any>["rowSelection"] = {
     onChange: (selectedRowKeys, selectedRows) => {
@@ -29,6 +36,10 @@ export default function SalesRecords() {
       console.log("Selected Rows: ", selectedRows);
     },
   };
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterStatus, searchText]);
 
   const columns = [
     {
@@ -116,29 +127,6 @@ export default function SalesRecords() {
     },
   ];
 
-  const filteredData = sales?.filter((item) => {
-    const referenceNo = item?.referenceNo ?? "";
-    const customerId = item?.customerId?.toString() ?? "";
-    const customerName = item?.customer?.name ?? "";
-    const invoice = item.invoice; 
-
-    const search = searchText.toLowerCase();
-
-    const matchesSearch =
-      referenceNo.toLowerCase().includes(search) ||
-      customerId.toLowerCase().includes(search) ||
-      customerName?.toLowerCase().includes(search) ||
-      (typeof invoice === "object" &&
-        invoice.invoiceNo?.toLowerCase().includes(search));
-
-    const matchesStatus =
-      filterStatus === "all"
-        ? true
-        : typeof invoice === "object" && invoice.status === filterStatus;
-
-    return matchesSearch && matchesStatus;
-  });
-
   return (
     <div className="space-y-6">
       <div className="flex md:items-center justify-between flex-col md:flex-row gap-6">
@@ -148,7 +136,7 @@ export default function SalesRecords() {
         />
         <div className="flex items-center gap-x-3">
           <ToolbarButton onRefreshClick={() => refetch()} />
-          <Link to="#">
+          <Link to={`${basePath}/pos/create`}>
             <Button
               type="primary"
               icon={<MdAddCircleOutline />}
@@ -186,20 +174,24 @@ export default function SalesRecords() {
       >
         <Table
           rowSelection={rowSelection}
-          dataSource={filteredData}
+          dataSource={sales}
           columns={columns}
           loading={Loader({ loading })}
           rowKey="id"
           pagination={
-            filteredData?.length > 10
-              ? {
-                  pageSize: 10,
-                  showSizeChanger: true,
-                  showQuickJumper: true,
-                  showTotal: (total, range) =>
-                    `${range[0]}-${range[1]} of ${total} invoices`,
-                }
-              : false
+            {
+              current: pagination.page,
+              pageSize: pagination.limit,
+              total: pagination.total,
+              showSizeChanger: true,
+              showQuickJumper: true,
+              showTotal: (total, range) =>
+                `${range[0]}-${range[1]} of ${total} invoices`,
+              onChange: (page, size) => {
+                setCurrentPage(page);
+                setPageSize(size);
+              },
+            }
           }
           scroll={{ x: "max-content" }}
         />

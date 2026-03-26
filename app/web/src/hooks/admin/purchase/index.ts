@@ -1,34 +1,68 @@
 import { useCallback, useEffect, useState } from "react";
-import {TPurchasePayload, TPurchaseReturn} from "@/interface/common";
+import {
+  TPagination,
+  TPurchasePayload,
+  TPurchaseReturn,
+  TPurchasesApiResponse,
+} from "@/interface/common";
 import useApi from "@/hooks/use-api";
 
+const DEFAULT_PAGINATION: TPagination = {
+  page: 1,
+  limit: 20,
+  total: 0,
+  pages: 1,
+  hasPrev: false,
+  hasNext: false,
+};
+
+interface TUsePurchasesParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  status?: TPurchasePayload["status"];
+  statuses?: TPurchasePayload["status"][];
+}
 
 // Get all purchases
-export function usePurchases() {
+export function usePurchases(params: TUsePurchasesParams = {}) {
   const [purchases, setPurchases] = useState<TPurchasePayload[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
+  const [pagination, setPagination] = useState<TPagination>(DEFAULT_PAGINATION);
+  const { page = 1, limit = 20, search, status, statuses } = params;
 
   const fetchPurchases = useCallback(async () => {
     setLoading(true);
     try {
-      const { data } = await useApi.get<{ data: TPurchasePayload[] }>(
-        "/v1/admin/purchase/all"
+      const { data } = await useApi.get<TPurchasesApiResponse>(
+        "/v1/admin/purchase/all",
+        {
+          params: {
+            page,
+            limit,
+            ...(search ? { search } : {}),
+            ...(status ? { status } : {}),
+            ...(statuses?.length ? { statuses: statuses.join(",") } : {}),
+          },
+        }
       );
       setPurchases(data?.data || []);
+      setPagination(data?.pagination || DEFAULT_PAGINATION);
     } catch (error: any) {
       console.error("Error fetching purchases:", error);
       console.error("API response:", error?.response?.data);
       setPurchases([]);
+      setPagination(DEFAULT_PAGINATION);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [limit, page, search, status, statuses]);
 
   useEffect(() => {
     fetchPurchases();
   }, [fetchPurchases]);
 
-  return { purchases, loading, refetch: fetchPurchases };
+  return { purchases, loading, pagination, refetch: fetchPurchases };
 }
 
 // Get single purchase by ID

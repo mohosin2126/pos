@@ -13,6 +13,7 @@ const ROUTE_PRIORITY: PermittedRoute[] = [
   { permission: PERMISSIONS.VIEW_DASHBOARD, path: "/dashboard" },
   { permission: PERMISSIONS.VIEW_USERS, path: "/user/all" },
   { permission: PERMISSIONS.VIEW_ROLES, path: "/access/roles" },
+  { permission: PERMISSIONS.VIEW_REPORTS, path: "/reports/product-revenue" },
   { permission: PERMISSIONS.VIEW_CATEGORIES, path: "/category/all" },
   { permission: PERMISSIONS.VIEW_SUPPLIERS, path: "/supplier/all" },
   { permission: PERMISSIONS.VIEW_PRODUCTS, path: "/product/all" },

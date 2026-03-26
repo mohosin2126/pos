@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { showConfirmDelete } from "@/components/re-useable/delete-modal";
 import {
   Button,
@@ -7,6 +7,7 @@ import {
   Dropdown,
   Input,
   message,
+  Pagination,
   Skeleton,
   Typography,
 } from "antd";
@@ -27,6 +28,8 @@ export default function CategoriesAll() {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [searchText, setSearchText] = useState<string>("");
   const [updateData, setUpdateData] = useState<TCategoryPayload | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(9);
   const { deleteItem } = useDeleteCategory();
   const { categories, refetch, loading } = useCategories();
 
@@ -54,6 +57,15 @@ export default function CategoriesAll() {
         new Date(b.createdAt ?? 0).getTime() -
         new Date(a.createdAt ?? 0).getTime()
     );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchText]);
+
+  const paginatedCategories = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredCategories?.slice(start, start + pageSize) ?? [];
+  }, [filteredCategories, currentPage, pageSize]);
 
   const menuItems = [
     {
@@ -186,7 +198,7 @@ export default function CategoriesAll() {
           </div>
         ) : (
           <div className="grid gap-4 md:grid-cols-3 sm:grid-cols-2 grid-cols-1">
-            {filteredCategories?.map((cat) => (
+            {paginatedCategories.map((cat) => (
               <Col key={cat.id}>
                 <Card className=" text-center relative">
                   {/* Dropdown for dots */}
@@ -232,6 +244,26 @@ export default function CategoriesAll() {
           <p className="text-center text-gray-500 col-span-full">
             No categories found
           </p>
+        )}
+
+        {filteredCategories.length > 0 && (
+          <div className="mt-6 flex justify-end">
+            <Pagination
+              current={currentPage}
+              pageSize={pageSize}
+              total={filteredCategories.length}
+              showSizeChanger
+              showQuickJumper
+              pageSizeOptions={["6", "9", "12", "18"]}
+              showTotal={(total, range) =>
+                `${range[0]}-${range[1]} of ${total} categories`
+              }
+              onChange={(page, size) => {
+                setCurrentPage(page);
+                setPageSize(size);
+              }}
+            />
+          </div>
         )}
       </Card>
     </div>

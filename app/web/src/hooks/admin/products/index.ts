@@ -1,32 +1,113 @@
 
 import { useCallback, useEffect, useState } from "react";
-import {TProductPayload} from "@/interface/common";
+import {
+  TProductListParams,
+  TProductPayload,
+  TProductsApiResponse,
+  TPagination,
+  TProductReportTotals,
+} from "@/interface/common";
 import useApi from "@/hooks/use-api";
 import {useDelete} from "@/hooks/common";
 
+const DEFAULT_PAGINATION: TPagination = {
+  page: 1,
+  limit: 20,
+  total: 0,
+  pages: 1,
+  hasPrev: false,
+  hasNext: false,
+};
 
 // Hooks
-export function useProducts() {
+export function useProducts(params: TProductListParams = {}) {
   const [products, setProducts] = useState<TProductPayload[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
+  const [pagination, setPagination] = useState<TPagination>(DEFAULT_PAGINATION);
 
-  const fetchStudents = useCallback(async () => {
+  const {
+    page = 1,
+    limit = 100,
+    search,
+    status,
+    includeAnalytics = false,
+    period = "month",
+  } = params;
+
+  const fetchProducts = useCallback(async () => {
     setLoading(true);
     try {
-      const { data } = await useApi.get("/v1/admin/product/all");
+      const { data } = await useApi.get<TProductsApiResponse>("/v1/admin/product/all", {
+        params: {
+          page,
+          limit,
+          ...(search ? { search } : {}),
+          ...(status ? { status } : {}),
+          ...(includeAnalytics ? { includeAnalytics: "true", period } : {}),
+        },
+      });
       setProducts(data?.data || []);
+      setPagination(data?.pagination || DEFAULT_PAGINATION);
     } catch (error) {
       console.error("Error fetching product:", error);
+      setProducts([]);
+      setPagination(DEFAULT_PAGINATION);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [includeAnalytics, limit, page, period, search, status]);
 
   useEffect(() => {
-    fetchStudents();
-  }, [fetchStudents]);
+    fetchProducts();
+  }, [fetchProducts]);
 
-  return { products, loading, refetch: fetchStudents };
+  return { products, loading, pagination, refetch: fetchProducts };
+}
+
+export function useProductRevenueReport(params: TProductListParams = {}) {
+  const [products, setProducts] = useState<TProductPayload[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [pagination, setPagination] = useState<TPagination>(DEFAULT_PAGINATION);
+  const [reportTotals, setReportTotals] = useState<TProductReportTotals | null>(null);
+
+  const {
+    page = 1,
+    limit = 10,
+    search,
+    status,
+    period = "month",
+  } = params;
+
+  const fetchReport = useCallback(async () => {
+    setLoading(true);
+    try {
+      const { data } = await useApi.get<TProductsApiResponse>("/v1/admin/product/revenue-report", {
+        params: {
+          page,
+          limit,
+          ...(search ? { search } : {}),
+          ...(status ? { status } : {}),
+          period,
+        },
+      });
+      setProducts(data?.data || []);
+      setPagination(data?.pagination || DEFAULT_PAGINATION);
+      setReportTotals(data?.reportTotals || null);
+    } catch (error) {
+      console.error("Error fetching product revenue report:", error);
+      setProducts([]);
+      setPagination(DEFAULT_PAGINATION);
+      setReportTotals(null);
+    } finally {
+      setLoading(false);
+    }
+  }, [limit, page, period, search, status]);
+
+  useEffect(() => {
+    fetchReport();
+  }, [fetchReport]);
+
+  return { products, loading, pagination, reportTotals, refetch: fetchReport };
 }
 
 export function useProduct(id: string | undefined) {

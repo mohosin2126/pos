@@ -1,5 +1,6 @@
 "use strict";
 
+const { Op } = require("sequelize");
 const { PurchaseReturn, Purchase, sequelize } = require("../../database/models");
 const { recomputeForProducts } = require("../../utils/inventory-recompute");
 const {
@@ -15,10 +16,32 @@ const {
 const getAll = async (req, res) => {
     try {
         const { page, limit, offset } = parsePagination(req.query, { page: 1, limit: 20, maxLimit: 100 });
+        const search = String(req.query.search || "").trim();
+        const status = String(req.query.status || "").trim();
+        const where = {};
+
+        if (status) {
+            where.refundStatus = status;
+        }
+
+        if (search) {
+            where[Op.or] = [
+                { referenceNo: { [Op.like]: `%${search}%` } },
+                { "$purchase.referenceNo$": { [Op.like]: `%${search}%` } },
+            ];
+        }
+
         const { rows, count } = await PurchaseReturn.findAndCountAll({
-            include: [{ model: Purchase, as: "purchase" }],
+            where,
+            include: [{
+                model: Purchase,
+                as: "purchase",
+                required: false,
+            }],
             order: [["createdAt", "DESC"]],
             limit, offset,
+            distinct: true,
+            subQuery: false,
         });
         return paginated(res, { rows, count }, { page, limit }, "Fetched successfully");
     } catch (error) {
@@ -114,9 +137,10 @@ const destroy = async (req, res) => {
         await sequelize.transaction(async (t) => {
             const affectedProductIds = getReturnProductIds(purchaseReturn);
             const purchaseId = purchaseReturn.purchaseId;
+            const fallbackStatus = purchaseReturn.basePurchaseStatus;
 
             await purchaseReturn.destroy({ transaction: t });
-            await syncPurchaseReturnStatus(purchaseId, t);
+            await syncPurchaseReturnStatus(purchaseId, t, { fallbackStatus });
 
             if (affectedProductIds.length > 0) {
                 await recomputeForProducts(affectedProductIds, t);
@@ -210,7 +234,9 @@ const rejectReturn = async (req, res) => {
 
         const rejected = await sequelize.transaction(async (t) => {
             const result = await purchaseReturn.update(updateData, { transaction: t });
-            await syncPurchaseReturnStatus(purchaseReturn.purchaseId, t);
+            await syncPurchaseReturnStatus(purchaseReturn.purchaseId, t, {
+                fallbackStatus: purchaseReturn.basePurchaseStatus,
+            });
 
             const affectedProductIds = getReturnProductIds(purchaseReturn);
             if (affectedProductIds.length > 0) {

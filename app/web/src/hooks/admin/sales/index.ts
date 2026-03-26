@@ -1,29 +1,57 @@
 import { useCallback, useEffect, useState } from "react";
-import { TSaleProps } from "@/interface/common";
+import { TPagination, TSaleProps, TSalesApiResponse } from "@/interface/common";
 import useApi from "@/hooks/use-api";
 import { message } from "antd";
 
-export function useSales() {
+const DEFAULT_PAGINATION: TPagination = {
+  page: 1,
+  limit: 20,
+  total: 0,
+  pages: 1,
+  hasPrev: false,
+  hasNext: false,
+};
+
+interface TUseSalesParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  invoiceStatus?: "issued" | "paid" | "void";
+}
+
+export function useSales(params: TUseSalesParams = {}) {
   const [sales, setSales] = useState<TSaleProps[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
+  const [pagination, setPagination] = useState<TPagination>(DEFAULT_PAGINATION);
+  const { page = 1, limit = 20, search, invoiceStatus } = params;
 
   const fetchSales = useCallback(async () => {
     setLoading(true);
     try {
-      const { data } = await useApi.get("/v1/admin/sale/all");
+      const { data } = await useApi.get<TSalesApiResponse>("/v1/admin/sale/all", {
+        params: {
+          page,
+          limit,
+          ...(search ? { search } : {}),
+          ...(invoiceStatus ? { invoiceStatus } : {}),
+        },
+      });
       setSales(data?.data || []);
+      setPagination(data?.pagination || DEFAULT_PAGINATION);
     } catch (error) {
       console.error("Error fetching sales:", error);
+      setSales([]);
+      setPagination(DEFAULT_PAGINATION);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [invoiceStatus, limit, page, search]);
 
   useEffect(() => {
     fetchSales();
   }, [fetchSales]);
 
-  return { sales, loading, refetch: fetchSales };
+  return { sales, loading, pagination, refetch: fetchSales };
 }
 
 export function useSale(id: string | undefined) {

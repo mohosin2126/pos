@@ -1,5 +1,6 @@
 "use strict";
 
+const { Op } = require("sequelize");
 const { sequelize, Sale, SaleItem, Customer, Invoice } = require("../../database/models");
 const {
     recomputeForProducts,
@@ -286,14 +287,46 @@ const create = async (req, res) => {
 const getAll = async (req, res) => {
     try {
         const { page, limit, offset } = parsePagination(req.query, { page: 1, limit: 20, maxLimit: 100 });
+        const search = String(req.query.search || "").trim();
+        const invoiceStatus = String(req.query.invoiceStatus || "").trim();
+        const where = {};
+        const invoiceWhere = {};
+
+        if (search) {
+            where[Op.or] = [
+                { referenceNo: { [Op.like]: `%${search}%` } },
+                sequelize.where(sequelize.cast(sequelize.col("Sale.customerId"), "CHAR"), {
+                    [Op.like]: `%${search}%`,
+                }),
+                { "$customer.name$": { [Op.like]: `%${search}%` } },
+                { "$invoice.invoiceNo$": { [Op.like]: `%${search}%` } },
+            ];
+        }
+
+        if (invoiceStatus) {
+            invoiceWhere.status = invoiceStatus;
+        }
+
         const { rows, count } = await Sale.findAndCountAll({
+            where,
             include: [
                 { model: SaleItem, as: "items", include: [{ model: sequelize.models.Product, as: "product" }] },
-                { model: sequelize.models.Customer, as: "customer" },
-                { model: sequelize.models.Invoice, as: "invoice" },
+                {
+                    model: sequelize.models.Customer,
+                    as: "customer",
+                    required: false,
+                },
+                {
+                    model: sequelize.models.Invoice,
+                    as: "invoice",
+                    where: Object.keys(invoiceWhere).length ? invoiceWhere : undefined,
+                    required: Boolean(invoiceStatus),
+                },
             ],
             order: [["createdAt", "DESC"]],
             limit, offset,
+            distinct: true,
+            subQuery: false,
         });
         return paginated(res, { rows, count }, { page, limit }, "Fetched successfully");
     } catch (error) {

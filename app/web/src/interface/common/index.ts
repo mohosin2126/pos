@@ -106,6 +106,34 @@ export interface TProductPayload {
   updatedBy?: number | null;
   createdAt?: string;
   updatedAt?: string;
+  analyticsPeriod?: TProductAnalyticsPeriod;
+  soldQuantity?: number;
+  revenue?: number;
+  averageCost?: number;
+  costOfGoodsSold?: number;
+  profit?: number;
+  loss?: number;
+}
+
+export type TProductAnalyticsPeriod = "day" | "month" | "year" | "all";
+
+export interface TProductListParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  status?: "active" | "inactive";
+  includeAnalytics?: boolean;
+  period?: TProductAnalyticsPeriod;
+}
+
+export interface TProductReportTotals {
+  analyticsPeriod: TProductAnalyticsPeriod;
+  products: number;
+  soldQuantity: number;
+  revenue: number;
+  costOfGoodsSold: number;
+  profit: number;
+  loss: number;
 }
 
 // for purchase
@@ -356,6 +384,35 @@ export interface TSuppliersApiResponse {
   success: boolean;
   message: string;
   data: TSupplierPayload[];
+  pagination: TPagination;
+}
+
+export interface TProductsApiResponse {
+  success: boolean;
+  message: string;
+  data: TProductPayload[];
+  pagination: TPagination;
+  reportTotals?: TProductReportTotals;
+}
+
+export interface TSalesApiResponse {
+  success: boolean;
+  message: string;
+  data: TSaleProps[];
+  pagination: TPagination;
+}
+
+export interface TPurchasesApiResponse {
+  success: boolean;
+  message: string;
+  data: TPurchasePayload[];
+  pagination: TPagination;
+}
+
+export interface TPurchaseReturnsApiResponse {
+  success: boolean;
+  message: string;
+  data: TPurchaseReturn[];
   pagination: TPagination;
 }
 

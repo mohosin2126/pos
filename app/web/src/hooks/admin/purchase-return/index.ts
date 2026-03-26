@@ -1,32 +1,64 @@
 import { useCallback, useEffect, useState } from "react";
-import { TPurchaseReturn } from "@/interface/common";
+import {
+  TPagination,
+  TPurchaseReturn,
+  TPurchaseReturnsApiResponse,
+} from "@/interface/common";
 import useApi from "@/hooks/use-api";
 
+const DEFAULT_PAGINATION: TPagination = {
+  page: 1,
+  limit: 20,
+  total: 0,
+  pages: 1,
+  hasPrev: false,
+  hasNext: false,
+};
+
+interface TUsePurchaseReturnsParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  status?: "pending" | "approved" | "refunded" | "rejected";
+}
+
 // Get all purchase returns
-export function usePurchaseReturns() {
+export function usePurchaseReturns(params: TUsePurchaseReturnsParams = {}) {
   const [returns, setReturns] = useState<TPurchaseReturn[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
+  const [pagination, setPagination] = useState<TPagination>(DEFAULT_PAGINATION);
+  const { page = 1, limit = 20, search, status } = params;
 
   const fetchReturns = useCallback(async () => {
     setLoading(true);
     try {
-      const { data } = await useApi.get<{ data: TPurchaseReturn[] }>(
-        "/v1/admin/purchase-return/all"
+      const { data } = await useApi.get<TPurchaseReturnsApiResponse>(
+        "/v1/admin/purchase-return/all",
+        {
+          params: {
+            page,
+            limit,
+            ...(search ? { search } : {}),
+            ...(status ? { status } : {}),
+          },
+        }
       );
       setReturns(data?.data || []);
+      setPagination(data?.pagination || DEFAULT_PAGINATION);
     } catch (error: any) {
       console.error("Error fetching returns:", error);
       setReturns([]);
+      setPagination(DEFAULT_PAGINATION);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [limit, page, search, status]);
 
   useEffect(() => {
     fetchReturns();
   }, [fetchReturns]);
 
-  return { returns, loading, refetch: fetchReturns };
+  return { returns, loading, pagination, refetch: fetchReturns };
 }
 
 // Get single return by ID

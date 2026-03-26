@@ -57,6 +57,17 @@ export const getMenuItems = (basePath: string): TMenuBlock[] => [
         ],
     },
     {
+        title: "Reports",
+        menu: [
+            {
+                label: "Product Revenue",
+                icon: FiBarChart2,
+                href: `${basePath}/reports/product-revenue`,
+                permission: P.VIEW_REPORTS,
+            },
+        ],
+    },
+    {
         title: "Inventory",
         menu: [
             {

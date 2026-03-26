@@ -3,7 +3,7 @@ import { DashboardTitle } from "@/components/re-useable/dashboard-titile";
 import ToolbarButton from "@/components/re-useable/toolbar-button";
 import { Button, Card, Input, message, Select, Table, Tag, Modal, Form, InputNumber, Space } from "antd";
 import { MdOutlineSearch } from "react-icons/md";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { showConfirmDelete } from "@/components/re-useable/delete-modal";
 import type { TableProps } from "antd";
 import { MdAddCircleOutline } from "react-icons/md";
@@ -21,7 +21,8 @@ const { Option } = Select;
 
 export default function PurchaseReturnPage() {
   const basePath = useBasePath();
-  const { returns, refetch, loading } = usePurchaseReturns();
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const { deleteReturn } = useDeleteReturn();
   const { approveReturn, loading: approveLoading } = useApproveReturn();
   const { processRefund, loading: refundLoading } = useProcessRefund();
@@ -32,12 +33,11 @@ export default function PurchaseReturnPage() {
   const [approveModal, setApproveModal] = useState(false);
   const [selectedReturn, setSelectedReturn] = useState<TPurchaseReturn | null>(null);
   const [form] = Form.useForm();
-
-  const filteredReturns = returns?.filter((item) => {
-    const matchesSearch =
-      (item.referenceNo?.toLowerCase() || "").includes(searchText.toLowerCase());
-    const matchesStatus = filterStatus === "all" ? true : item.refundStatus === filterStatus;
-    return matchesSearch && matchesStatus;
+  const { returns, refetch, loading, pagination } = usePurchaseReturns({
+    page: currentPage,
+    limit: pageSize,
+    search: searchText || undefined,
+    status: filterStatus === "all" ? undefined : filterStatus,
   });
 
   const handleDelete = (record: TPurchaseReturn) => {
@@ -216,6 +216,10 @@ export default function PurchaseReturnPage() {
     },
   ];
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterStatus, searchText]);
+
   return (
     <div className="space-y-6">
       <div className="flex md:items-center justify-between flex-col md:flex-row gap-6">
@@ -262,20 +266,24 @@ export default function PurchaseReturnPage() {
         }
       >
         <Table
-          dataSource={filteredReturns}
+          dataSource={returns}
           columns={columns}
           loading={Loader({ loading })}
           rowKey="id"
           pagination={
-            filteredReturns.length > 10
-              ? {
-                  pageSize: 10,
-                  showSizeChanger: true,
-                  showQuickJumper: true,
-                  showTotal: (total, range) =>
-                    `${range[0]}-${range[1]} of ${total} returns`,
-                }
-              : false
+            {
+              current: pagination.page,
+              pageSize: pagination.limit,
+              total: pagination.total,
+              showSizeChanger: true,
+              showQuickJumper: true,
+              showTotal: (total, range) =>
+                `${range[0]}-${range[1]} of ${total} returns`,
+              onChange: (page, size) => {
+                setCurrentPage(page);
+                setPageSize(size);
+              },
+            }
           }
           scroll={{ x: "max-content" }}
         />

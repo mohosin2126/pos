@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { DashboardTitle } from "@/components/re-useable/dashboard-titile";
-import { Button, Card, Divider, Input, message, Modal } from "antd";
+import { Button, Card, Divider, Input, message, Modal, Pagination } from "antd";
 import { useEffect, useRef, useState, useMemo } from "react";
 import {
     FaBarcode,
@@ -37,6 +37,8 @@ export default function AllPos() {
     const [paymentMethod, setPaymentMethod] = useState<string>("cash");
     const [barcodeInput, setBarcodeInput] = useState<string>("");
     const [searchTerm, setSearchTerm] = useState<string>("");
+    const [productPage, setProductPage] = useState(1);
+    const [productPageSize, setProductPageSize] = useState(8);
     const [showInvoice, setShowInvoice] = useState<boolean>(false);
     const [orderNumber] = useState<string>(`ORD-${Date.now()}`);
     const { createSale } = useCreateSale();
@@ -256,6 +258,15 @@ export default function AllPos() {
         });
     }, [sellableProducts, searchTerm]);
 
+    useEffect(() => {
+        setProductPage(1);
+    }, [searchTerm]);
+
+    const paginatedProducts = useMemo(() => {
+        const start = (productPage - 1) * productPageSize;
+        return (filteredProducts ?? []).slice(start, start + productPageSize);
+    }, [filteredProducts, productPage, productPageSize]);
+
     const totals = calculateTotals();
 
     return (
@@ -303,7 +314,7 @@ export default function AllPos() {
 
                         <div className="flex-1 p-4 overflow-y-auto">
                             <div className="space-y-2">
-                                {(filteredProducts ?? []).map((product: any) => {
+                                {paginatedProducts.map((product: any) => {
                                     const baseProduct = normalizeProduct(product);
                                     const availableQty = productAvailableQty(product);
 
@@ -350,6 +361,26 @@ export default function AllPos() {
                                     </div>
                                 )}
                             </div>
+
+                            {filteredProducts.length > 0 && (
+                                <div className="mt-4 flex justify-end">
+                                    <Pagination
+                                        current={productPage}
+                                        pageSize={productPageSize}
+                                        total={filteredProducts.length}
+                                        size="small"
+                                        showSizeChanger
+                                        pageSizeOptions={["8", "12", "16", "24"]}
+                                        showTotal={(total, range) =>
+                                            `${range[0]}-${range[1]} of ${total} products`
+                                        }
+                                        onChange={(page, size) => {
+                                            setProductPage(page);
+                                            setProductPageSize(size);
+                                        }}
+                                    />
+                                </div>
+                            )}
                         </div>
                     </div>
 

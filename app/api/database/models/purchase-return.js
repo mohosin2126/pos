@@ -27,6 +27,10 @@ module.exports = (sequelize, DataTypes) => {
 
             totalReturnAmount: { type: DataTypes.DECIMAL(18, 2), allowNull: false },
             refundAmount: { type: DataTypes.DECIMAL(18, 2), allowNull: true },
+            basePurchaseStatus: {
+                type: DataTypes.ENUM("purchase", "received", "partial"),
+                allowNull: true,
+            },
             refundStatus: {
                 type: DataTypes.ENUM("pending", "approved", "refunded", "rejected"),
                 allowNull: false,
