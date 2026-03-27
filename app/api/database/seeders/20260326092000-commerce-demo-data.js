@@ -228,6 +228,7 @@ function normalizeSaleItems(items, productBySku) {
             discountAmount: calculation.discount,
             taxable: calculation.taxable,
             taxPercent: item.taxPercent || 0,
+            tax: calculation.tax,
             taxAmount: calculation.tax,
             lineTotal: calculation.lineTotal,
             allocations: item.allocations || null,
