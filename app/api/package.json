@@ -9,6 +9,7 @@
     "start": "node index.js",
     "dev": "nodemon index.js",
     "db:migrate": "sequelize-cli db:migrate",
+    "db:prepare": "sequelize-cli db:migrate && sequelize-cli db:seed:all",
     "db:seed": "sequelize-cli db:seed:all",
     "db:seed:undo": "sequelize-cli db:seed:undo:all"
   },

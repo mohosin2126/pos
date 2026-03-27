@@ -10,6 +10,7 @@
     "lint": "pnpm -r --if-present run lint",
     "start": "pnpm --filter @pos/api run start",
     "db:migrate": "pnpm --filter @pos/api run db:migrate",
+    "db:prepare": "pnpm --filter @pos/api run db:prepare",
     "db:seed": "pnpm --filter @pos/api run db:seed",
     "db:seed:undo": "pnpm --filter @pos/api run db:seed:undo"
   }
