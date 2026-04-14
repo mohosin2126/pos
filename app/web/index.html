@@ -17,14 +17,16 @@
     <meta name="robots" content="index, follow, max-image-preview:large" />
     <meta name="application-name" content="POS" />
     <meta name="apple-mobile-web-app-title" content="POS" />
-    <meta name="thumbnail" content="/social-preview.png" />
+    <meta name="thumbnail" content="%SITE_URL%/social-preview.png" />
+    <link rel="canonical" href="%SITE_URL%" />
+    <link rel="image_src" href="%SITE_URL%/social-preview.png" />
 
     <meta itemprop="name" content="POS - Point of Sale" />
     <meta
       itemprop="description"
       content="Simplify sales, inventory, suppliers, billing, and customer insights with a modern POS system built for local shops and growing retail businesses."
     />
-    <meta itemprop="image" content="/social-preview.png" />
+    <meta itemprop="image" content="%SITE_URL%/social-preview.png" />
 
     <meta property="og:locale" content="en_US" />
     <meta property="og:type" content="website" />
@@ -34,9 +36,9 @@
       property="og:description"
       content="Simplify sales, inventory, suppliers, billing, and customer insights with a modern POS system built for local shops and growing retail businesses."
     />
-    <meta property="og:url" content="/" />
-    <meta property="og:image" content="/social-preview.png" />
-    <meta property="og:image:secure_url" content="/social-preview.png" />
+    <meta property="og:url" content="%SITE_URL%" />
+    <meta property="og:image" content="%SITE_URL%/social-preview.png" />
+    <meta property="og:image:secure_url" content="%SITE_URL%/social-preview.png" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1896" />
     <meta property="og:image:height" content="901" />
@@ -51,54 +53,14 @@
       name="twitter:description"
       content="Simplify sales, inventory, suppliers, billing, and customer insights with a modern POS system built for local shops and growing retail businesses."
     />
-    <meta name="twitter:url" content="/" />
-    <meta name="twitter:image" content="/social-preview.png" />
+    <meta name="twitter:url" content="%SITE_URL%" />
+    <meta name="twitter:image" content="%SITE_URL%/social-preview.png" />
     <meta
       name="twitter:image:alt"
       content="POS dashboard preview for sales, inventory, and store management."
     />
 
     <title>POS - Point of Sale</title>
-    <script>
-      const absoluteUrl = `${window.location.origin}${window.location.pathname}`;
-      const absoluteImageUrl = `${window.location.origin}/social-preview.png`;
-      const ensureLink = (rel) => {
-        let element = document.querySelector(`link[rel="${rel}"]`);
-
-        if (!element) {
-          element = document.createElement("link");
-          element.setAttribute("rel", rel);
-          document.head.appendChild(element);
-        }
-
-        return element;
-      };
-
-      ensureLink("canonical").setAttribute("href", absoluteUrl);
-      ensureLink("image_src").setAttribute("href", absoluteImageUrl);
-
-      document
-        .querySelector('meta[property="og:url"]')
-        ?.setAttribute("content", absoluteUrl);
-      document
-        .querySelector('meta[property="og:image"]')
-        ?.setAttribute("content", absoluteImageUrl);
-      document
-        .querySelector('meta[property="og:image:secure_url"]')
-        ?.setAttribute("content", absoluteImageUrl);
-      document
-        .querySelector('meta[name="twitter:url"]')
-        ?.setAttribute("content", absoluteUrl);
-      document
-        .querySelector('meta[name="twitter:image"]')
-        ?.setAttribute("content", absoluteImageUrl);
-      document
-        .querySelector('meta[itemprop="image"]')
-        ?.setAttribute("content", absoluteImageUrl);
-      document
-        .querySelector('meta[name="thumbnail"]')
-        ?.setAttribute("content", absoluteImageUrl);
-    </script>
   </head>
   <body>
     <div id="root"></div>
